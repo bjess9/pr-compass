@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -24,7 +24,6 @@ func openInBrowser(url string) error {
 	var cmd *exec.Cmd
 
 	if isWSL() {
-		fmt.Println("WSL")
 		cmd = exec.Command("explorer.exe", url)
 	} else {
 		switch runtime.GOOS {

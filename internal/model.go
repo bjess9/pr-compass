@@ -1,8 +1,8 @@
-package main
+package internal
 
 import (
-	"github.com/bjess9/pr-pilot/config"
-	"github.com/bjess9/pr-pilot/github"
+	"github.com/bjess9/pr-pilot/internal/config"
+	"github.com/bjess9/pr-pilot/internal/github"
 	gh "github.com/google/go-github/v55/github"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -24,7 +24,7 @@ type model struct {
 	err    error
 }
 
-func initialModel() model {
+func InitialModel() model {
 	columns := createTableColumns()
 	t := table.New(
 		table.WithColumns(columns),

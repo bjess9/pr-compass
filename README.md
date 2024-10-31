@@ -20,13 +20,13 @@
 
 2. **Configure Repositories**
 
-    Edit `config.yaml` to include the repositories you want to track in the `owner/repo` format:
+    Configure the repositories you want to track by running:
 
-    ```yaml
-    repos:
-      - owner1/repo1
-      - owner2/repo2
+    ```bash
+    go run cmd/prpilot/main.go configure
     ```
+
+    Follow the prompts to enter the list of repositories in `owner/repo` format, separated by commas. Your repository configuration will be saved to `~/.prpilot_config.yaml`. To make future changes, you can edit this file directly if needed.
 
 3. **Run the Application**
 

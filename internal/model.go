@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"time"
+
 	"github.com/bjess9/pr-pilot/internal/config"
 	"github.com/bjess9/pr-pilot/internal/github"
 	gh "github.com/google/go-github/v55/github"
@@ -17,14 +19,17 @@ func (e errMsg) Error() string {
 	return e.err.Error()
 }
 
+type refreshMsg struct{}
+
 type model struct {
 	table  table.Model
 	prs    []*gh.PullRequest
 	loaded bool
 	err    error
+	token  string
 }
 
-func InitialModel() model {
+func InitialModel(token string) model {
 	columns := createTableColumns()
 	t := table.New(
 		table.WithColumns(columns),
@@ -33,19 +38,26 @@ func InitialModel() model {
 	)
 	t.Focus()
 
-	return model{table: t}
+	return model{table: t, token: token}
+}
+
+func refreshCmd() tea.Cmd {
+	return func() tea.Msg {
+		time.Sleep(60 * time.Second)
+		return refreshMsg{}
+	}
 }
 
 func (m model) Init() tea.Cmd {
-	return fetchPRs
+	return tea.Batch(m.fetchPRs, refreshCmd())
 }
 
-func fetchPRs() tea.Msg {
+func (m model) fetchPRs() tea.Msg {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return errMsg{err}
 	}
-	prs, err := github.FetchOpenPRs(cfg.Repos)
+	prs, err := github.FetchOpenPRs(cfg.Repos, m.token)
 	if err != nil {
 		return errMsg{err}
 	}
@@ -63,6 +75,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.prs = msg
 		rows := createTableRows(m.prs)
 		m.table.SetRows(rows)
+		return m, tea.Batch(cmd, refreshCmd())
+
+	case refreshMsg:
+		return m, tea.Batch(m.fetchPRs, refreshCmd())
 
 	case errMsg:
 		m.err = msg.err

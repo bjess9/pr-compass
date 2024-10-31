@@ -22,9 +22,10 @@ type model struct {
 	prs    []*gh.PullRequest
 	loaded bool
 	err    error
+	token  string
 }
 
-func InitialModel() model {
+func InitialModel(token string) model {
 	columns := createTableColumns()
 	t := table.New(
 		table.WithColumns(columns),
@@ -33,19 +34,20 @@ func InitialModel() model {
 	)
 	t.Focus()
 
-	return model{table: t}
+	return model{table: t, token: token}
 }
 
 func (m model) Init() tea.Cmd {
-	return fetchPRs
+	return m.fetchPRs
 }
 
-func fetchPRs() tea.Msg {
+func (m model) fetchPRs() tea.Msg {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return errMsg{err}
 	}
-	prs, err := github.FetchOpenPRs(cfg.Repos)
+
+	prs, err := github.FetchOpenPRs(cfg.Repos, m.token)
 	if err != nil {
 		return errMsg{err}
 	}

@@ -1,4 +1,4 @@
-# PR Pilot
+# PR Pilot ✈️
 
 **PR Pilot** is a terminal-based tool for listing, navigating, and opening GitHub pull requests across multiple repositories.
 

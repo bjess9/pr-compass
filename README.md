@@ -24,7 +24,7 @@ curl -sL https://raw.githubusercontent.com/bjess9/pr-pilot/main/install.sh | bas
     Configure the repositories you want to track by running:
 
     ```bash
-    prpilot configure
+    pr-pilot configure
     ```
 
     Follow the prompts to enter the list of repositories in `owner/repo` format, separated by commas. Your repository configuration will be saved to `~/.prpilot_config.yaml`. You can edit this file directly if you need to make further changes later.
@@ -34,7 +34,7 @@ curl -sL https://raw.githubusercontent.com/bjess9/pr-pilot/main/install.sh | bas
     To start the application, use:
 
     ```bash
-    prpilot
+    pr-pilot
     ```
 
 3. **Authentication**

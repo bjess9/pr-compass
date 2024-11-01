@@ -11,11 +11,27 @@
 
 ## Installation
 
-To install PR Pilot, run the following command in your terminal. This will automatically download and install the latest version:
+To install PR Pilot, follow the appropriate method for your operating system. Each command will download and install the latest version of PR Pilot.
+
+### Linux/macOS
+
+Open a terminal and run the following command:
 
 ```bash
 curl -sL https://raw.githubusercontent.com/bjess9/pr-pilot/main/install.sh | bash
 ```
+
+This will automatically download and install PR Pilot, placing it in /usr/local/bin.
+
+### Windows
+
+Open PowerShell as Adminsitrator and run:
+
+```bash
+Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-WebRequest -Uri "https://raw.githubusercontent.com/bjess9/pr-pilot/main/install.ps1" -OutFile "install.ps1"; .\install.ps1
+```
+
+This will download and install PR Pilot in C:\Program Files\pr-pilot. Ensure this directory is in your system PATH.
 
 ## Getting Started
 

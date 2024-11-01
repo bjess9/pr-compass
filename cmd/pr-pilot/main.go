@@ -20,7 +20,7 @@ func main() {
 	}
 
 	if !config.ConfigExists() {
-		fmt.Println("No configuration found. Please run `prpilot configure` to set up your repositories.")
+		fmt.Println("No configuration found. Please run `pr-pilot configure` to set up your repositories.")
 		return
 	}
 

@@ -24,6 +24,10 @@ archives:
       - README.md
 
 release:
+  # Manage GitHub release options directly here
+  draft: false
+  prerelease: false
   github:
-    draft: false
-    prerelease: false
+    owner: bjess9
+    name: prpilot
+    token: "{{ .Env.GITHUB_TOKEN }}"

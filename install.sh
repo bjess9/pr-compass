@@ -17,14 +17,14 @@ VERSION=${1:-"latest"}
 if [ "$VERSION" == "latest" ]; then
     URL=$(curl -s https://api.github.com/repos/bjess9/pr-pilot/releases/latest | grep "browser_download_url" | grep "$OS" | grep "$ARCH" | cut -d '"' -f 4)
 else
-    URL="https://github.com/bjess9/pr-pilot/releases/download/$VERSION/prpilot_${OS}_${ARCH}.tar.gz"
+    URL="https://github.com/bjess9/pr-pilot/releases/download/$VERSION/pr-pilot_${OS}_${ARCH}.tar.gz"
 fi
 
 # Download and extract
-curl -L $URL -o prpilot.tar.gz
-tar -xzf prpilot.tar.gz prpilot
-rm prpilot.tar.gz
+curl -L $URL -o pr-pilot.tar.gz
+tar -xzf pr-pilot.tar.gz pr-pilot
+rm pr-pilot.tar.gz
 
 # Move to /usr/local/bin
-sudo mv prpilot /usr/local/bin/
-echo "PR Pilot installed successfully! Run 'prpilot configure' to get started."
+sudo mv pr-pilot /usr/local/bin/
+echo "PR Pilot installed successfully! Run 'pr-pilot configure' to get started."

@@ -69,10 +69,3 @@ This will download and install PR Pilot in C:\Program Files\pr-pilot. Ensure thi
      - **WSL2**: ⚠️ **Stored as a plain text file in your home directory (`~/.prpilot_token`). This is not a secure storage method**, so take care to protect access to this file if security is a concern.
 
    With this approach, you won’t need to re-authenticate each time you run PR Pilot. However, on WSL2, **⚠️ the token is stored in plain text** and lacks the added security provided by other platforms' native credential managers.
-
-## Usage
-
-- **Track New PRs:** See incoming PRs in order of newest to oldest, so you can review recent work across repositories.
-- **Navigate PRs:** Use `↑/↓` arrow keys or `j/k` to move up and down the list.
-- **Open PR:** Press `Enter` to open the selected PR in your browser.
-- **Quit:** Press `q` or `Ctrl+C` to exit the application.

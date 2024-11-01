@@ -3,7 +3,8 @@ version: 2
 project_name: prpilot
 
 builds:
-  - env:
+  - main: ./cmd/prpilot
+    env:
       - CGO_ENABLED=0
     goos:
       - linux

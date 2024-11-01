@@ -1,9 +1,9 @@
 version: 2
 
-project_name: prpilot
+project_name: pr-pilot
 
 builds:
-  - main: ./cmd/prpilot
+  - main: ./cmd/pr-pilot
     env:
       - CGO_ENABLED=0
     goos:
@@ -15,7 +15,7 @@ builds:
       - arm64
     ldflags:
       - "-s -w"
-    binary: prpilot
+    binary: pr-pilot
 
 archives:
   - format: tar.gz
@@ -29,4 +29,4 @@ release:
   prerelease: false
   github:
     owner: bjess9
-    name: prpilot
+    name: pr-pilot

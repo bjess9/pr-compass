@@ -3,7 +3,12 @@ $OS = "windows"
 $ARCH = if ([System.Environment]::Is64BitOperatingSystem) { "amd64" } else { "386" }
 
 # Set the download URL
-$VERSION = $args[0] -ne "" ? $args[0] : "latest"
+if ($args.Length -gt 0) {
+    $VERSION = $args[0]
+} else {
+    $VERSION = "latest"
+}
+
 if ($VERSION -eq "latest") {
     $URL = (Invoke-RestMethod https://api.github.com/repos/bjess9/pr-pilot/releases/latest).assets |
            Where-Object { $_.name -like "*$OS*$ARCH*" } |

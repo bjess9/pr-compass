@@ -3,28 +3,33 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"os/user"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/bjess9/pr-pilot/internal"
+	"github.com/zalando/go-keyring"
 )
 
 const (
-	clientID          = "Ov23lijhjxWcGktMYQoA"
-	deviceCodeURL     = "https://github.com/login/device/code"
-	accessTokenURL    = "https://github.com/login/oauth/access_token"
+	service        = "prpilot"
+	tokenKey       = "auth_token"
+	clientID       = "Ov23lijhjxWcGktMYQoA"
+	deviceCodeURL  = "https://github.com/login/device/code"
+	accessTokenURL = "https://github.com/login/oauth/access_token"
 )
 
-type DeviceCodeResponse struct {
-	DeviceCode              string `json:"device_code"`
-	UserCode                string `json:"user_code"`
-	VerificationURI         string `json:"verification_uri"`
-	VerificationURIComplete string `json:"verification_uri_complete"`
-	ExpiresIn               int    `json:"expires_in"`
-	Interval                int    `json:"interval"`
+func getTokenFilePath() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get home directory: %w", err)
+	}
+	return filepath.Join(homeDir, ".prpilot_token"), nil
 }
 
 func Authenticate() (string, error) {
@@ -34,7 +39,7 @@ func Authenticate() (string, error) {
 		return token, nil
 	}
 
-	fmt.Println("Token not found. Starting OAuth Device Flow.") // Debugging print
+	fmt.Println("Token not found. Starting OAuth Device Flow.")
 	deviceCodeResp, err := getDeviceCode()
 	if err != nil {
 		return "", err
@@ -65,7 +70,7 @@ func getDeviceCode() (*DeviceCodeResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -75,24 +80,27 @@ func getDeviceCode() (*DeviceCodeResponse, error) {
 		return nil, fmt.Errorf("failed to parse URL-encoded response: %w", err)
 	}
 
-	deviceCodeResp := &DeviceCodeResponse{
+	return &DeviceCodeResponse{
 		DeviceCode:      values.Get("device_code"),
 		UserCode:        values.Get("user_code"),
 		VerificationURI: values.Get("verification_uri"),
 		ExpiresIn:       parseInt(values.Get("expires_in")),
 		Interval:        parseInt(values.Get("interval")),
-	}
-
-	if deviceCodeResp.DeviceCode == "" || deviceCodeResp.UserCode == "" || deviceCodeResp.VerificationURI == "" {
-		return nil, errors.New("failed to retrieve device code information")
-	}
-
-	return deviceCodeResp, nil
+	}, nil
 }
 
 func parseInt(s string) int {
 	val, _ := strconv.Atoi(s)
 	return val
+}
+
+type DeviceCodeResponse struct {
+	DeviceCode              string `json:"device_code"`
+	UserCode                string `json:"user_code"`
+	VerificationURI         string `json:"verification_uri"`
+	VerificationURIComplete string `json:"verification_uri_complete"`
+	ExpiresIn               int    `json:"expires_in"`
+	Interval                int    `json:"interval"`
 }
 
 type TokenResponse struct {
@@ -105,7 +113,7 @@ func promptUserForAuthorization(dcr *DeviceCodeResponse) {
 	fmt.Printf("To authenticate, please visit the following URL:\n\n%s\n\n", dcr.VerificationURI)
 	fmt.Printf("Then enter the code: %s\n", dcr.UserCode)
 	fmt.Println("\nPress Enter when you have completed this step.")
-	fmt.Scanln() // Wait for the user to press Enter
+	fmt.Scanln()
 }
 
 func pollForAccessToken(deviceCode string, interval int) (*TokenResponse, error) {
@@ -115,71 +123,80 @@ func pollForAccessToken(deviceCode string, interval int) (*TokenResponse, error)
 	data.Set("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
 
 	for {
-			time.Sleep(time.Duration(interval) * time.Second)
+		time.Sleep(time.Duration(interval) * time.Second)
 
-			resp, err := http.PostForm(accessTokenURL, data)
-			if err != nil {
-					return nil, err
-			}
-			defer resp.Body.Close()
+		resp, err := http.PostForm(accessTokenURL, data)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
 
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-					return nil, err
-			}
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
 
-			values, err := url.ParseQuery(string(body))
-			if err != nil {
-					return nil, fmt.Errorf("failed to parse URL-encoded response: %w", err)
-			}
+		values, err := url.ParseQuery(string(body))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse URL-encoded response: %w", err)
+		}
 
-			token := values.Get("access_token")
-			if token != "" {
-					return &TokenResponse{
-							AccessToken: token,
-							TokenType:   values.Get("token_type"),
-							Scope:       values.Get("scope"),
-					}, nil
-			}
+		token := values.Get("access_token")
+		if token != "" {
+			return &TokenResponse{
+				AccessToken: token,
+				TokenType:   values.Get("token_type"),
+				Scope:       values.Get("scope"),
+			}, nil
+		}
 
-			switch values.Get("error") {
-			case "authorization_pending":
-					continue
-			case "slow_down":
-					interval++
-			case "expired_token":
-					return nil, errors.New("device code expired")
-			default:
-					return nil, errors.New("failed to authenticate")
-			}
+		switch values.Get("error") {
+		case "authorization_pending":
+			continue
+		case "slow_down":
+			interval++
+		case "expired_token":
+			return nil, errors.New("device code expired")
+		default:
+			return nil, errors.New("failed to authenticate")
+		}
 	}
 }
 
-
 func saveToken(token string) error {
-	usr, err := user.Current()
-	if err != nil {
-		return err
+	if internal.IsWSL() {
+		tokenFilePath, err := getTokenFilePath()
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(tokenFilePath, []byte(token), 0600)
 	}
-	tokenFile := usr.HomeDir + "/.prpilot_token"
-
-	err = os.WriteFile(tokenFile, []byte(token), 0600)
-	if err != nil {
-		return fmt.Errorf("failed to save token: %w", err)
-	}
-	return nil
+	return keyring.Set(service, tokenKey, token)
 }
 
 func loadToken() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
+	if internal.IsWSL() {
+		tokenFilePath, err := getTokenFilePath()
+		if err != nil {
+			return "", err
+		}
+		token, err := os.ReadFile(tokenFilePath)
+		if err != nil {
+			return "", fmt.Errorf("token file not found; please authenticate")
+		}
+		return strings.TrimSpace(string(token)), nil
 	}
-	tokenFile := usr.HomeDir + "/.prpilot_token"
+	return keyring.Get(service, tokenKey)
+}
 
-	data, err := os.ReadFile(tokenFile)
-	if err != nil {
-		return "", fmt.Errorf("no access token found; please authenticate")
+// TODO: Implement delete token feature
+func deleteToken() error {
+	if internal.IsWSL() {
+		tokenFilePath, err := getTokenFilePath()
+		if err != nil {
+			return err
+		}
+		return os.Remove(tokenFilePath)
 	}
-	return string(data), nil
+	return keyring.Delete(service, tokenKey)
 }

@@ -9,42 +9,50 @@
 - **Open PRs:** Press `Enter` to open the selected PR in your default browser.
 - **Quit:** Press `q` or `Ctrl+C` to exit the application.
 
+## Installation
+
+To install PR Pilot, run the following command in your terminal. This will automatically download and install the latest version:
+
+```bash
+curl -sL https://raw.githubusercontent.com/bjess9/pr-pilot/main/install.sh | bash
+```
+
 ## Getting Started
 
-1. **Clone the Repository**
-
-    ```bash
-    git clone https://github.com/bjess9/pr-pilot.git
-    cd pr-pilot
-    ```
-
-2. **Configure Repositories**
+1. **Configure Repositories**
 
     Configure the repositories you want to track by running:
 
     ```bash
-    go run cmd/prpilot/main.go configure
+    prpilot configure
     ```
 
-    Follow the prompts to enter the list of repositories in `owner/repo` format, separated by commas. Your repository configuration will be saved to `~/.prpilot_config.yaml`. To make future changes, you can edit this file directly if needed.
+    Follow the prompts to enter the list of repositories in `owner/repo` format, separated by commas. Your repository configuration will be saved to `~/.prpilot_config.yaml`. You can edit this file directly if you need to make further changes later.
 
-3. **Run the Application**
+2. **Run the Application**
 
     To start the application, use:
 
     ```bash
-    go run cmd/prpilot/main.go
+    prpilot
     ```
 
-4. **Authentication**
+3. **Authentication**
 
-    PR Pilot uses GitHub’s OAuth Device Flow to authenticate. When you run the app for the first time, you’ll be prompted to authenticate:
+   PR Pilot uses GitHub’s OAuth Device Flow to authenticate. When you run the app for the first time, you’ll be prompted to authenticate:
 
-    - **Follow the Authentication Prompt:**  
-      The application will display a URL and a one-time code. Open the URL in your browser, enter the provided code, and authorize the application.
+   - **Follow the Authentication Prompt:**  
+     The application will display a URL and a one-time code. Open the URL in your browser, enter the provided code, and authorize the application.
 
-    - **Token Storage:**  
-      After authentication, your access token will be securely saved in a file located in your home directory (`~/.prpilot_token`). This token will be used for subsequent runs, so you won’t need to re-authenticate each time.
+   - **Token Storage:**  
+     After authentication, your access token will be stored as follows, depending on your platform:
+
+     - **macOS**: Stored securely in the Keychain.
+     - **Windows**: Stored securely in the Windows Credential Manager.
+     - **Linux**: Stored securely in the Secret Service API (used by GNOME Keyring or similar).
+     - **WSL2**: ⚠️ **Stored as a plain text file in your home directory (`~/.prpilot_token`). This is not a secure storage method**, so take care to protect access to this file if security is a concern.
+
+   With this approach, you won’t need to re-authenticate each time you run PR Pilot. However, on WSL2, **⚠️ the token is stored in plain text** and lacks the added security provided by other platforms' native credential managers.
 
 ## Usage
 

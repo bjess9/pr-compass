@@ -2,10 +2,8 @@ package internal
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"runtime"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -23,7 +21,7 @@ func openURLCmd(url string) tea.Cmd {
 func openInBrowser(url string) error {
 	var cmd *exec.Cmd
 
-	if isWSL() {
+	if IsWSL() {
 		cmd = exec.Command("explorer.exe", url)
 	} else {
 		switch runtime.GOOS {
@@ -43,26 +41,4 @@ func openInBrowser(url string) error {
 		return fmt.Errorf("failed to open browser: %w", err)
 	}
 	return nil
-}
-
-func isWSL() bool {
-	if runtime.GOOS != "linux" {
-		return false
-	}
-
-	if _, err := exec.LookPath("wslpath"); err == nil {
-		return true
-	}
-
-	if content, err := exec.Command("uname", "-r").Output(); err == nil {
-		if strings.Contains(strings.ToLower(string(content)), "microsoft") {
-			return true
-		}
-	}
-
-	if os.Getenv("WSL_INTEROP") != "" || os.Getenv("WSL_DISTRO_NAME") != "" {
-		return true
-	}
-
-	return false
 }

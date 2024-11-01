@@ -3,6 +3,9 @@ package internal
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
+	"strings"
 	"time"
 
 	gh "github.com/google/go-github/v55/github"
@@ -10,6 +13,28 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	"golang.org/x/term"
 )
+
+func IsWSL() bool {
+	if runtime.GOOS != "linux" {
+		return false
+	}
+
+	if _, err := exec.LookPath("wslpath"); err == nil {
+		return true
+	}
+
+	if content, err := exec.Command("uname", "-r").Output(); err == nil {
+		if strings.Contains(strings.ToLower(string(content)), "microsoft") {
+			return true
+		}
+	}
+
+	if os.Getenv("WSL_INTEROP") != "" || os.Getenv("WSL_DISTRO_NAME") != "" {
+		return true
+	}
+
+	return false
+}
 
 func createTableColumns() []table.Column {
 	totalWidth := getTerminalWidth() - 4

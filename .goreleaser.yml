@@ -1,0 +1,31 @@
+project_name: prpilot
+
+builds:
+  - id: prpilot
+    main: ./cmd/prpilot/main.go
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags: "-s -w"
+
+archive:
+  format: tar.gz
+  files:
+    - LICENSE
+    - README.md
+    - install.sh
+
+checksum:
+  name_template: "{{ .ProjectName }}_checksums.txt"
+
+release:
+  github:
+    owner: bjess9
+    name: pr-pilot
+    draft: false
+    prerelease: false
+    changelog: changelog.md

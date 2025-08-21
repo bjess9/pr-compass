@@ -144,7 +144,7 @@ func getPRReviewIndicator(pr *gh.PullRequest) string {
 
 // getPRLabelsDisplay returns a truncated display of important labels
 func getPRLabelsDisplay(pr *gh.PullRequest) string {
-	if pr.Labels == nil || len(pr.Labels) == 0 {
+	if len(pr.Labels) == 0 {
 		return ""
 	}
 	

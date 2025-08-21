@@ -149,10 +149,12 @@ func TestConfigExists(t *testing.T) {
 	cfg, err := LoadConfigFromPath(configPath)
 	if err != nil {
 		t.Errorf("LoadConfigFromPath should succeed for valid config: %v", err)
+		return
 	}
 	
 	if cfg == nil {
 		t.Error("Config should not be nil for valid config file")
+		return
 	}
 	
 	if cfg.Mode != "repos" {

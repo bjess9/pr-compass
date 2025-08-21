@@ -113,7 +113,8 @@ func promptUserForAuthorization(dcr *DeviceCodeResponse) {
 	fmt.Printf("To authenticate, please visit the following URL:\n\n%s\n\n", dcr.VerificationURI)
 	fmt.Printf("Then enter the code: %s\n", dcr.UserCode)
 	fmt.Println("\nPress Enter when you have completed this step.")
-	fmt.Scanln()
+	var dummy string
+	_, _ = fmt.Scanln(&dummy) // Ignore error since we just want to wait for user input
 }
 
 func pollForAccessToken(deviceCode string, interval int) (*TokenResponse, error) {

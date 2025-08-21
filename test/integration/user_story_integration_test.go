@@ -14,6 +14,7 @@ import (
 	"github.com/bjess9/pr-pilot/internal/ui"
 	"github.com/bjess9/pr-pilot/internal/config"
 	"github.com/bjess9/pr-pilot/internal/github"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // User Story: As a team lead, I want to quickly set up PR tracking for my team
@@ -323,8 +324,9 @@ func createKeyMsg(key string) interface{} {
 	}
 }
 
-func createErrorMsg(message string) interface{} {
-	return ui.errMsg{err: fmt.Errorf(message)}
+func createErrorMsg(message string) tea.Msg {
+	// Create a custom error message type for testing
+	return struct{ err error }{err: fmt.Errorf(message)}
 }
 
 // Run this test file with: go test -v user_story_integration_test.go

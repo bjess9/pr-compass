@@ -1,13 +1,11 @@
 # PR Pilot ✈️
 
-[![CI Status](https://github.com/YOUR_USERNAME/pr-pilot/workflows/CI/badge.svg)](https://github.com/YOUR_USERNAME/pr-pilot/actions)
-[![Go Report Card](https://goreportcard.com/badge/github.com/YOUR_USERNAME/pr-pilot)](https://goreportcard.com/report/github.com/YOUR_USERNAME/pr-pilot)
-[![License](https://img.shields.io/github/license/YOUR_USERNAME/pr-pilot)](LICENSE)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/YOUR_USERNAME/pr-pilot)](go.mod)
+[![CI Status](https://github.com/bjess9/pr-pilot/workflows/CI/badge.svg)](https://github.com/bjess9/pr-pilot/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bjess9/pr-pilot)](https://goreportcard.com/report/github.com/bjess9/pr-pilot)
+[![License](https://img.shields.io/github/license/bjess9/pr-pilot)](LICENSE)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/bjess9/pr-pilot)](go.mod)
 
 A powerful CLI tool for tracking and managing Pull Requests across teams and organizations with a clean terminal interface.
-
-![PR Pilot Demo](https://via.placeholder.com/800x400/2d3748/ffffff?text=PR+Pilot+Terminal+UI)
 
 ## Features
 
@@ -26,12 +24,12 @@ A powerful CLI tool for tracking and managing Pull Requests across teams and org
 
 ```bash
 # Download latest release
-curl -L -o pr-pilot.tar.gz https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_$(uname -s)_$(uname -m).tar.gz
+curl -L -o pr-pilot.tar.gz https://github.com/bjess9/pr-pilot/releases/latest/download/pr-pilot_$(uname -s)_$(uname -m).tar.gz
 tar -xzf pr-pilot.tar.gz
 sudo mv pr-pilot /usr/local/bin/
 
 # Or use Go install
-go install github.com/YOUR_USERNAME/pr-pilot/cmd/pr-pilot@latest
+go install github.com/bjess9/pr-pilot/cmd/pr-pilot@latest
 ```
 
 ### Platform-Specific
@@ -41,10 +39,10 @@ go install github.com/YOUR_USERNAME/pr-pilot/cmd/pr-pilot@latest
 
 ```bash
 # Intel Macs
-curl -L -o pr-pilot.tar.gz https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_Darwin_x86_64.tar.gz
+curl -L -o pr-pilot.tar.gz https://github.com/bjess9/pr-pilot/releases/latest/download/pr-pilot_Darwin_x86_64.tar.gz
 
 # Apple Silicon Macs  
-curl -L -o pr-pilot.tar.gz https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_Darwin_arm64.tar.gz
+curl -L -o pr-pilot.tar.gz https://github.com/bjess9/pr-pilot/releases/latest/download/pr-pilot_Darwin_arm64.tar.gz
 
 tar -xzf pr-pilot.tar.gz && sudo mv pr-pilot /usr/local/bin/
 ```
@@ -56,10 +54,10 @@ tar -xzf pr-pilot.tar.gz && sudo mv pr-pilot /usr/local/bin/
 
 ```bash
 # x86_64
-curl -L -o pr-pilot.tar.gz https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_Linux_x86_64.tar.gz
+curl -L -o pr-pilot.tar.gz https://github.com/bjess9/pr-pilot/releases/latest/download/pr-pilot_Linux_x86_64.tar.gz
 
 # ARM64
-curl -L -o pr-pilot.tar.gz https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_Linux_arm64.tar.gz
+curl -L -o pr-pilot.tar.gz https://github.com/bjess9/pr-pilot/releases/latest/download/pr-pilot_Linux_arm64.tar.gz
 
 tar -xzf pr-pilot.tar.gz && sudo mv pr-pilot /usr/local/bin/
 ```
@@ -71,7 +69,7 @@ tar -xzf pr-pilot.tar.gz && sudo mv pr-pilot /usr/local/bin/
 
 ```powershell
 # Download and extract
-Invoke-WebRequest -Uri "https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_Windows_x86_64.zip" -OutFile "pr-pilot.zip"
+Invoke-WebRequest -Uri "https://github.com/bjess9/pr-pilot/releases/latest/download/pr-pilot_Windows_x86_64.zip" -OutFile "pr-pilot.zip"
 Expand-Archive pr-pilot.zip -DestinationPath "C:\tools\"
 # Add C:\tools to your PATH
 ```
@@ -193,7 +191,7 @@ All tests use mock GitHub clients and don't require API tokens or network access
 ### Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/pr-pilot.git
+git clone https://github.com/bjess9/pr-pilot.git
 cd pr-pilot
 go mod download
 make test

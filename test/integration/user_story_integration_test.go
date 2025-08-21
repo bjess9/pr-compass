@@ -239,7 +239,9 @@ func TestDeveloperHasComprehensiveTestCoverage(t *testing.T) {
 					
 					configPath := filepath.Join(tempDir, "test.yaml")
 					testConfig := fmt.Sprintf(`mode: "%s"`, mode)
-					os.WriteFile(configPath, []byte(testConfig), 0644)
+					if err := os.WriteFile(configPath, []byte(testConfig), 0644); err != nil {
+						return fmt.Errorf("failed to write test config: %v", err)
+					}
 					
 					cfg, err := config.LoadConfigFromPath(configPath)
 					if err != nil {
@@ -326,7 +328,7 @@ func createKeyMsg(key string) interface{} {
 
 func createErrorMsg(message string) tea.Msg {
 	// Create a custom error message type for testing
-	return struct{ err error }{err: fmt.Errorf(message)}
+	return struct{ err error }{err: fmt.Errorf("%s", message)}
 }
 
 // Run this test file with: go test -v user_story_integration_test.go

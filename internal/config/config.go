@@ -77,7 +77,9 @@ func ConfigureRepos() error {
 	
 	fmt.Print("Select option (1-5): ")
 	var choice string
-	fmt.Scanln(&choice)
+	if _, err := fmt.Scanln(&choice); err != nil {
+		return fmt.Errorf("failed to read input: %w", err)
+	}
 
 	viper.SetConfigFile(getConfigFilePath())
 	
@@ -102,7 +104,9 @@ func configureRepoList() error {
 	fmt.Println("\n--- Repository List Configuration ---")
 	fmt.Print("Enter repositories (comma-separated, in owner/repo format): ")
 	var reposInput string
-	fmt.Scanln(&reposInput)
+	if _, err := fmt.Scanln(&reposInput); err != nil {
+		return fmt.Errorf("failed to read repositories: %w", err)
+	}
 	repos := strings.Split(reposInput, ",")
 
 	// Clean up repo names
@@ -125,7 +129,9 @@ func configureOrganization() error {
 	fmt.Println("\n--- Organization Configuration ---")
 	fmt.Print("Enter GitHub organization name: ")
 	var org string
-	fmt.Scanln(&org)
+	if _, err := fmt.Scanln(&org); err != nil {
+		return fmt.Errorf("failed to read organization: %w", err)
+	}
 
 	viper.Set("mode", "organization")
 	viper.Set("organization", strings.TrimSpace(org))
@@ -142,11 +148,15 @@ func configureTeams() error {
 	fmt.Println("\n--- Team Configuration ---")
 	fmt.Print("Enter GitHub organization name: ")
 	var org string
-	fmt.Scanln(&org)
+	if _, err := fmt.Scanln(&org); err != nil {
+		return fmt.Errorf("failed to read organization: %w", err)
+	}
 	
 	fmt.Print("Enter team names (comma-separated): ")
 	var teamsInput string
-	fmt.Scanln(&teamsInput)
+	if _, err := fmt.Scanln(&teamsInput); err != nil {
+		return fmt.Errorf("failed to read teams: %w", err)
+	}
 	teams := strings.Split(teamsInput, ",")
 	
 	// Clean up team names
@@ -174,7 +184,9 @@ func configureSearch() error {
 	fmt.Print("Enter GitHub search query: ")
 	
 	var query string
-	fmt.Scanln(&query)
+	if _, err := fmt.Scanln(&query); err != nil {
+		return fmt.Errorf("failed to read search query: %w", err)
+	}
 
 	viper.Set("mode", "search")
 	viper.Set("search_query", strings.TrimSpace(query))
@@ -196,11 +208,15 @@ func configureTopics() error {
 	
 	fmt.Print("Enter GitHub organization name: ")
 	var org string
-	fmt.Scanln(&org)
+	if _, err := fmt.Scanln(&org); err != nil {
+		return fmt.Errorf("failed to read organization: %w", err)
+	}
 	
 	fmt.Print("Enter repository topics/labels (comma-separated, e.g., 'my-team,backend'): ")
 	var topicsInput string
-	fmt.Scanln(&topicsInput)
+	if _, err := fmt.Scanln(&topicsInput); err != nil {
+		return fmt.Errorf("failed to read topics: %w", err)
+	}
 	topics := strings.Split(topicsInput, ",")
 	
 	// Clean up topic names

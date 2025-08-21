@@ -33,7 +33,7 @@ func main() {
 	model := ui.InitialModel(token)
 
 	p := tea.NewProgram(model, tea.WithAltScreen())
-	if err := p.Start(); err != nil {
+	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error starting program: %v\n", err)
 		os.Exit(1)
 	}

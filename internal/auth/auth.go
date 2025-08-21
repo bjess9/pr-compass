@@ -189,8 +189,8 @@ func loadToken() (string, error) {
 	return keyring.Get(service, tokenKey)
 }
 
-// TODO: Implement delete token feature
-func deleteToken() error {
+// DeleteToken removes the stored authentication token
+func DeleteToken() error {
 	if ui.IsWSL() {
 		tokenFilePath, err := getTokenFilePath()
 		if err != nil {

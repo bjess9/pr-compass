@@ -130,11 +130,11 @@ func getPRReviewIndicator(pr *gh.PullRequest) string {
 	// For now, we'll use available information from the PR object
 	
 	// Check if there are requested reviewers (users or teams)
-	if pr.RequestedReviewers != nil && len(pr.RequestedReviewers) > 0 {
+	if len(pr.RequestedReviewers) > 0 {
 		return "🔄 Pending"
 	}
 	
-	if pr.RequestedTeams != nil && len(pr.RequestedTeams) > 0 {
+	if len(pr.RequestedTeams) > 0 {
 		return "🔄 Pending"
 	}
 	

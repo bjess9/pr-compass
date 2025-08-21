@@ -133,7 +133,7 @@ func TestUserReceivesHelpfulErrorWhenGitHubUnavailable(t *testing.T) {
 		t.Error("User should be informed when GitHub is unavailable")
 	}
 	
-	if prs != nil && len(prs) > 0 {
+	if len(prs) > 0 {
 		t.Error("User should not receive stale data when GitHub is unavailable")
 	}
 	

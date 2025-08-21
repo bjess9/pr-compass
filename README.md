@@ -1,71 +1,244 @@
 # PR Pilot ✈️
 
-**PR Pilot** is a terminal-based tool that helps you stay on top of incoming pull requests across multiple GitHub repositories by listing them in order from newest to oldest. Perfect for keeping an eye on your team's PR activity, PR Pilot makes it easy to navigate and open pull requests from a single interface.
+[![CI Status](https://github.com/YOUR_USERNAME/pr-pilot/workflows/CI/badge.svg)](https://github.com/YOUR_USERNAME/pr-pilot/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/YOUR_USERNAME/pr-pilot)](https://goreportcard.com/report/github.com/YOUR_USERNAME/pr-pilot)
+[![License](https://img.shields.io/github/license/YOUR_USERNAME/pr-pilot)](LICENSE)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/YOUR_USERNAME/pr-pilot)](go.mod)
+
+A powerful CLI tool for tracking and managing Pull Requests across teams and organizations with a clean terminal interface.
+
+![PR Pilot Demo](https://via.placeholder.com/800x400/2d3748/ffffff?text=PR+Pilot+Terminal+UI)
 
 ## Features
 
-- **Unified PR View:** See open pull requests from all configured repositories, sorted with the newest PRs at the top, allowing you to quickly review recent activity across multiple projects.
-- **Navigate PRs:** Use keyboard arrows or `j/k` to move through PRs.
-- **Open PRs:** Press `Enter` to open the selected PR in your default browser.
-- **Quit:** Press `q` or `Ctrl+C` to exit the application.
+- **🎯 Team-Based Tracking** - Monitor PRs by organization, teams, repository topics, or custom search queries
+- **📊 Rich PR Details** - View status, reviews, labels, age, and conflicts at a glance  
+- **🚀 Multiple Tracking Modes** - Support for repos, organization-wide, team-based, topic-based, and custom search
+- **🎨 Intuitive TUI** - Clean terminal interface with keyboard navigation
+- **⚡ Auto-Refresh** - Automatic PR list updates every 60 seconds
+- **🔍 Smart Filtering** - Filter by drafts, status, author, and more
+- **🌐 Browser Integration** - Open PRs directly in your default browser
+- **📱 Cross-Platform** - Works on macOS, Linux, and Windows
 
 ## Installation
 
-To install PR Pilot, follow the appropriate method for your operating system. Each command will download and install the latest version of PR Pilot.
-
-### Linux/macOS
-
-Open a terminal and run the following command:
+### Quick Install
 
 ```bash
-curl -sL https://raw.githubusercontent.com/bjess9/pr-pilot/main/install.sh | bash
+# Download latest release
+curl -L -o pr-pilot.tar.gz https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_$(uname -s)_$(uname -m).tar.gz
+tar -xzf pr-pilot.tar.gz
+sudo mv pr-pilot /usr/local/bin/
+
+# Or use Go install
+go install github.com/YOUR_USERNAME/pr-pilot/cmd/pr-pilot@latest
 ```
 
-This will automatically download and install PR Pilot, placing it in /usr/local/bin.
+### Platform-Specific
 
-### Windows
-
-Open PowerShell as Adminsitrator and run:
+<details>
+<summary>macOS</summary>
 
 ```bash
-Set-ExecutionPolicy Bypass -Scope Process -Force; Invoke-WebRequest -Uri "https://raw.githubusercontent.com/bjess9/pr-pilot/main/install.ps1" -OutFile "install.ps1"; .\install.ps1
+# Intel Macs
+curl -L -o pr-pilot.tar.gz https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_Darwin_x86_64.tar.gz
+
+# Apple Silicon Macs  
+curl -L -o pr-pilot.tar.gz https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_Darwin_arm64.tar.gz
+
+tar -xzf pr-pilot.tar.gz && sudo mv pr-pilot /usr/local/bin/
 ```
 
-This will download and install PR Pilot in C:\Program Files\pr-pilot. Ensure this directory is in your system PATH.
+</details>
 
-## Getting Started
+<details>
+<summary>Linux</summary>
 
-1. **Configure Repositories**
+```bash
+# x86_64
+curl -L -o pr-pilot.tar.gz https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_Linux_x86_64.tar.gz
 
-    Configure the repositories you want to track by running:
+# ARM64
+curl -L -o pr-pilot.tar.gz https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_Linux_arm64.tar.gz
 
-    ```bash
-    pr-pilot configure
-    ```
+tar -xzf pr-pilot.tar.gz && sudo mv pr-pilot /usr/local/bin/
+```
 
-    Follow the prompts to enter the list of repositories in `owner/repo` format, separated by commas. Your repository configuration will be saved to `~/.prpilot_config.yaml`. You can edit this file directly if you need to make further changes later.
+</details>
 
-2. **Run the Application**
+<details>
+<summary>Windows</summary>
 
-    To start the application, use:
+```powershell
+# Download and extract
+Invoke-WebRequest -Uri "https://github.com/YOUR_USERNAME/pr-pilot/releases/latest/download/pr-pilot_Windows_x86_64.zip" -OutFile "pr-pilot.zip"
+Expand-Archive pr-pilot.zip -DestinationPath "C:\tools\"
+# Add C:\tools to your PATH
+```
 
-    ```bash
-    pr-pilot
-    ```
+</details>
 
-3. **Authentication**
+## Quick Start
 
-   PR Pilot uses GitHub’s OAuth Device Flow to authenticate. When you run the app for the first time, you’ll be prompted to authenticate:
+1. **Authenticate with GitHub:**
+   ```bash
+   pr-pilot auth login
+   ```
 
-   - **Follow the Authentication Prompt:**  
-     The application will display a URL and a one-time code. Open the URL in your browser, enter the provided code, and authorize the application.
+2. **Configure PR tracking:**
+   ```bash
+   pr-pilot configure
+   ```
 
-   - **Token Storage:**  
-     After authentication, your access token will be stored as follows, depending on your platform:
+3. **Start monitoring PRs:**
+   ```bash
+   pr-pilot
+   ```
 
-     - **macOS**: Stored securely in the Keychain.
-     - **Windows**: Stored securely in the Windows Credential Manager.
-     - **Linux**: Stored securely in the Secret Service API (used by GNOME Keyring or similar).
-     - **WSL2**: ⚠️ **Stored as a plain text file in your home directory (`~/.prpilot_token`). This is not a secure storage method**, so take care to protect access to this file if security is a concern.
+## Configuration
 
-   With this approach, you won’t need to re-authenticate each time you run PR Pilot. However, on WSL2, **⚠️ the token is stored in plain text** and lacks the added security provided by other platforms' native credential managers.
+PR Pilot supports multiple tracking modes to fit different team workflows:
+
+### Repository Topics (Recommended)
+Track all PRs from repositories tagged with specific topics - perfect for team-based workflows:
+
+```yaml
+mode: "topics"
+topic_org: "your-org"
+topics:
+  - "backend"
+  - "infrastructure" 
+  - "api"
+```
+
+### Organization-Wide
+Monitor all PRs across your GitHub organization:
+
+```yaml
+mode: "organization"  
+organization: "your-org"
+```
+
+### Specific Repositories
+Track individual repositories:
+
+```yaml
+mode: "repos"
+repos:
+  - "your-org/repo1"
+  - "your-org/repo2"
+```
+
+### Custom Search
+Use GitHub's search API for advanced filtering:
+
+```yaml
+mode: "search"
+search_query: "org:myorg is:pr is:open author:@me"
+```
+
+Configuration is stored in `~/.prpilot_config.yaml`. See [example_config.yaml](example_config.yaml) for all options.
+
+## Usage
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `↑/↓` or `j/k` | Navigate PR list |
+| `Enter` | Open PR in browser |
+| `r` | Refresh PR list |
+| `d` | Filter to draft PRs |
+| `c` | Clear all filters |
+| `h` or `?` | Show help |
+| `q` or `Ctrl+C` | Quit |
+
+### Command Line Options
+
+```bash
+pr-pilot                  # Start with interactive TUI
+pr-pilot configure        # Set up configuration
+pr-pilot auth login       # Authenticate with GitHub
+pr-pilot --version        # Show version
+pr-pilot --help          # Show help
+```
+
+## Testing
+
+PR Pilot includes comprehensive testing without external dependencies:
+
+```bash
+# Run all tests
+make test
+
+# Unit tests only
+make test-unit
+
+# Integration tests  
+make test-integration
+
+# With coverage
+make test-coverage
+```
+
+All tests use mock GitHub clients and don't require API tokens or network access. See [TESTING.md](TESTING.md) for details.
+
+## Development
+
+### Prerequisites
+
+- Go 1.21+
+- Make (optional)
+
+### Setup
+
+```bash
+git clone https://github.com/YOUR_USERNAME/pr-pilot.git
+cd pr-pilot
+go mod download
+make test
+make build
+```
+
+### Project Structure
+
+```
+pr-pilot/
+├── cmd/pr-pilot/          # Main application
+├── internal/              # Internal packages
+│   ├── auth/             # GitHub authentication
+│   ├── config/           # Configuration management
+│   ├── github/           # GitHub API client + mocks
+│   └── ui/               # Terminal UI components
+├── .github/workflows/    # CI/CD pipelines  
+└── test/                 # Test utilities
+```
+
+### Build Commands
+
+```bash
+make build          # Build binary
+make test           # Run tests
+make lint           # Lint code
+make clean          # Clean artifacts
+make dev            # Run in development mode
+```
+
+## Architecture
+
+PR Pilot follows a clean architecture pattern:
+
+- **CLI Layer** (`cmd/`) - Command-line interface and argument parsing
+- **UI Layer** (`internal/ui/`) - Terminal user interface using Bubble Tea
+- **Business Logic** (`internal/config/`, `internal/github/`) - Core functionality
+- **External APIs** (`internal/github/client.go`) - GitHub API integration
+
+The application is designed to be testable with comprehensive mocks for external dependencies.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+**Built for developers, by developers.** ⭐ Star this project if you find it useful!

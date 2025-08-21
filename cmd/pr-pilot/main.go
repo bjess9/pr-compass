@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/bjess9/pr-pilot/internal"
+	"github.com/bjess9/pr-pilot/internal/ui"
 	"github.com/bjess9/pr-pilot/internal/auth"
 	"github.com/bjess9/pr-pilot/internal/config"
 	tea "github.com/charmbracelet/bubbletea"
@@ -30,7 +30,7 @@ func main() {
 	}
 
 	fmt.Println("Authentication successful. Starting PR Pilot...")
-	model := internal.InitialModel(token)
+	model := ui.InitialModel(token)
 
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	if err := p.Start(); err != nil {

@@ -18,5 +18,9 @@
 go.work
 go.work.sum
 
-# env file
+# env files
 .env
+config.env
+test_config.yaml
+pr-pilot
+pr-pilot.exe

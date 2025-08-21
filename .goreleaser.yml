@@ -2,31 +2,115 @@ version: 2
 
 project_name: pr-pilot
 
+before:
+  hooks:
+    - go mod tidy
+    - go run test_runner.go
+
 builds:
   - main: ./cmd/pr-pilot
+    id: pr-pilot
+    binary: pr-pilot
     env:
       - CGO_ENABLED=0
     goos:
       - linux
-      - darwin
       - windows
+      - darwin
     goarch:
       - amd64
       - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
     ldflags:
-      - "-s -w"
-    binary: pr-pilot
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
 
 archives:
   - format: tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
     files:
-      - LICENSE
       - README.md
+      - LICENSE
+      - CHANGELOG.md
+      - docs/**/*
+      - examples/**/*
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^style:'
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: 'Bug fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Others
+      order: 999
+
+# Homebrew formula disabled - users can download binaries directly
+
+nfpms:
+  - file_name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    homepage: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/pr-pilot"
+    description: "A powerful CLI tool for tracking and managing Pull Requests across teams and organizations"
+    maintainer: "{{ .Env.GITHUB_REPOSITORY_OWNER }} <email@example.com>"
+    license: "MIT"
+    vendor: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+    formats:
+      - apk
+      - deb
+      - rpm
+      - termux.deb
+      - archlinux
+    dependencies:
+      - git
+    recommends:
+      - ca-certificates
+
+# Docker and publishers disabled - keeping it simple
 
 release:
-  draft: false
-  prerelease: false
   github:
-    owner: bjess9
+    owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
     name: pr-pilot
+  prerelease: auto
+  mode: replace
+  header: |
+    ## PR Pilot {{ .Tag }}
+    
+    ### Installation
+    
+    ```bash
+    # Download binary from assets below
+    
+    # Go install
+    go install github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/pr-pilot/cmd/pr-pilot@{{ .Tag }}
+    ```
+  footer: |
+    **Full Changelog**: https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/pr-pilot/compare/{{ .PreviousTag }}...{{ .Tag }}

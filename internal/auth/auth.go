@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bjess9/pr-pilot/internal"
+	"github.com/bjess9/pr-pilot/internal/ui"
 	"github.com/zalando/go-keyring"
 )
 
@@ -164,7 +164,7 @@ func pollForAccessToken(deviceCode string, interval int) (*TokenResponse, error)
 }
 
 func saveToken(token string) error {
-	if internal.IsWSL() {
+	if ui.IsWSL() {
 		tokenFilePath, err := getTokenFilePath()
 		if err != nil {
 			return err
@@ -175,7 +175,7 @@ func saveToken(token string) error {
 }
 
 func loadToken() (string, error) {
-	if internal.IsWSL() {
+	if ui.IsWSL() {
 		tokenFilePath, err := getTokenFilePath()
 		if err != nil {
 			return "", err
@@ -191,7 +191,7 @@ func loadToken() (string, error) {
 
 // TODO: Implement delete token feature
 func deleteToken() error {
-	if internal.IsWSL() {
+	if ui.IsWSL() {
 		tokenFilePath, err := getTokenFilePath()
 		if err != nil {
 			return err

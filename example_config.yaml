@@ -1,0 +1,67 @@
+# Example PR Pilot Configuration
+# Save this as ~/.prpilot_config.yaml
+
+# Configuration mode - choose one of: "repos", "organization", "teams", "search", "topics"
+mode: "topics"
+
+# For mode: "topics" - Track PRs from repositories with specific topics/labels (RECOMMENDED)
+# This example tracks all PRs from repositories tagged with your team's topics
+topics:
+  - "my-team"
+  - "backend"
+topic_org: "your-org-name"
+
+# Alternative configurations:
+
+## Mode 1: Specific repositories (legacy mode)
+# mode: "repos"
+# repos:
+#   - "your-org/repo1"
+#   - "your-org/repo2"
+#   - "your-org/repo3"
+
+## Mode 2: All repositories in an organization
+# mode: "organization"
+# organization: "your-org-name"
+
+## Mode 3: Specific teams in an organization
+# mode: "teams"
+# organization: "your-org-name"
+# teams:
+#   - "backend-team"
+#   - "frontend-team"
+
+## Mode 4: Custom search (flexible)
+# mode: "search"
+# search_query: "org:your-org-name team:backend-team is:pr is:open"
+# 
+# Other useful search examples:
+# - All PRs in org: "org:your-org-name is:pr is:open"
+# - PRs by specific users: "author:username1 OR author:username2 is:pr is:open"
+# - PRs with specific labels: "org:your-org-name label:urgent is:pr is:open"
+# - Draft PRs only: "org:your-org-name is:pr is:open is:draft"
+
+## Mode 5: Repository topics (RECOMMENDED for team tracking)
+# mode: "topics"
+# topic_org: "your-org-name"
+# topics:
+#   - "my-team"
+#   - "backend"
+#   - "infrastructure"
+# 
+# This mode finds all repositories tagged with the specified topics and tracks
+# ALL PRs from those repos, regardless of who opens them. Perfect for catching
+# external contributions to your team's repositories.
+
+# Filtering Options (apply to all modes)
+exclude_bots: true    # Filter out renovate, dependabot, github-actions bots (recommended)
+include_drafts: true  # Include draft PRs (default: true)
+
+# Advanced filtering - add custom authors or title patterns to exclude
+# exclude_authors:
+#   - "some-bot[bot]"
+#   - "automated-user"
+# exclude_titles:
+#   - "chore:"
+#   - "docs:"
+#   - "[skip ci]"

@@ -18,5 +18,18 @@
 go.work
 go.work.sum
 
-# env file
+# env files
 .env
+config.env
+test_config.yaml
+pr-pilot
+pr-pilot.exe
+
+# Personal config files (auto-ignore user configs to prevent accidental commits)
+*_config.yaml
+my_config.yaml
+personal_config.yaml
+local_config.yaml
+dev_config.yaml
+work_config.yaml
+user_config.yaml

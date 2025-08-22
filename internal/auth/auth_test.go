@@ -39,28 +39,22 @@ func TestAuthenticationPriorityOrder(t *testing.T) {
 	// This is more of a documentation test - the actual priority is:
 	// 1. GITHUB_TOKEN environment variable (highest priority)
 	// 2. GitHub CLI token (gh auth token)
-	// 3. Stored token (keyring/file)
-	// 4. Manual token input from user (lowest priority)
 
 	// We can't easily test the full flow due to environment dependencies,
 	// but we can document the expected behavior
 	priorities := []string{
 		"GITHUB_TOKEN environment variable",
 		"GitHub CLI token (gh auth token)",
-		"Stored token (keyring/file)",
-		"Manual token input",
 	}
 
-	if len(priorities) != 4 {
-		t.Error("Authentication should have exactly 4 priority levels")
+	if len(priorities) != 2 {
+		t.Error("Authentication should have exactly 2 priority levels")
 	}
 
 	// Test that priority order is documented correctly
 	expectedOrder := []string{
 		"GITHUB_TOKEN environment variable",
 		"GitHub CLI token (gh auth token)",
-		"Stored token (keyring/file)",
-		"Manual token input",
 	}
 
 	for i, expected := range expectedOrder {

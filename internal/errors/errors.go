@@ -92,7 +92,7 @@ func NewAuthTokenMissingError() *PRPilotError {
 		Type:        ErrorTypeAuthTokenMissing,
 		Message:     "No GitHub token found",
 		UserMessage: "No GitHub authentication token found",
-		Suggestion:  "Set GITHUB_TOKEN environment variable, use 'gh auth login', or run the app to enter manually",
+		Suggestion:  "Set GITHUB_TOKEN environment variable or use 'gh auth login' to authenticate with GitHub CLI",
 		Cause:       nil,
 	}
 }

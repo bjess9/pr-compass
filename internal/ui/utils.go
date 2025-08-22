@@ -113,8 +113,15 @@ func createTableRows(prs []*gh.PullRequest) []table.Row {
 		prName := formatPRTitle(pr, prColumnWidth)
 
 		// Author and Repo (now separate columns for better visibility)
-		author := pr.GetUser().GetLogin()
-		repoFullName := pr.GetBase().GetRepo().GetFullName()
+		author := "Unknown"
+		if pr.GetUser() != nil && pr.GetUser().GetLogin() != "" {
+			author = pr.GetUser().GetLogin()
+		}
+
+		repoFullName := "Unknown"
+		if pr.GetBase() != nil && pr.GetBase().GetRepo() != nil && pr.GetBase().GetRepo().GetFullName() != "" {
+			repoFullName = pr.GetBase().GetRepo().GetFullName()
+		}
 		repoParts := strings.Split(repoFullName, "/")
 		repoName := repoFullName
 		if len(repoParts) == 2 {
@@ -170,8 +177,15 @@ func createTableRowsWithEnhancement(prs []*gh.PullRequest, enhancedData map[int]
 		prName := formatPRTitle(pr, prColumnWidth)
 
 		// Author and Repo (now separate columns for better visibility)
-		author := pr.GetUser().GetLogin()
-		repoFullName := pr.GetBase().GetRepo().GetFullName()
+		author := "Unknown"
+		if pr.GetUser() != nil && pr.GetUser().GetLogin() != "" {
+			author = pr.GetUser().GetLogin()
+		}
+
+		repoFullName := "Unknown"
+		if pr.GetBase() != nil && pr.GetBase().GetRepo() != nil && pr.GetBase().GetRepo().GetFullName() != "" {
+			repoFullName = pr.GetBase().GetRepo().GetFullName()
+		}
 		repoParts := strings.Split(repoFullName, "/")
 		repoName := repoFullName
 		if len(repoParts) == 2 {

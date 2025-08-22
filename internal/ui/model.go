@@ -199,9 +199,28 @@ func (m *model) enhanceSinglePR(pr *gh.PullRequest, delay time.Duration) tea.Cmd
 
 // fetchEnhancedPRData gets detailed PR information from individual API call
 func (m *model) fetchEnhancedPRData(ctx context.Context, client *gh.Client, pr *gh.PullRequest) (enhancedPRData, error) {
+	// Validate PR structure to avoid nil pointer panics
+	if pr == nil {
+		return enhancedPRData{}, fmt.Errorf("PR is nil")
+	}
+	if pr.GetBase() == nil || pr.GetBase().GetRepo() == nil {
+		return enhancedPRData{}, fmt.Errorf("PR base or repository is nil for PR #%d", pr.GetNumber())
+	}
+	if pr.GetBase().GetRepo().GetOwner() == nil {
+		return enhancedPRData{}, fmt.Errorf("PR repository owner is nil for PR #%d", pr.GetNumber())
+	}
+
 	owner := pr.GetBase().GetRepo().GetOwner().GetLogin()
 	repo := pr.GetBase().GetRepo().GetName()
 	number := pr.GetNumber()
+
+	// Additional validation for required fields
+	if owner == "" {
+		return enhancedPRData{}, fmt.Errorf("PR owner is empty for PR #%d", number)
+	}
+	if repo == "" {
+		return enhancedPRData{}, fmt.Errorf("PR repository name is empty for PR #%d", number)
+	}
 
 	// Get detailed PR data
 	detailedPR, _, err := client.PullRequests.Get(ctx, owner, repo, number)
@@ -218,10 +237,12 @@ func (m *model) fetchEnhancedPRData(ctx context.Context, client *gh.Client, pr *
 
 	// Get checks status
 	checksStatus := "unknown"
-	if sha := pr.GetHead().GetSHA(); sha != "" {
-		checks, _, err := client.Checks.ListCheckRunsForRef(ctx, owner, repo, sha, nil)
-		if err == nil && checks != nil {
-			checksStatus = determineChecksStatus(checks.CheckRuns)
+	if pr.GetHead() != nil {
+		if sha := pr.GetHead().GetSHA(); sha != "" {
+			checks, _, err := client.Checks.ListCheckRunsForRef(ctx, owner, repo, sha, nil)
+			if err == nil && checks != nil {
+				checksStatus = determineChecksStatus(checks.CheckRuns)
+			}
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/bubbles/table"
 	"github.com/google/go-github/v55/github"
 )
 
@@ -631,6 +632,141 @@ func TestGetPRActivityEnhanced(t *testing.T) {
 			result := getPRActivityEnhanced(pr, tt.enhancedData)
 			if result != tt.expected {
 				t.Errorf("getPRActivityEnhanced() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestTableCreationNilSafety tests the nil pointer safety fixes added to table creation
+func TestTableCreationNilSafety(t *testing.T) {
+	tests := []struct {
+		name        string
+		pr          *github.PullRequest
+		expectAuthor string
+		expectRepo   string
+	}{
+		{
+			name: "PR with nil user shows Unknown author",
+			pr: &github.PullRequest{
+				Number:    github.Int(123),
+				Title:     github.String("Test PR"),
+				User:      nil, // Should not crash
+				CreatedAt: &github.Timestamp{Time: time.Now().Add(-1 * time.Hour)},
+				Base: &github.PullRequestBranch{
+					Repo: &github.Repository{
+						FullName: github.String("owner/test-repo"),
+					},
+				},
+			},
+			expectAuthor: "Unknown",
+			expectRepo:   "test-repo",
+		},
+		{
+			name: "PR with user having nil login shows Unknown author",
+			pr: &github.PullRequest{
+				Number:    github.Int(124),
+				Title:     github.String("Test PR 2"),
+				CreatedAt: &github.Timestamp{Time: time.Now().Add(-1 * time.Hour)},
+				User: &github.User{
+					Login: nil, // Should not crash
+				},
+				Base: &github.PullRequestBranch{
+					Repo: &github.Repository{
+						FullName: github.String("owner/test-repo"),
+					},
+				},
+			},
+			expectAuthor: "Unknown",
+			expectRepo:   "test-repo",
+		},
+		{
+			name: "PR with nil base shows Unknown repo",
+			pr: &github.PullRequest{
+				Number:    github.Int(126),
+				Title:     github.String("Test PR 4"),
+				CreatedAt: &github.Timestamp{Time: time.Now().Add(-1 * time.Hour)},
+				User: &github.User{
+					Login: github.String("testuser"),
+				},
+				Base: nil, // Should not crash
+			},
+			expectAuthor: "testuser",
+			expectRepo:   "Unknown",
+		},
+		{
+			name: "PR with nil repo shows Unknown repo",
+			pr: &github.PullRequest{
+				Number:    github.Int(127),
+				Title:     github.String("Test PR 5"),
+				CreatedAt: &github.Timestamp{Time: time.Now().Add(-1 * time.Hour)},
+				User: &github.User{
+					Login: github.String("testuser"),
+				},
+				Base: &github.PullRequestBranch{
+					Repo: nil, // Should not crash
+				},
+			},
+			expectAuthor: "testuser",
+			expectRepo:   "Unknown",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Test both regular and enhanced table row creation
+			testFuncs := []struct {
+				name string
+				fn   func([]*github.PullRequest) []table.Row
+			}{
+				{
+					name: "createTableRows",
+					fn:   createTableRows,
+				},
+				{
+					name: "createTableRowsWithEnhancement",
+					fn: func(prs []*github.PullRequest) []table.Row {
+						return createTableRowsWithEnhancement(prs, make(map[int]enhancedPRData))
+					},
+				},
+			}
+
+			for _, tf := range testFuncs {
+				t.Run(tf.name, func(t *testing.T) {
+					// Should not panic with nil pointers
+					defer func() {
+						if r := recover(); r != nil {
+							t.Errorf("%s panicked with nil pointer: %v", tf.name, r)
+						}
+					}()
+
+					rows := tf.fn([]*github.PullRequest{tt.pr})
+					if len(rows) != 1 {
+						t.Fatalf("Expected 1 row, got %d", len(rows))
+					}
+
+					row := rows[0]
+					if len(row) < 3 {
+						t.Fatalf("Row should have at least 3 columns, got %d", len(row))
+					}
+
+					// Check author (column 1)
+					if row[1] != tt.expectAuthor {
+						t.Errorf("Expected author %q, got %q", tt.expectAuthor, row[1])
+					}
+
+					// Check repo (column 2) - extract just the repo name from full path if needed
+					repoCol := row[2]
+					if tt.expectRepo == "Unknown" {
+						if repoCol != "Unknown" {
+							t.Errorf("Expected repo %q, got %q", tt.expectRepo, repoCol)
+						}
+					} else {
+						// For valid repos, we might get just the repo name or full name
+						if repoCol != tt.expectRepo && repoCol != "owner/"+tt.expectRepo {
+							t.Errorf("Expected repo %q or %q, got %q", tt.expectRepo, "owner/"+tt.expectRepo, repoCol)
+						}
+					}
+				})
 			}
 		})
 	}

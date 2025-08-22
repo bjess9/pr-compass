@@ -208,8 +208,22 @@ func fetchOpenPRsWithFilter(ctx context.Context, client *github.Client, repos []
 	}
 
 	go func() {
-		wg.Wait()
-		close(results)
+		defer close(results)
+		// Wait for all goroutines to complete or context to be cancelled
+		done := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(done)
+		}()
+		
+		select {
+		case <-done:
+			// All goroutines completed normally
+		case <-ctx.Done():
+			// Context was cancelled, but we still need to wait for goroutines
+			// to avoid resource leaks. They should exit quickly due to context cancellation.
+			wg.Wait()
+		}
 	}()
 
 	var allPRs []*github.PullRequest
@@ -373,8 +387,22 @@ func fetchPRsFromSearchWithFilter(ctx context.Context, client *github.Client, qu
 		}
 
 		go func() {
-			wg.Wait()
-			close(prResults)
+			defer close(prResults)
+			// Wait for all goroutines to complete or context to be cancelled
+			done := make(chan struct{})
+			go func() {
+				wg.Wait()
+				close(done)
+			}()
+			
+			select {
+			case <-done:
+				// All goroutines completed normally
+			case <-ctx.Done():
+				// Context was cancelled, but we still need to wait for goroutines
+				// to avoid resource leaks. They should exit quickly due to context cancellation.
+				wg.Wait()
+			}
 		}()
 
 		for result := range prResults {

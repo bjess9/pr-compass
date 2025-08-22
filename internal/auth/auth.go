@@ -8,6 +8,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/bjess9/pr-pilot/internal/errors"
 	"github.com/bjess9/pr-pilot/internal/ui"
 	"github.com/zalando/go-keyring"
 	"golang.org/x/term"
@@ -22,7 +23,7 @@ const (
 func getTokenFilePath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("failed to get home directory: %w", err)
+		return "", errors.NewAuthStorageError(fmt.Errorf("failed to get home directory: %w", err))
 	}
 	return filepath.Join(homeDir, ".prpilot_token"), nil
 }
@@ -86,7 +87,7 @@ func Authenticate() (string, error) {
 		fmt.Print("Enter your GitHub Personal Access Token: ")
 		tokenBytes, err := term.ReadPassword(int(syscall.Stdin))
 		if err != nil {
-			return "", fmt.Errorf("failed to read token: %w", err)
+			return "", errors.NewAuthTokenMissingError()
 		}
 		fmt.Println() // New line after hidden input
 
@@ -104,6 +105,7 @@ func Authenticate() (string, error) {
 
 		// Save the token for future use
 		if err := saveToken(token); err != nil {
+			// Don't fail authentication if we can't save the token
 			fmt.Printf("[!] Token accepted but failed to save: %v\n", err)
 			fmt.Println("   You'll need to enter it again next time.")
 		} else {

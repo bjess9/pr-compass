@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bjess9/pr-pilot/internal/errors"
 	gh "github.com/google/go-github/v55/github"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -540,9 +541,22 @@ func loadingView() string {
 
 func errorView(err error) string {
 	title := titleStyle.Render("PR Pilot - Pull Request Monitor")
-	message := lipgloss.NewStyle().
-		Foreground(lipgloss.Color(ErrorColor)).
-		Render(fmt.Sprintf("Error: %v", err))
+	
+	var message string
+	
+	// Check if this is a domain-specific error
+	if prErr, isPRError := errors.IsPRPilotError(err); isPRError {
+		// Use user-friendly error message with suggestions
+		message = lipgloss.NewStyle().
+			Foreground(lipgloss.Color(ErrorColor)).
+			Render(fmt.Sprintf("❌ Error: %s", prErr.UserFriendlyError()))
+	} else {
+		// Fall back to generic error display
+		message = lipgloss.NewStyle().
+			Foreground(lipgloss.Color(ErrorColor)).
+			Render(fmt.Sprintf("❌ Error: %v", err))
+	}
+	
 	help := helpStyle.Render("Press 'q' to quit")
 
 	return title + "\n" + baseStyle.Render(message+"\n\n"+help)

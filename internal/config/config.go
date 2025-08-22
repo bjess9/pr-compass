@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bjess9/pr-pilot/internal/errors"
 	"github.com/spf13/viper"
 )
 
@@ -44,12 +45,12 @@ func LoadConfigFromPath(configPath string) (*Config, error) {
 	v.SetConfigType("yaml")
 
 	if err := v.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("config file not found: %w", err)
+		return nil, errors.NewConfigNotFoundError(configPath, err)
 	}
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
-		return nil, fmt.Errorf("unable to decode config: %w", err)
+		return nil, errors.NewConfigInvalidError(err)
 	}
 
 	// Auto-detect mode if not set (for backward compatibility)

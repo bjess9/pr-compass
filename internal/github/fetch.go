@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bjess9/pr-pilot/internal/config"
+	"github.com/bjess9/pr-pilot/internal/errors"
 	"github.com/google/go-github/v55/github"
 )
 
@@ -121,7 +122,7 @@ func fetchOpenPRsWithFilter(ctx context.Context, client *github.Client, repos []
 
 			parts := strings.Split(repo, "/")
 			if len(parts) != 2 {
-				results <- repoResult{err: fmt.Errorf("invalid repo format: %s", repo)}
+				results <- repoResult{err: errors.NewRepositoryInvalidError(repo, nil)}
 				return
 			}
 			owner, repoName := parts[0], parts[1]
@@ -407,7 +408,7 @@ func fetchPRsFromSearchWithFilter(ctx context.Context, client *github.Client, qu
 	for {
 		result, resp, err := client.Search.Issues(ctx, query, opts)
 		if err != nil {
-			return nil, fmt.Errorf("search query failed: %w", err)
+			return nil, errors.NewGitHubUnknownError(0, fmt.Errorf("search query failed: %w", err))
 		}
 
 		// Processing search results...

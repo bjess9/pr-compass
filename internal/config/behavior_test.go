@@ -9,7 +9,7 @@ import (
 // User Story: As a team lead, I want to configure PR tracking by repository topics
 // so I can see all PRs from repositories tagged with my team's topic
 func TestUserCanConfigureTopicsMode(t *testing.T) {
-	// Given a user wants to track PRs from repositories tagged "backend" and "api"  
+	// Given a user wants to track PRs from repositories tagged "backend" and "api"
 	tempDir := t.TempDir()
 	configPath := filepath.Join(tempDir, "team_config.yaml")
 
@@ -34,22 +34,22 @@ topics:
 	if cfg.Mode != "topics" {
 		t.Errorf("System not configured for topics tracking. Expected 'topics', got '%s'", cfg.Mode)
 	}
-	
+
 	if cfg.TopicOrg != "mycompany" {
 		t.Errorf("System not configured for correct organization. Expected 'mycompany', got '%s'", cfg.TopicOrg)
 	}
-	
+
 	if len(cfg.Topics) != 2 {
 		t.Errorf("System not configured for correct number of topics. Expected 2, got %d", len(cfg.Topics))
 	}
 }
 
 // User Story: As a user, I want the system to automatically detect my preferred tracking mode
-// so I don't have to explicitly specify it when migrating from old configurations  
+// so I don't have to explicitly specify it when migrating from old configurations
 func TestSystemAutoDetectsUserIntent(t *testing.T) {
 	scenarios := []struct {
-		userIntent string
-		config     string
+		userIntent   string
+		config       string
 		expectedMode string
 	}{
 		{
@@ -60,15 +60,15 @@ func TestSystemAutoDetectsUserIntent(t *testing.T) {
 			expectedMode: "repos",
 		},
 		{
-			userIntent: "user wants to track repositories by topics", 
+			userIntent: "user wants to track repositories by topics",
 			config: `topics:
   - "backend"
 topic_org: "company"`,
 			expectedMode: "topics",
 		},
 		{
-			userIntent: "user wants to track entire organization",
-			config: `organization: "company"`,
+			userIntent:   "user wants to track entire organization",
+			config:       `organization: "company"`,
 			expectedMode: "organization",
 		},
 		{
@@ -76,11 +76,11 @@ topic_org: "company"`,
 			config: `organization: "company"
 teams:
   - "backend-team"`,
-			expectedMode: "teams", 
+			expectedMode: "teams",
 		},
 		{
-			userIntent: "user wants custom search tracking",
-			config: `search_query: "org:company is:pr is:open"`,
+			userIntent:   "user wants custom search tracking",
+			config:       `search_query: "org:company is:pr is:open"`,
 			expectedMode: "search",
 		},
 	}
@@ -115,13 +115,13 @@ teams:
 func TestUserGetsHelpfulErrorsForInvalidConfiguration(t *testing.T) {
 	// Given a user provides an invalid configuration path
 	_, err := LoadConfigFromPath("/this/path/does/not/exist/config.yaml")
-	
+
 	// When the system tries to load it
 	// Then it should provide a clear error message
 	if err == nil {
 		t.Error("System should tell user when configuration file doesn't exist")
 	}
-	
+
 	// The error should be helpful for troubleshooting
 	if err != nil && !containsAnyString(err.Error(), []string{"not found", "file", "config"}) {
 		t.Errorf("Error message not helpful for user: %v", err)
@@ -138,7 +138,7 @@ func TestUserCanSuccessfullyLoadValidConfiguration(t *testing.T) {
 	configContent := `mode: "repos"
 repos:
   - "company/important-repo"`
-	
+
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create valid config: %v", err)
@@ -146,16 +146,16 @@ repos:
 
 	// When the user starts the application
 	cfg, err := LoadConfigFromPath(configPath)
-	
+
 	// Then the system should load successfully and be ready to use
 	if err != nil {
 		t.Errorf("System failed to load user's valid configuration: %v", err)
 	}
-	
+
 	if cfg == nil {
 		t.Error("System should provide loaded configuration to user")
 	}
-	
+
 	if cfg != nil && cfg.Mode != "repos" {
 		t.Errorf("System loaded incorrect configuration mode. Expected 'repos', got '%s'", cfg.Mode)
 	}

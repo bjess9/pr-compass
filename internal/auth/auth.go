@@ -34,18 +34,18 @@ func getGitHubCLIToken() string {
 	if err != nil {
 		return ""
 	}
-	
+
 	token := strings.TrimSpace(string(output))
 	if token == "" {
 		return ""
 	}
-	
+
 	return token
 }
 
 // Authenticate returns a GitHub token from various sources in order of preference:
 // 1. GITHUB_TOKEN environment variable
-// 2. GitHub CLI token (gh auth token) 
+// 2. GitHub CLI token (gh auth token)
 // 3. Stored token (keyring/file)
 // 4. Manual token input from user
 func Authenticate() (string, error) {
@@ -81,7 +81,7 @@ func Authenticate() (string, error) {
 	fmt.Println("4. Select scopes: 'repo' and 'read:org' (minimum required)")
 	fmt.Println("5. Click 'Generate token'")
 	fmt.Println()
-	
+
 	for {
 		fmt.Print("Enter your GitHub Personal Access Token: ")
 		tokenBytes, err := term.ReadPassword(int(syscall.Stdin))
@@ -89,19 +89,19 @@ func Authenticate() (string, error) {
 			return "", fmt.Errorf("failed to read token: %w", err)
 		}
 		fmt.Println() // New line after hidden input
-		
+
 		token := strings.TrimSpace(string(tokenBytes))
 		if token == "" {
 			fmt.Println("[X] Token cannot be empty. Please try again.")
 			continue
 		}
-		
+
 		if !validateToken(token) {
 			fmt.Println("[X] Invalid token format. GitHub tokens start with 'ghp_', 'gho_', 'ghu_', or 'ghs_'")
 			fmt.Println("   Please try again or press Ctrl+C to exit.")
 			continue
 		}
-		
+
 		// Save the token for future use
 		if err := saveToken(token); err != nil {
 			fmt.Printf("[!] Token accepted but failed to save: %v\n", err)
@@ -109,7 +109,7 @@ func Authenticate() (string, error) {
 		} else {
 			fmt.Println("[✓] Token saved for future use")
 		}
-		
+
 		return token, nil
 	}
 }
@@ -120,7 +120,7 @@ func validateToken(token string) bool {
 	if len(token) < 20 {
 		return false
 	}
-	
+
 	// GitHub tokens have specific prefixes
 	validPrefixes := []string{"ghp_", "gho_", "ghu_", "ghs_", "github_pat_"}
 	for _, prefix := range validPrefixes {
@@ -128,12 +128,12 @@ func validateToken(token string) bool {
 			return true
 		}
 	}
-	
+
 	// Legacy tokens (40 characters, no prefix) - still supported
 	if len(token) == 40 {
 		return true
 	}
-	
+
 	return false
 }
 
@@ -168,7 +168,7 @@ func loadToken() (string, error) {
 // DeleteToken removes the stored authentication token
 func DeleteToken() error {
 	fmt.Println("[DEL] Clearing stored GitHub token...")
-	
+
 	if ui.IsWSL() {
 		tokenFilePath, err := getTokenFilePath()
 		if err != nil {
@@ -184,7 +184,7 @@ func DeleteToken() error {
 		fmt.Println("[✓] Token file deleted successfully")
 		return nil
 	}
-	
+
 	if err := keyring.Delete(service, tokenKey); err != nil {
 		fmt.Printf("[!] Failed to delete token from keyring: %v\n", err)
 		return err

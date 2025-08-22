@@ -10,56 +10,56 @@ import (
 // TestCreateTableColumns verifies column width allocation
 func TestCreateTableColumns(t *testing.T) {
 	columns := createTableColumns()
-	
-	// Should have 8 columns (added Comments column)
-	expectedColumns := 8
+
+	// Should have 9 columns (split Author/Repo into two columns)
+	expectedColumns := 9
 	if len(columns) != expectedColumns {
 		t.Errorf("Expected %d columns, got %d", expectedColumns, len(columns))
 	}
-	
-	// Verify column titles (now with 8 columns: split Activity, added Created, removed Labels)
-	expectedTitles := []string{"Pull Request", "Author/Repo", "Status/CI", "Review", "Comments", "Files", "Created", "Updated"}
+
+	// Verify column titles (now with 9 columns: split Author/Repo, split Activity, added Created, removed Labels)
+	expectedTitles := []string{"📋 Pull Request", "👤 Author", "📦 Repo", "⚡ Status/CI", "👀 Review", "💬 Comments", "📁 Files", "📅 Created", "🕐 Updated"}
 	for i, col := range columns {
 		if col.Title != expectedTitles[i] {
 			t.Errorf("Column %d: expected title %q, got %q", i, expectedTitles[i], col.Title)
 		}
 	}
-	
+
 	// Verify all columns have positive width
 	for i, col := range columns {
 		if col.Width <= 0 {
 			t.Errorf("Column %d (%s) should have positive width, got %d", i, col.Title, col.Width)
 		}
 	}
-	
+
 	// PR column should be widest (for readability)
 	prColumn := columns[0]
-	if prColumn.Title != "Pull Request" {
+	if prColumn.Title != "📋 Pull Request" {
 		t.Error("First column should be Pull Request")
 	}
-	
-	// Updated column should be last (at index 7 for 8 columns)
-	updatedColumn := columns[7]  // Updated now at index 7 (8 columns total)
-	if updatedColumn.Title != "Updated" {
+
+	// Updated column should be last (at index 8 for 9 columns)
+	updatedColumn := columns[8] // Updated now at index 8 (9 columns total)
+	if updatedColumn.Title != "🕐 Updated" {
 		t.Error("Last column should be Updated")
 	}
-	
-	// Created column should be at index 6
-	createdColumn := columns[6]  // Created at index 6
-	if createdColumn.Title != "Created" {
-		t.Error("Created column should be at index 6")
+
+	// Created column should be at index 7
+	createdColumn := columns[7] // Created at index 7
+	if createdColumn.Title != "📅 Created" {
+		t.Error("Created column should be at index 7")
 	}
-	
-	// Comments column should be at index 4
-	commentsColumn := columns[4] // Comments now at index 4
-	if commentsColumn.Title != "Comments" {
-		t.Error("Comments column should be at index 4")
+
+	// Comments column should be at index 5
+	commentsColumn := columns[5] // Comments now at index 5
+	if commentsColumn.Title != "💬 Comments" {
+		t.Error("Comments column should be at index 5")
 	}
-	
-	// Files column should be at index 5
-	filesColumn := columns[5] // Files now at index 5
-	if filesColumn.Title != "Files" {
-		t.Error("Files column should be at index 5")
+
+	// Files column should be at index 6
+	filesColumn := columns[6] // Files now at index 6
+	if filesColumn.Title != "📁 Files" {
+		t.Error("Files column should be at index 6")
 	}
 
 }
@@ -81,8 +81,8 @@ func TestCreateTableRows(t *testing.T) {
 			Mergeable:      github.Bool(true),
 			CreatedAt:      &github.Timestamp{Time: time.Now().Add(-2 * time.Hour)},
 			UpdatedAt:      &github.Timestamp{Time: time.Now().Add(-1 * time.Hour)},
-			Comments:       github.Int(5),       // General discussion comments
-			ReviewComments: github.Int(12),      // Code review comments
+			Comments:       github.Int(5),  // General discussion comments
+			ReviewComments: github.Int(12), // Code review comments
 			Labels: []*github.Label{
 				{Name: github.String("feature")},
 				{Name: github.String("backend")},
@@ -98,70 +98,74 @@ func TestCreateTableRows(t *testing.T) {
 			Mergeable:      github.Bool(false),
 			CreatedAt:      &github.Timestamp{Time: time.Now().Add(-24 * time.Hour)},
 			UpdatedAt:      &github.Timestamp{Time: time.Now().Add(-12 * time.Hour)},
-			Comments:       github.Int(0),        // No general comments
-			ReviewComments: github.Int(3),        // Few review comments
-			Labels:         []*github.Label{},    // No labels
+			Comments:       github.Int(0),     // No general comments
+			ReviewComments: github.Int(3),     // Few review comments
+			Labels:         []*github.Label{}, // No labels
 		},
 	}
-	
+
 	rows := createTableRows(testPRs)
-	
+
 	// Should have same number of rows as PRs
 	if len(rows) != len(testPRs) {
 		t.Errorf("Expected %d rows, got %d", len(testPRs), len(rows))
 	}
-	
-	// Each row should have 8 columns (Comments, Files, Created, Updated separate)
+
+	// Each row should have 9 columns (split Author/Repo, Comments, Files, Created, Updated separate)
 	for i, row := range rows {
-		if len(row) != 8 {
-			t.Errorf("Row %d should have 8 columns, got %d", i, len(row))
+		if len(row) != 9 {
+			t.Errorf("Row %d should have 9 columns, got %d", i, len(row))
 		}
 	}
-	
+
 	// First row should contain title (without PR number)
 	firstRow := rows[0]
 	if contains(firstRow[0], "#123") {
 		t.Error("First column should NOT contain PR number (we removed PR numbers)")
 	}
-	
+
 	if !contains(firstRow[0], "feat: add awesome") {
 		t.Error("First column should contain truncated title")
 	}
-	
-	// Author+Repo column should be formatted intelligently to show repo name
-	authorRepoCol := firstRow[1]
-	if !contains(authorRepoCol, "/") {
-		t.Error("Author+Repo column should contain '/' separator")
+
+	// Author column should show author name
+	authorCol := firstRow[1] // Author at index 1
+	if authorCol != "developer" {
+		t.Errorf("Author column should show 'developer', got %q", authorCol)
 	}
-	if !contains(authorRepoCol, "awesome-repo") && !contains(authorRepoCol, "awesome-rep") {
-		t.Errorf("Author+Repo column should contain repo name (possibly truncated), got %q", authorRepoCol)
+
+	// Repo column should show repo name
+	repoCol := firstRow[2] // Repo at index 2
+	if !contains(repoCol, "awesome-repo") && !contains(repoCol, "awesome-rep") {
+		t.Errorf("Repo column should contain repo name (possibly truncated), got %q", repoCol)
 	}
-	
-	// Status+CI column should have proper merge status indicators (compact format)
-	if !contains(firstRow[2], "[") && !contains(firstRow[2], "]") {
-		t.Error("Status+CI column should have bracket indicators")
+
+	// Status+CI column should have proper merge status indicators (clean text)
+	statusCol := firstRow[3] // Status/CI at index 3
+	if !contains(statusCol, "Ready") && !contains(statusCol, "Draft") {
+		t.Error("Status+CI column should have status indicators")
 	}
-	
+
 	// Comments column should show total comment count (5 + 12 = 17)
-	commentsCol := firstRow[4]  // Comments column at index 4
+	commentsCol := firstRow[5] // Comments column at index 5
 	if commentsCol != "17" {
 		t.Errorf("Comments column should show '17' (5+12 comments), got %q", commentsCol)
 	}
-	
+
 	// Files column should show "-" (placeholder since no enhanced data)
-	filesCol := firstRow[5]  // Files column at index 5
+	filesCol := firstRow[6] // Files column at index 6
 	if filesCol != "-" {
 		t.Errorf("Files column should show '-' for basic data, got %q", filesCol)
 	}
-	
-	// Created column should have time (index 6)
-	createdCol := firstRow[6]  // Created column at index 6
+
+	// Created column should have time (index 7)
+	createdCol := firstRow[7] // Created column at index 7
 	if createdCol == "" {
 		t.Error("Created column should not be empty")
 	}
-	
-	// Updated column should have time (index 7)
-	updatedCol := firstRow[7]  // Updated column at index 7
+
+	// Updated column should have time (index 8)
+	updatedCol := firstRow[8] // Updated column at index 8
 	if updatedCol == "" {
 		t.Error("Updated column should not be empty")
 	}
@@ -204,12 +208,12 @@ func TestGetPRLabelsDisplay(t *testing.T) {
 			expected: "urgent", // urgent should come first
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			pr := &github.PullRequest{Labels: tt.labels}
 			result := getPRLabelsDisplay(pr)
-			
+
 			if tt.expected == "" {
 				if result != "" {
 					t.Errorf("Expected empty result, got %q", result)
@@ -225,9 +229,9 @@ func TestGetPRLabelsDisplay(t *testing.T) {
 
 // Helper function to check if string contains substring
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && s[:len(substr)] == substr || 
-		   len(s) > len(substr) && s[len(s)-len(substr):] == substr ||
-		   (len(s) > len(substr) && findInString(s, substr))
+	return len(s) >= len(substr) && s[:len(substr)] == substr ||
+		len(s) > len(substr) && s[len(s)-len(substr):] == substr ||
+		(len(s) > len(substr) && findInString(s, substr))
 }
 
 func findInString(s, substr string) bool {
@@ -280,7 +284,7 @@ func TestGetPRCommentCount(t *testing.T) {
 		},
 		{
 			name: "PR with nil comment counts (should handle gracefully)",
-			pr: &github.PullRequest{
+			pr:   &github.PullRequest{
 				// Comments and ReviewComments are nil
 			},
 			expectedOutput: "?", // Shows ? when comment data not available
@@ -313,19 +317,19 @@ func TestCreateTableRowsWithEnhancement(t *testing.T) {
 			Draft:     github.Bool(false),
 		},
 	}
-	
+
 	// Test without enhanced data
 	enhancedData := make(map[int]enhancedPRData)
 	rows := createTableRowsWithEnhancement(prs, enhancedData)
-	
+
 	if len(rows) != 1 {
 		t.Errorf("Expected 1 row, got %d", len(rows))
 	}
-	
-	if len(rows[0]) != 8 {
-		t.Errorf("Expected 8 columns, got %d", len(rows[0]))
+
+	if len(rows[0]) != 9 {
+		t.Errorf("Expected 9 columns, got %d", len(rows[0]))
 	}
-	
+
 	// Test with enhanced data
 	enhancedData[123] = enhancedPRData{
 		Number:         123,
@@ -335,35 +339,35 @@ func TestCreateTableRowsWithEnhancement(t *testing.T) {
 		ChecksStatus:   "success",
 		Mergeable:      "clean",
 	}
-	
+
 	rowsEnhanced := createTableRowsWithEnhancement(prs, enhancedData)
-	
+
 	if len(rowsEnhanced) != 1 {
 		t.Errorf("Expected 1 row, got %d", len(rowsEnhanced))
 	}
-	
-	// Comments column should show "8" (8 comments)
-	commentsCol := rowsEnhanced[0][4] // Comments is 5th column (index 4)
+
+	// Comments column should show "8" (8 comments, no emoji)
+	commentsCol := rowsEnhanced[0][5] // Comments is 6th column (index 5)
 	if commentsCol != "8" {
 		t.Errorf("Expected comments column to be '8', got '%s'", commentsCol)
 	}
-	
+
 	// Files column should show file changes when enhanced data is available
-	filesCol := rowsEnhanced[0][5] // Files is 6th column (index 5)
+	filesCol := rowsEnhanced[0][6] // Files is 7th column (index 6)
 	// This will be empty since we didn't set file change data in the enhanced data
 	if filesCol != "-" {
 		t.Errorf("Expected files column to be '-' when no file data, got '%s'", filesCol)
 	}
-	
+
 	// Status column should show enhanced merge status with CI status
-	statusCol := rowsEnhanced[0][2] // Status+CI is 3rd column (index 2) 
-	// Note: This will have two lines, so we check if it contains the merge status
-	if !contains(statusCol, "[✓] Ready") {
-		t.Errorf("Expected status column to contain '[✓] Ready', got '%s'", statusCol)
+	statusCol := rowsEnhanced[0][3] // Status+CI is 4th column (index 3)
+	// Note: This will have clean text status, so we check if it contains the merge status
+	if !contains(statusCol, "Ready") {
+		t.Errorf("Expected status column to contain 'Ready', got '%s'", statusCol)
 	}
-	
+
 	// Review column should show enhanced review status
-	reviewCol := rowsEnhanced[0][3] // Review is 4th column (index 3)
+	reviewCol := rowsEnhanced[0][4] // Review is 5th column (index 4)
 	if reviewCol != "Approved" {
 		t.Errorf("Expected review column to be 'Approved', got '%s'", reviewCol)
 	}
@@ -376,7 +380,7 @@ func TestGetPRCommentCountEnhanced(t *testing.T) {
 		Comments:       github.Int(0), // List API returns 0
 		ReviewComments: github.Int(0), // List API returns 0
 	}
-	
+
 	tests := []struct {
 		name         string
 		enhancedData map[int]enhancedPRData
@@ -395,7 +399,7 @@ func TestGetPRCommentCountEnhanced(t *testing.T) {
 					ReviewComments: 3,
 				},
 			},
-			expected: "8", // 5 + 3
+			expected: "8", // 5 + 3 with emoji
 		},
 		{
 			name: "enhanced data with zero comments shows dash",
@@ -418,7 +422,7 @@ func TestGetPRCommentCountEnhanced(t *testing.T) {
 			expected: "?", // Should fall back since PR 123 not found
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := getPRCommentCountEnhanced(pr, tt.enhancedData)
@@ -435,7 +439,7 @@ func TestGetPRStatusIndicatorEnhanced(t *testing.T) {
 		Number: github.Int(123),
 		Draft:  github.Bool(false),
 	}
-	
+
 	tests := []struct {
 		name         string
 		enhancedData map[int]enhancedPRData
@@ -444,7 +448,7 @@ func TestGetPRStatusIndicatorEnhanced(t *testing.T) {
 		{
 			name:         "no enhanced data falls back to original logic",
 			enhancedData: make(map[int]enhancedPRData),
-			expected:     "[✓] Ready", // Default for non-draft PR
+			expected:     "Ready", // Default for non-draft PR
 		},
 		{
 			name: "enhanced data shows clean mergeable",
@@ -477,7 +481,7 @@ func TestGetPRStatusIndicatorEnhanced(t *testing.T) {
 			expected: "[!] Checks",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := getPRStatusIndicatorEnhanced(pr, tt.enhancedData)
@@ -495,7 +499,7 @@ func TestGetPRReviewIndicatorEnhanced(t *testing.T) {
 		UpdatedAt: &github.Timestamp{Time: time.Now()}, // Make it recent so it returns "Recent"
 		Draft:     github.Bool(false),
 	}
-	
+
 	tests := []struct {
 		name         string
 		enhancedData map[int]enhancedPRData
@@ -543,7 +547,7 @@ func TestGetPRReviewIndicatorEnhanced(t *testing.T) {
 			expected: "No Review",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := getPRReviewIndicatorEnhanced(pr, tt.enhancedData)
@@ -561,7 +565,7 @@ func TestGetPRActivityEnhanced(t *testing.T) {
 		Comments:       github.Int(0), // List API returns 0
 		ReviewComments: github.Int(0), // List API returns 0
 	}
-	
+
 	tests := []struct {
 		name         string
 		enhancedData map[int]enhancedPRData
@@ -621,7 +625,7 @@ func TestGetPRActivityEnhanced(t *testing.T) {
 			expected: "-", // No activity (compact format)
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := getPRActivityEnhanced(pr, tt.enhancedData)

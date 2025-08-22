@@ -135,7 +135,7 @@ func TestConfigExists(t *testing.T) {
 	if err == nil {
 		t.Error("LoadConfigFromPath should return error for non-existent config")
 	}
-	
+
 	// Test with valid config
 	tempDir := t.TempDir()
 	configPath := filepath.Join(tempDir, "test_config.yaml")
@@ -151,12 +151,12 @@ func TestConfigExists(t *testing.T) {
 		t.Errorf("LoadConfigFromPath should succeed for valid config: %v", err)
 		return
 	}
-	
+
 	if cfg == nil {
 		t.Error("Config should not be nil for valid config file")
 		return
 	}
-	
+
 	if cfg.Mode != "repos" {
 		t.Errorf("Expected mode 'repos', got '%s'", cfg.Mode)
 	}

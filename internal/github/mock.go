@@ -131,7 +131,7 @@ func (m *MockClient) AddPR(pr *github.PullRequest) {
 // generateTestPRs creates realistic test PR data
 func generateTestPRs() []*github.PullRequest {
 	now := time.Now()
-	
+
 	prs := []*github.PullRequest{
 		createTestPR(1, "Fix authentication bug", "johnsmith", "testorg/api-service", false, true, now.Add(-2*time.Hour), []string{"bug", "critical"}),
 		createTestPR(2, "Add user dashboard feature", "janedoe", "testorg/frontend", true, false, now.Add(-1*time.Hour), []string{"feature", "ui"}),
@@ -139,7 +139,7 @@ func generateTestPRs() []*github.PullRequest {
 		createTestPR(4, "Refactor payment processing", "alicechen", "testorg/payment-api", false, true, now.Add(-4*time.Hour), []string{"refactor", "payments"}),
 		createTestPR(5, "Add integration tests", "davidkim", "testorg/test-automation", true, false, now.Add(-45*time.Minute), []string{"testing", "ci"}),
 	}
-	
+
 	return prs
 }
 
@@ -152,7 +152,7 @@ func generateTestRepos() []*github.Repository {
 		createTestRepo("payment-api", "testorg", "Payment processing API", []string{"backend", "payments"}),
 		createTestRepo("test-automation", "testorg", "Automated testing suite", []string{"testing", "ci"}),
 	}
-	
+
 	return repos
 }
 
@@ -161,7 +161,7 @@ func createTestPR(number int, title, author, repoFullName string, isDraft, merge
 	parts := strings.Split(repoFullName, "/")
 	owner := parts[0]
 	repoName := parts[1]
-	
+
 	pr := &github.PullRequest{
 		Number:    &number,
 		Title:     &title,
@@ -182,21 +182,21 @@ func createTestPR(number int, title, author, repoFullName string, isDraft, merge
 		},
 		HTMLURL: github.String(fmt.Sprintf("https://github.com/%s/pull/%d", repoFullName, number)),
 	}
-	
+
 	// Add labels
 	for _, label := range labels {
 		pr.Labels = append(pr.Labels, &github.Label{
 			Name: &label,
 		})
 	}
-	
+
 	// Add mock reviewers for some PRs
 	if number%2 == 0 {
 		pr.RequestedReviewers = []*github.User{
 			{Login: github.String("reviewer1")},
 		}
 	}
-	
+
 	return pr
 }
 
@@ -204,7 +204,7 @@ func createTestPR(number int, title, author, repoFullName string, isDraft, merge
 func createTestRepo(name, owner, description string, topics []string) *github.Repository {
 	fullName := fmt.Sprintf("%s/%s", owner, name)
 	archived := false
-	
+
 	repo := &github.Repository{
 		Name:        &name,
 		FullName:    &fullName,
@@ -215,6 +215,6 @@ func createTestRepo(name, owner, description string, topics []string) *github.Re
 		},
 		Topics: topics,
 	}
-	
+
 	return repo
 }

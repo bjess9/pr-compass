@@ -24,24 +24,24 @@ func (e errMsg) Error() string {
 
 type refreshMsg struct{}
 
-// prsWithConfigMsg contains both PRs and config info for status display
-type prsWithConfigMsg struct {
-	prs []*gh.PullRequest
-	cfg *config.Config
+// PrsWithConfigMsg contains both PRs and config info for status display
+type PrsWithConfigMsg struct {
+	Prs []*gh.PullRequest
+	Cfg *config.Config
 }
 
 // Enhanced PR data from individual API calls
 type enhancedPRData struct {
-	Number          int
-	Comments        int
-	ReviewComments  int
-	ReviewStatus    string // "approved", "changes_requested", "pending", "unknown"
-	ChecksStatus    string // "success", "failure", "pending", "unknown"
-	Mergeable       string // "clean", "conflicts", "unknown"
-	Additions       int
-	Deletions       int
-	ChangedFiles    int
-	EnhancedAt      time.Time
+	Number         int
+	Comments       int
+	ReviewComments int
+	ReviewStatus   string // "approved", "changes_requested", "pending", "unknown"
+	ChecksStatus   string // "success", "failure", "pending", "unknown"
+	Mergeable      string // "clean", "conflicts", "unknown"
+	Additions      int
+	Deletions      int
+	ChangedFiles   int
+	EnhancedAt     time.Time
 }
 
 // Message types for background enhancement
@@ -59,17 +59,17 @@ type model struct {
 	loaded              bool
 	err                 error
 	token               string
-	refreshIntervalMins int    // Refresh interval in minutes
+	refreshIntervalMins int // Refresh interval in minutes
 	showHelp            bool
 	filterMode          string // "", "author", "repo", "status"
 	filterValue         string
-	statusMsg       string
-	
+	statusMsg           string
+
 	// Enhanced data tracking
-	enhancedData    map[int]enhancedPRData // PR number -> enhanced data
+	enhancedData     map[int]enhancedPRData // PR number -> enhanced data
 	enhancementMutex sync.RWMutex
-	enhancing       bool
-	enhancedCount   int
+	enhancing        bool
+	enhancedCount    int
 }
 
 func InitialModel(token string) model {
@@ -82,7 +82,7 @@ func InitialModel(token string) model {
 	t.Focus()
 
 	return model{
-		table:               t, 
+		table:               t,
 		token:               token,
 		refreshIntervalMins: 5, // default, will be updated from config
 		enhancedData:        make(map[int]enhancedPRData),
@@ -110,7 +110,7 @@ func (m *model) fetchPRs() tea.Msg {
 	if err != nil {
 		return errMsg{err}
 	}
-	return prsWithConfigMsg{prs: prs, cfg: cfg}
+	return PrsWithConfigMsg{Prs: prs, Cfg: cfg}
 }
 
 // Background enhancement command that fetches individual PR details
@@ -119,21 +119,21 @@ func (m *model) enhancePRs() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// enhancePRsIndividually creates commands for each PR to be enhanced individually  
+// enhancePRsIndividually creates commands for each PR to be enhanced individually
 func (m *model) enhancePRsIndividually() []tea.Cmd {
 	// Limit to top 20 PRs for better performance (since refresh is now 5 min)
 	prsToEnhance := m.prs
 	if len(prsToEnhance) > 20 {
 		prsToEnhance = prsToEnhance[:20]
 	}
-	
+
 	var cmds []tea.Cmd
-	
+
 	// Create a command for each PR with staggered delays
 	for i, pr := range prsToEnhance {
 		cmds = append(cmds, m.enhanceSinglePR(pr, time.Duration(i)*time.Second))
 	}
-	
+
 	return cmds
 }
 
@@ -142,15 +142,15 @@ func (m *model) enhanceSinglePR(pr *gh.PullRequest, delay time.Duration) tea.Cmd
 	return func() tea.Msg {
 		// Staggered delay for rate limiting
 		time.Sleep(delay)
-		
-		// Get GitHub client  
+
+		// Get GitHub client
 		client, err := github.NewClient(m.token)
 		if err != nil {
 			return errMsg{err}
 		}
 
 		ctx := context.Background()
-		
+
 		// Fetch enhanced data for this PR
 		enhanced, err := m.fetchEnhancedPRData(ctx, client, pr)
 		if err != nil {
@@ -160,31 +160,31 @@ func (m *model) enhanceSinglePR(pr *gh.PullRequest, delay time.Duration) tea.Cmd
 				error:  err,
 			}
 		}
-		
+
 		return prEnhancementUpdateMsg{prData: enhanced}
 	}
 }
 
-// fetchEnhancedPRData gets detailed PR information from individual API call  
+// fetchEnhancedPRData gets detailed PR information from individual API call
 func (m *model) fetchEnhancedPRData(ctx context.Context, client *gh.Client, pr *gh.PullRequest) (enhancedPRData, error) {
 	owner := pr.GetBase().GetRepo().GetOwner().GetLogin()
 	repo := pr.GetBase().GetRepo().GetName()
 	number := pr.GetNumber()
-	
+
 	// Get detailed PR data
 	detailedPR, _, err := client.PullRequests.Get(ctx, owner, repo, number)
 	if err != nil {
 		return enhancedPRData{}, err
 	}
-	
+
 	// Get review status
 	reviews, _, err := client.PullRequests.ListReviews(ctx, owner, repo, number, nil)
 	reviewStatus := "unknown"
 	if err == nil {
 		reviewStatus = determineReviewStatus(reviews)
 	}
-	
-	// Get checks status  
+
+	// Get checks status
 	checksStatus := "unknown"
 	if sha := pr.GetHead().GetSHA(); sha != "" {
 		checks, _, err := client.Checks.ListCheckRunsForRef(ctx, owner, repo, sha, nil)
@@ -192,7 +192,7 @@ func (m *model) fetchEnhancedPRData(ctx context.Context, client *gh.Client, pr *
 			checksStatus = determineChecksStatus(checks.CheckRuns)
 		}
 	}
-	
+
 	// Determine mergeable status
 	mergeableStatus := "unknown"
 	if detailedPR.Mergeable != nil {
@@ -202,7 +202,7 @@ func (m *model) fetchEnhancedPRData(ctx context.Context, client *gh.Client, pr *
 			mergeableStatus = "conflicts"
 		}
 	}
-	
+
 	return enhancedPRData{
 		Number:         number,
 		Comments:       detailedPR.GetComments(),
@@ -222,7 +222,7 @@ func determineReviewStatus(reviews []*gh.PullRequestReview) string {
 	if len(reviews) == 0 {
 		return "no_review"
 	}
-	
+
 	// Get latest review by each reviewer
 	latestReviews := make(map[string]string)
 	for _, review := range reviews {
@@ -230,14 +230,14 @@ func determineReviewStatus(reviews []*gh.PullRequestReview) string {
 		state := review.GetState()
 		latestReviews[user] = state
 	}
-	
+
 	// Check for blocking states
 	for _, state := range latestReviews {
 		if state == "CHANGES_REQUESTED" {
 			return "changes_requested"
 		}
 	}
-	
+
 	// Check if all reviews are approved
 	approvedCount := 0
 	for _, state := range latestReviews {
@@ -245,11 +245,11 @@ func determineReviewStatus(reviews []*gh.PullRequestReview) string {
 			approvedCount++
 		}
 	}
-	
+
 	if approvedCount > 0 && approvedCount == len(latestReviews) {
 		return "approved"
 	}
-	
+
 	return "pending"
 }
 
@@ -258,10 +258,10 @@ func determineChecksStatus(checkRuns []*gh.CheckRun) string {
 	if len(checkRuns) == 0 {
 		return "none"
 	}
-	
+
 	hasFailure := false
 	hasPending := false
-	
+
 	for _, check := range checkRuns {
 		switch check.GetStatus() {
 		case "completed":
@@ -272,7 +272,7 @@ func determineChecksStatus(checkRuns []*gh.CheckRun) string {
 			hasPending = true
 		}
 	}
-	
+
 	if hasFailure {
 		return "failure"
 	}
@@ -288,53 +288,53 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.table, cmd = m.table.Update(msg)
 
 	switch msg := msg.(type) {
-	case prsWithConfigMsg:
+	case PrsWithConfigMsg:
 		m.loaded = true
-		m.prs = sortPRsByNewest(msg.prs)  // Sort by newest first
-		m.filteredPRs = m.prs // Initially show all PRs (already filtered by config)
-		
+		m.prs = sortPRsByNewest(msg.Prs) // Sort by newest first
+		m.filteredPRs = m.prs            // Initially show all PRs (already filtered by config)
+
 		// Update refresh interval from config
-		if msg.cfg != nil {
-			m.refreshIntervalMins = msg.cfg.RefreshIntervalMinutes
+		if msg.Cfg != nil {
+			m.refreshIntervalMins = msg.Cfg.RefreshIntervalMinutes
 		}
-		
+
 		// Clear previous enhanced data
 		m.enhancementMutex.Lock()
 		m.enhancedData = make(map[int]enhancedPRData)
 		m.enhancing = false
 		m.enhancedCount = 0
 		m.enhancementMutex.Unlock()
-		
+
 		rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
 		m.table.SetRows(rows)
-		
+
 		// Create informative status message with org/topic info
-		statusInfo := fmt.Sprintf("Loaded %d PRs", len(msg.prs))
-		if msg.cfg != nil {
-			switch msg.cfg.Mode {
+		statusInfo := fmt.Sprintf("Loaded %d PRs", len(msg.Prs))
+		if msg.Cfg != nil {
+			switch msg.Cfg.Mode {
 			case "topics":
-				if msg.cfg.TopicOrg != "" && len(msg.cfg.Topics) > 0 {
-					statusInfo += fmt.Sprintf(" from %s (topics: %v)", msg.cfg.TopicOrg, msg.cfg.Topics)
+				if msg.Cfg.TopicOrg != "" && len(msg.Cfg.Topics) > 0 {
+					statusInfo += fmt.Sprintf(" from %s (topics: %v)", msg.Cfg.TopicOrg, msg.Cfg.Topics)
 				}
 			case "organization":
-				if msg.cfg.Organization != "" {
-					statusInfo += fmt.Sprintf(" from %s organization", msg.cfg.Organization)
+				if msg.Cfg.Organization != "" {
+					statusInfo += fmt.Sprintf(" from %s organization", msg.Cfg.Organization)
 				}
 			case "teams":
-				if msg.cfg.Organization != "" && len(msg.cfg.Teams) > 0 {
-					statusInfo += fmt.Sprintf(" from %s teams: %v", msg.cfg.Organization, msg.cfg.Teams)
+				if msg.Cfg.Organization != "" && len(msg.Cfg.Teams) > 0 {
+					statusInfo += fmt.Sprintf(" from %s teams: %v", msg.Cfg.Organization, msg.Cfg.Teams)
 				}
 			}
 		}
 		m.statusMsg = statusInfo
-		
+
 		// Start background enhancement
 		enhanceCmd := func() tea.Msg {
 			// Small delay to let UI render first
 			time.Sleep(100 * time.Millisecond)
 			return prEnhancementStartMsg{}
 		}
-		
+
 		return m, tea.Batch(cmd, refreshCmd(m.refreshIntervalMins), enhanceCmd)
 
 	case refreshMsg:
@@ -345,22 +345,22 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case error:
 		m.err = msg
-		
+
 	case prEnhancementStartMsg:
 		m.enhancementMutex.Lock()
 		m.enhancing = true
 		m.enhancedCount = 0 // Reset count when starting enhancement
 		m.enhancementMutex.Unlock()
-		
+
 		m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhancing with detailed data...", len(m.prs))
 		return m, m.enhancePRs()
-		
+
 	case prEnhancementUpdateMsg:
 		if msg.error != nil {
 			// Skip this PR on error, don't crash the whole thing
 			return m, nil
 		}
-		
+
 		// Update enhanced data
 		m.enhancementMutex.Lock()
 		m.enhancedData[msg.prData.Number] = msg.prData
@@ -371,18 +371,18 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		currentCount := m.enhancedCount
 		m.enhancementMutex.Unlock()
-		
+
 		// Update table rows immediately with this new enhanced data
 		rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
 		m.table.SetRows(rows)
 		m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhancing %d/%d ⏳", len(m.prs), currentCount, totalPRsToEnhance)
-		
+
 		// Check if we're done enhancing
 		if currentCount >= totalPRsToEnhance {
 			m.enhancing = false
 			m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhanced top %d with detailed data ✅", len(m.prs), currentCount)
 		}
-		
+
 	case prEnhancementCompleteMsg:
 		// This is now just a fallback/cleanup message
 		if m.enhancing {
@@ -456,19 +456,19 @@ func (m *model) View() string {
 	}
 
 	m.table.SetStyles(tableStyles())
-	
+
 	// Title
 	title := titleStyle.Render("PR Pilot - Pull Request Monitor")
-	
-	// Table 
+
+	// Table
 	tableView := m.table.View()
-	
+
 	// Status message
 	statusLine := ""
 	if m.statusMsg != "" {
 		statusLine = "\n" + statusStyle.Render(m.statusMsg)
 	}
-	
+
 	// Help text
 	helpText := "↑/↓: Navigate  •  Enter: Open PR  •  r: Refresh  •  h: Help  •  q: Quit"
 	if m.filterMode != "" {
@@ -498,10 +498,10 @@ func (m *model) View() string {
 │ Help/Exit:   h/?           Toggle this help             │
 │              q/Ctrl+C      Quit application             │
 └─────────────────────────────────────────────────────────┘`)
-		return title + "\n" + baseStyle.Render(tableView + statusLine + extendedHelp)
+		return title + "\n" + baseStyle.Render(tableView+statusLine+extendedHelp)
 	}
 
-	return title + "\n" + baseStyle.Render(tableView + statusLine) + "\n" + helpStyle.Render(helpText)
+	return title + "\n" + baseStyle.Render(tableView+statusLine) + "\n" + helpStyle.Render(helpText)
 }
 
 // Filter methods
@@ -512,14 +512,14 @@ func (m *model) filterByAuthor() (*model, tea.Cmd) {
 		author := pr.GetUser().GetLogin()
 		authorMap[author]++
 	}
-	
+
 	// If only one author, filter by them
 	if len(authorMap) == 1 {
 		for author := range authorMap {
 			return m.applyAuthorFilter(author)
 		}
 	}
-	
+
 	// For now, filter by the current selected PR's author
 	if len(m.filteredPRs) > 0 {
 		idx := m.table.Cursor()
@@ -528,7 +528,7 @@ func (m *model) filterByAuthor() (*model, tea.Cmd) {
 			return m.applyAuthorFilter(author)
 		}
 	}
-	
+
 	return m, nil
 }
 
@@ -539,14 +539,14 @@ func (m *model) applyAuthorFilter(author string) (*model, tea.Cmd) {
 			filtered = append(filtered, pr)
 		}
 	}
-	
+
 	m.filteredPRs = filtered
 	m.filterMode = "author"
 	m.filterValue = author
 	rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
 	m.table.SetRows(rows)
 	m.statusMsg = fmt.Sprintf("Showing %d PRs by %s", len(filtered), author)
-	
+
 	return m, nil
 }
 
@@ -558,14 +558,14 @@ func (m *model) filterByStatus() (*model, tea.Cmd) {
 			filtered = append(filtered, pr)
 		}
 	}
-	
+
 	m.filteredPRs = filtered
 	m.filterMode = "status"
 	m.filterValue = "ready"
 	rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
 	m.table.SetRows(rows)
 	m.statusMsg = fmt.Sprintf("Showing %d ready PRs", len(filtered))
-	
+
 	return m, nil
 }
 
@@ -576,13 +576,13 @@ func (m *model) filterByDraft() (*model, tea.Cmd) {
 			filtered = append(filtered, pr)
 		}
 	}
-	
+
 	m.filteredPRs = filtered
 	m.filterMode = "status"
 	m.filterValue = "draft"
 	rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
 	m.table.SetRows(rows)
 	m.statusMsg = fmt.Sprintf("Showing %d draft PRs", len(filtered))
-	
+
 	return m, nil
 }

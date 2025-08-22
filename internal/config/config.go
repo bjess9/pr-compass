@@ -10,25 +10,25 @@ import (
 type Config struct {
 	// Legacy repo list support
 	Repos []string `mapstructure:"repos"`
-	
+
 	// New team-based configuration
 	Organization string   `mapstructure:"organization"`
 	Teams        []string `mapstructure:"teams"`
 	SearchQuery  string   `mapstructure:"search_query"`
-	
+
 	// Topic-based configuration
-	Topics       []string `mapstructure:"topics"`
-	TopicOrg     string   `mapstructure:"topic_org"`
-	
+	Topics   []string `mapstructure:"topics"`
+	TopicOrg string   `mapstructure:"topic_org"`
+
 	// Configuration mode
 	Mode string `mapstructure:"mode"` // "repos", "organization", "teams", "search", "topics"
-	
+
 	// Filtering options
 	ExcludeBots    bool     `mapstructure:"exclude_bots"`    // Exclude renovate, dependabot, etc.
 	ExcludeAuthors []string `mapstructure:"exclude_authors"` // Custom authors to exclude
 	ExcludeTitles  []string `mapstructure:"exclude_titles"`  // Title patterns to exclude
 	IncludeDrafts  bool     `mapstructure:"include_drafts"`  // Include draft PRs (default: true)
-	
+
 	// UI/Performance options
 	RefreshIntervalMinutes int `mapstructure:"refresh_interval_minutes"` // Auto-refresh interval (default: 5)
 }
@@ -51,7 +51,7 @@ func LoadConfigFromPath(configPath string) (*Config, error) {
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unable to decode config: %w", err)
 	}
-	
+
 	// Auto-detect mode if not set (for backward compatibility)
 	if cfg.Mode == "" {
 		if len(cfg.Repos) > 0 {
@@ -70,12 +70,12 @@ func LoadConfigFromPath(configPath string) (*Config, error) {
 			cfg.Mode = "repos" // default
 		}
 	}
-	
+
 	// Set default refresh interval if not configured
 	if cfg.RefreshIntervalMinutes == 0 {
 		cfg.RefreshIntervalMinutes = 5 // default: 5 minutes
 	}
-	
+
 	return &cfg, nil
 }
 

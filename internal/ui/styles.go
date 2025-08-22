@@ -8,7 +8,7 @@ import (
 const (
 	// Modern, professional color scheme inspired by popular TUI apps
 	BorderColor     = "#61AFEF" // Soft Blue
-	HeaderBgColor   = "#2E3440" // Dark Gray-Blue  
+	HeaderBgColor   = "#2E3440" // Dark Gray-Blue
 	HeaderFgColor   = "#ECEFF4" // Off White
 	SelectedBgColor = "#5E81AC" // Medium Blue
 	SelectedFgColor = "#ECEFF4" // Off White

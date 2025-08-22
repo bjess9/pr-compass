@@ -17,75 +17,75 @@ func TestShouldExcludePR(t *testing.T) {
 		{
 			name: "excludes renovate bot",
 			pr: &github.PullRequest{
-				User: &github.User{Login: github.String("renovate[bot]")},
+				User:  &github.User{Login: github.String("renovate[bot]")},
 				Title: github.String("Update dependency react"),
 			},
-			filter: DefaultFilter(),
+			filter:   DefaultFilter(),
 			expected: true,
 		},
 		{
 			name: "excludes dependabot",
 			pr: &github.PullRequest{
-				User: &github.User{Login: github.String("dependabot[bot]")},
+				User:  &github.User{Login: github.String("dependabot[bot]")},
 				Title: github.String("Bump lodash from 4.17.20 to 4.17.21"),
 			},
-			filter: DefaultFilter(),
+			filter:   DefaultFilter(),
 			expected: true,
 		},
 		{
 			name: "excludes github-actions bot",
 			pr: &github.PullRequest{
-				User: &github.User{Login: github.String("github-actions[bot]")},
+				User:  &github.User{Login: github.String("github-actions[bot]")},
 				Title: github.String("Auto-update dependencies"),
 			},
-			filter: DefaultFilter(),
+			filter:   DefaultFilter(),
 			expected: true,
 		},
 		{
 			name: "excludes by title pattern",
 			pr: &github.PullRequest{
-				User: &github.User{Login: github.String("human-dev")},
+				User:  &github.User{Login: github.String("human-dev")},
 				Title: github.String("chore(deps): update all dependencies"),
 			},
-			filter: DefaultFilter(),
+			filter:   DefaultFilter(),
 			expected: true,
 		},
 		{
 			name: "includes human PR",
 			pr: &github.PullRequest{
-				User: &github.User{Login: github.String("human-dev")},
+				User:  &github.User{Login: github.String("human-dev")},
 				Title: github.String("feat: add new authentication system"),
 			},
-			filter: DefaultFilter(),
+			filter:   DefaultFilter(),
 			expected: false,
 		},
 		{
 			name: "includes draft when drafts enabled",
 			pr: &github.PullRequest{
-				User: &github.User{Login: github.String("human-dev")},
+				User:  &github.User{Login: github.String("human-dev")},
 				Title: github.String("draft: work in progress"),
 				Draft: github.Bool(true),
 			},
-			filter: &PRFilter{IncludeDrafts: true},
+			filter:   &PRFilter{IncludeDrafts: true},
 			expected: false,
 		},
 		{
 			name: "excludes draft when drafts disabled",
 			pr: &github.PullRequest{
-				User: &github.User{Login: github.String("human-dev")},
+				User:  &github.User{Login: github.String("human-dev")},
 				Title: github.String("draft: work in progress"),
 				Draft: github.Bool(true),
 			},
-			filter: &PRFilter{IncludeDrafts: false},
+			filter:   &PRFilter{IncludeDrafts: false},
 			expected: true,
 		},
 		{
 			name: "partial bot name matching",
 			pr: &github.PullRequest{
-				User: &github.User{Login: github.String("renovate-enterprise-corp")},
+				User:  &github.User{Login: github.String("renovate-enterprise-corp")},
 				Title: github.String("Update all dependencies"),
 			},
-			filter: DefaultFilter(),
+			filter:   DefaultFilter(),
 			expected: true,
 		},
 	}
@@ -94,7 +94,7 @@ func TestShouldExcludePR(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := shouldExcludePR(tt.pr, tt.filter)
 			if result != tt.expected {
-				t.Errorf("shouldExcludePR() = %v, want %v for PR: %s by %s", 
+				t.Errorf("shouldExcludePR() = %v, want %v for PR: %s by %s",
 					result, tt.expected, tt.pr.GetTitle(), tt.pr.GetUser().GetLogin())
 			}
 		})
@@ -104,19 +104,19 @@ func TestShouldExcludePR(t *testing.T) {
 // TestDefaultFilter verifies our default filter has sensible exclusions
 func TestDefaultFilter(t *testing.T) {
 	filter := DefaultFilter()
-	
+
 	if len(filter.ExcludeAuthors) == 0 {
 		t.Error("Default filter should exclude bot authors")
 	}
-	
+
 	if len(filter.ExcludeTitles) == 0 {
 		t.Error("Default filter should exclude dependency update titles")
 	}
-	
+
 	if !filter.IncludeDrafts {
 		t.Error("Default filter should include drafts")
 	}
-	
+
 	// Test that it includes common bot names
 	botNames := []string{"renovate[bot]", "dependabot[bot]", "github-actions[bot]"}
 	for _, botName := range botNames {
@@ -140,7 +140,7 @@ func TestPRFilterWithConfig(t *testing.T) {
 		ExcludeTitles:  []string{"chore:", "docs:"},
 		IncludeDrafts:  false,
 	}
-	
+
 	tests := []struct {
 		name     string
 		author   string
@@ -155,7 +155,7 @@ func TestPRFilterWithConfig(t *testing.T) {
 		{"excludes draft", "human-dev", "WIP: new feature", true, true},
 		{"includes normal PR", "human-dev", "feat: awesome feature", false, false},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			pr := &github.PullRequest{
@@ -163,7 +163,7 @@ func TestPRFilterWithConfig(t *testing.T) {
 				Title: github.String(tt.title),
 				Draft: github.Bool(tt.isDraft),
 			}
-			
+
 			result := shouldExcludePR(pr, customFilter)
 			if result != tt.expected {
 				t.Errorf("shouldExcludePR() = %v, want %v for %s", result, tt.expected, tt.name)

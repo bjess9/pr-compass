@@ -215,6 +215,44 @@ func TestGenerateTestRepos(t *testing.T) {
 	}
 }
 
+func TestMockClient_FetchPRsFromConfig_TeamsMode(t *testing.T) {
+	client := NewMockClient()
+
+	cfg := &config.Config{
+		Mode:         "teams",
+		Organization: "testorg",
+		Teams:        []string{"backend", "service"},
+	}
+
+	prs, err := client.FetchPRsFromConfig(cfg)
+	if err != nil {
+		t.Fatalf("FetchPRsFromConfig failed: %v", err)
+	}
+
+	// All results should be from the specified organization
+	for _, pr := range prs {
+		repoOwner := pr.GetBase().GetRepo().GetOwner().GetLogin()
+		if repoOwner != "testorg" {
+			t.Errorf("Team filter results include PR from wrong organization: %s", repoOwner)
+		}
+	}
+
+	// Verify PRs are from repos that match team names (mock implementation checks repo name contains team name)
+	for _, pr := range prs {
+		repoName := pr.GetBase().GetRepo().GetName()
+		foundMatch := false
+		for _, team := range cfg.Teams {
+			if strings.Contains(repoName, team) {
+				foundMatch = true
+				break
+			}
+		}
+		if !foundMatch {
+			t.Errorf("PR from repo %s doesn't match any team filter", repoName)
+		}
+	}
+}
+
 // Helper function to check if a string contains any of the given substrings
 func containsAny(s string, substrings []string) bool {
 	for _, substring := range substrings {

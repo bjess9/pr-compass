@@ -101,42 +101,6 @@ func max(a, b int) int {
 	return b
 }
 
-// formatAuthorRepo intelligently formats author/repo to ensure repo name is visible
-func formatAuthorRepo(author, repoName string, maxWidth int) string {
-	if maxWidth < 8 { // Too narrow, just show what we can
-		if len(repoName) <= maxWidth {
-			return repoName
-		}
-		return repoName[:maxWidth]
-	}
-
-	// Calculate space needed for repo name (always prioritize showing it)
-	repoDisplayLength := len(repoName)
-	if repoDisplayLength > maxWidth-3 { // Leave space for "..."
-		repoDisplayLength = maxWidth - 3
-		repoName = repoName[:repoDisplayLength] + "..."
-	}
-
-	// Calculate remaining space for author
-	remainingWidth := maxWidth - repoDisplayLength - 1 // -1 for the "/"
-
-	if remainingWidth < 1 {
-		// Not enough space for author, just show repo
-		return repoName
-	}
-
-	authorDisplay := author
-	if len(author) > remainingWidth {
-		if remainingWidth > 3 {
-			authorDisplay = author[:remainingWidth-3] + "..."
-		} else {
-			authorDisplay = author[:remainingWidth]
-		}
-	}
-
-	return authorDisplay + "/" + repoName
-}
-
 func createTableRows(prs []*gh.PullRequest) []table.Row {
 	// Get column widths for dynamic truncation
 	columns := createTableColumns()
@@ -412,22 +376,6 @@ func getCIStatusEnhanced(pr *gh.PullRequest, enhancedData map[int]enhancedPRData
 
 	// No enhanced data available
 	return "CI:?"
-}
-
-// getPRChangeStatsEnhanced returns file change statistics when enhanced data is available
-func getPRChangeStatsEnhanced(pr *gh.PullRequest, enhancedData map[int]enhancedPRData) string {
-	prNumber := pr.GetNumber()
-
-	// Try to get enhanced data first
-	if enhanced, exists := enhancedData[prNumber]; exists {
-		if enhanced.ChangedFiles > 0 {
-			// Show format like: "5 files +120-45" (5 files, +120 additions, -45 deletions)
-			return fmt.Sprintf("%d files +%d-%d", enhanced.ChangedFiles, enhanced.Additions, enhanced.Deletions)
-		}
-	}
-
-	// No enhanced data available
-	return "..."
 }
 
 // formatPRTitle intelligently formats PR title for better readability

@@ -77,17 +77,16 @@ func shouldExcludePR(pr *github.PullRequest, filter *PRFilter) bool {
 }
 
 // FetchOpenPRs fetches PRs from multiple repositories concurrently for better performance
-func FetchOpenPRs(repos []string, token string) ([]*github.PullRequest, error) {
-	return FetchOpenPRsWithFilter(repos, token, DefaultFilter())
+func FetchOpenPRs(ctx context.Context, repos []string, token string) ([]*github.PullRequest, error) {
+	return FetchOpenPRsWithFilter(ctx, repos, token, DefaultFilter())
 }
 
 // FetchOpenPRsWithFilter fetches PRs with filtering options
-func FetchOpenPRsWithFilter(repos []string, token string, filter *PRFilter) ([]*github.PullRequest, error) {
+func FetchOpenPRsWithFilter(ctx context.Context, repos []string, token string, filter *PRFilter) ([]*github.PullRequest, error) {
 	client, err := NewClient(token)
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
 
 	// Use buffered channel and worker pool for better performance
 	type repoResult struct {
@@ -106,7 +105,13 @@ func FetchOpenPRsWithFilter(repos []string, token string, filter *PRFilter) ([]*
 		wg.Add(1)
 		go func(repo string) {
 			defer wg.Done()
-			semaphore <- struct{}{}        // Acquire semaphore
+
+			select {
+			case <-ctx.Done():
+				results <- repoResult{err: ctx.Err()}
+				return
+			case semaphore <- struct{}{}: // Acquire semaphore
+			}
 			defer func() { <-semaphore }() // Release semaphore
 
 			parts := strings.Split(repo, "/")
@@ -127,6 +132,14 @@ func FetchOpenPRsWithFilter(repos []string, token string, filter *PRFilter) ([]*
 
 			var repoPRs []*github.PullRequest
 			for {
+				// Check context before each API call
+				select {
+				case <-ctx.Done():
+					results <- repoResult{err: ctx.Err()}
+					return
+				default:
+				}
+
 				prs, resp, err := client.PullRequests.List(ctx, owner, repoName, opts)
 				if err != nil {
 					results <- repoResult{err: fmt.Errorf("failed to fetch PRs from %s: %w", repo, err)}
@@ -179,7 +192,7 @@ func FetchOpenPRsWithFilter(repos []string, token string, filter *PRFilter) ([]*
 }
 
 // FetchPRsFromConfig fetches PRs based on the configuration mode
-func FetchPRsFromConfig(cfg *config.Config, token string) ([]*github.PullRequest, error) {
+func FetchPRsFromConfig(ctx context.Context, cfg *config.Config, token string) ([]*github.PullRequest, error) {
 	// Create filter based on config
 	filter := &PRFilter{
 		IncludeDrafts: true, // Default to including drafts
@@ -212,32 +225,31 @@ func FetchPRsFromConfig(cfg *config.Config, token string) ([]*github.PullRequest
 
 	switch cfg.Mode {
 	case "repos":
-		return FetchOpenPRsWithFilter(cfg.Repos, token, filter)
+		return FetchOpenPRsWithFilter(ctx, cfg.Repos, token, filter)
 	case "organization":
-		return FetchPRsFromOrganizationWithFilter(cfg.Organization, token, filter)
+		return FetchPRsFromOrganizationWithFilter(ctx, cfg.Organization, token, filter)
 	case "teams":
-		return FetchPRsFromTeamsWithFilter(cfg.Organization, cfg.Teams, token, filter)
+		return FetchPRsFromTeamsWithFilter(ctx, cfg.Organization, cfg.Teams, token, filter)
 	case "search":
-		return FetchPRsFromSearchWithFilter(cfg.SearchQuery, token, filter)
+		return FetchPRsFromSearchWithFilter(ctx, cfg.SearchQuery, token, filter)
 	case "topics":
-		return FetchPRsFromTopicsWithFilter(cfg.TopicOrg, cfg.Topics, token, filter)
+		return FetchPRsFromTopicsWithFilter(ctx, cfg.TopicOrg, cfg.Topics, token, filter)
 	default:
-		return FetchOpenPRsWithFilter(cfg.Repos, token, filter) // fallback to repo mode
+		return FetchOpenPRsWithFilter(ctx, cfg.Repos, token, filter) // fallback to repo mode
 	}
 }
 
 // FetchPRsFromOrganization fetches all open PRs from all repositories in an organization
-func FetchPRsFromOrganization(org string, token string) ([]*github.PullRequest, error) {
-	return FetchPRsFromOrganizationWithFilter(org, token, DefaultFilter())
+func FetchPRsFromOrganization(ctx context.Context, org string, token string) ([]*github.PullRequest, error) {
+	return FetchPRsFromOrganizationWithFilter(ctx, org, token, DefaultFilter())
 }
 
 // FetchPRsFromOrganizationWithFilter fetches all open PRs from all repositories in an organization with filtering
-func FetchPRsFromOrganizationWithFilter(org string, token string, filter *PRFilter) ([]*github.PullRequest, error) {
+func FetchPRsFromOrganizationWithFilter(ctx context.Context, org string, token string, filter *PRFilter) ([]*github.PullRequest, error) {
 	client, err := NewClient(token)
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
 
 	// Loading repositories from organization...
 
@@ -272,21 +284,20 @@ func FetchPRsFromOrganizationWithFilter(org string, token string, filter *PRFilt
 	}
 
 	// Found repositories, loading PRs...
-	return FetchOpenPRsWithFilter(allRepos, token, filter)
+	return FetchOpenPRsWithFilter(ctx, allRepos, token, filter)
 }
 
 // FetchPRsFromTeams fetches PRs from repositories belonging to specific teams
-func FetchPRsFromTeams(org string, teams []string, token string) ([]*github.PullRequest, error) {
-	return FetchPRsFromTeamsWithFilter(org, teams, token, DefaultFilter())
+func FetchPRsFromTeams(ctx context.Context, org string, teams []string, token string) ([]*github.PullRequest, error) {
+	return FetchPRsFromTeamsWithFilter(ctx, org, teams, token, DefaultFilter())
 }
 
 // FetchPRsFromTeamsWithFilter fetches PRs from repositories belonging to specific teams with filtering
-func FetchPRsFromTeamsWithFilter(org string, teams []string, token string, filter *PRFilter) ([]*github.PullRequest, error) {
+func FetchPRsFromTeamsWithFilter(ctx context.Context, org string, teams []string, token string, filter *PRFilter) ([]*github.PullRequest, error) {
 	client, err := NewClient(token)
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
 
 	// Loading repositories for teams...
 
@@ -329,21 +340,20 @@ func FetchPRsFromTeamsWithFilter(org string, teams []string, token string, filte
 	}
 
 	// Found repositories from teams, loading PRs...
-	return FetchOpenPRsWithFilter(allRepos, token, filter)
+	return FetchOpenPRsWithFilter(ctx, allRepos, token, filter)
 }
 
 // FetchPRsFromSearch uses GitHub's search API to find PRs based on a custom query
-func FetchPRsFromSearch(query string, token string) ([]*github.PullRequest, error) {
-	return FetchPRsFromSearchWithFilter(query, token, DefaultFilter())
+func FetchPRsFromSearch(ctx context.Context, query string, token string) ([]*github.PullRequest, error) {
+	return FetchPRsFromSearchWithFilter(ctx, query, token, DefaultFilter())
 }
 
 // FetchPRsFromSearchWithFilter uses GitHub's search API to find PRs based on a custom query with filtering
-func FetchPRsFromSearchWithFilter(query string, token string, filter *PRFilter) ([]*github.PullRequest, error) {
+func FetchPRsFromSearchWithFilter(ctx context.Context, query string, token string, filter *PRFilter) ([]*github.PullRequest, error) {
 	client, err := NewClient(token)
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
 
 	// Ensure the query includes PR and open filters
 	if !strings.Contains(query, "is:pr") {
@@ -400,7 +410,13 @@ func FetchPRsFromSearchWithFilter(query string, token string, filter *PRFilter) 
 			wg.Add(1)
 			go func(issue *github.Issue) {
 				defer wg.Done()
-				semaphore <- struct{}{}
+
+				select {
+				case <-ctx.Done():
+					prResults <- prResult{err: ctx.Err()}
+					return
+				case semaphore <- struct{}{}:
+				}
 				defer func() { <-semaphore }()
 
 				parts := strings.Split(issue.GetRepositoryURL(), "/")
@@ -447,17 +463,16 @@ func FetchPRsFromSearchWithFilter(query string, token string, filter *PRFilter) 
 }
 
 // FetchPRsFromTopics fetches PRs from repositories that have specific topics/labels
-func FetchPRsFromTopics(org string, topics []string, token string) ([]*github.PullRequest, error) {
-	return FetchPRsFromTopicsWithFilter(org, topics, token, DefaultFilter())
+func FetchPRsFromTopics(ctx context.Context, org string, topics []string, token string) ([]*github.PullRequest, error) {
+	return FetchPRsFromTopicsWithFilter(ctx, org, topics, token, DefaultFilter())
 }
 
 // FetchPRsFromTopicsWithFilter fetches PRs from repositories that have specific topics/labels with filtering
-func FetchPRsFromTopicsWithFilter(org string, topics []string, token string, filter *PRFilter) ([]*github.PullRequest, error) {
+func FetchPRsFromTopicsWithFilter(ctx context.Context, org string, topics []string, token string, filter *PRFilter) ([]*github.PullRequest, error) {
 	client, err := NewClient(token)
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
 
 	repoSet := make(map[string]bool)
 
@@ -506,5 +521,5 @@ func FetchPRsFromTopicsWithFilter(org string, topics []string, token string, fil
 	}
 
 	// Loading PRs from repositories...
-	return FetchOpenPRsWithFilter(allRepos, token, filter)
+	return FetchOpenPRsWithFilter(ctx, allRepos, token, filter)
 }

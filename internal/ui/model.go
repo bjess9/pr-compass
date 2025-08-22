@@ -70,6 +70,10 @@ type model struct {
 	enhancementMutex sync.RWMutex
 	enhancing        bool
 	enhancedCount    int
+	
+	// Context for cancellation support
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func InitialModel(token string) model {
@@ -81,11 +85,16 @@ func InitialModel(token string) model {
 	)
 	t.Focus()
 
+	// Create context with cancellation support for proper resource cleanup
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return model{
 		table:               t,
 		token:               token,
 		refreshIntervalMins: 5, // default, will be updated from config
 		enhancedData:        make(map[int]enhancedPRData),
+		ctx:                 ctx,
+		cancel:              cancel,
 	}
 }
 
@@ -102,11 +111,15 @@ func (m *model) Init() tea.Cmd {
 }
 
 func (m *model) fetchPRs() tea.Msg {
+	// Create a timeout context for fetching PRs (30 seconds should be enough)
+	ctx, cancel := context.WithTimeout(m.ctx, 30*time.Second)
+	defer cancel()
+	
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return errMsg{err}
 	}
-	prs, err := github.FetchPRsFromConfig(cfg, m.token)
+	prs, err := github.FetchPRsFromConfig(ctx, cfg, m.token)
 	if err != nil {
 		return errMsg{err}
 	}
@@ -140,16 +153,35 @@ func (m *model) enhancePRsIndividually() []tea.Cmd {
 // enhanceSinglePR creates a command to enhance a single PR with a delay
 func (m *model) enhanceSinglePR(pr *gh.PullRequest, delay time.Duration) tea.Cmd {
 	return func() tea.Msg {
+		// Create timeout context for enhancement (10 seconds per PR)
+		ctx, cancel := context.WithTimeout(m.ctx, 10*time.Second)
+		defer cancel()
+
+		// Check if context is already canceled before starting
+		select {
+		case <-ctx.Done():
+			return prEnhancementUpdateMsg{
+				prData: enhancedPRData{Number: pr.GetNumber()},
+				error:  ctx.Err(),
+			}
+		default:
+		}
+
 		// Staggered delay for rate limiting
-		time.Sleep(delay)
+		select {
+		case <-ctx.Done():
+			return prEnhancementUpdateMsg{
+				prData: enhancedPRData{Number: pr.GetNumber()},
+				error:  ctx.Err(),
+			}
+		case <-time.After(delay):
+		}
 
 		// Get GitHub client
 		client, err := github.NewClient(m.token)
 		if err != nil {
 			return errMsg{err}
 		}
-
-		ctx := context.Background()
 
 		// Fetch enhanced data for this PR
 		enhanced, err := m.fetchEnhancedPRData(ctx, client, pr)
@@ -393,6 +425,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
+			// Cancel all ongoing operations before quitting
+			if m.cancel != nil {
+				m.cancel()
+			}
 			return m, tea.Quit
 
 		case "h", "?":

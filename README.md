@@ -4,8 +4,8 @@
 [![Docker Builds](https://github.com/bjess9/pr-pilot/workflows/Docker%20Build%20and%20Push/badge.svg)](https://github.com/bjess9/pr-pilot/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bjess9/pr-pilot)](https://goreportcard.com/report/github.com/bjess9/pr-pilot)
 [![License](https://img.shields.io/github/license/bjess9/pr-pilot)](LICENSE)
-[![Docker Pulls](https://img.shields.io/docker/pulls/bjess9/pr-pilot)](https://hub.docker.com/r/bjess9/pr-pilot)
-[![Coverage](https://codecov.io/gh/bjess9/pr-pilot/branch/main/graph/badge.svg)](https://codecov.io/gh/bjess9/pr-pilot)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/bjess9/pr-pilot/pkgs/container/pr-pilot)
+[![Coverage](https://coveralls.io/repos/github/bjess9/pr-pilot/badge.svg?branch=main)](https://coveralls.io/github/bjess9/pr-pilot?branch=main)
 
 TUI for tracking PRs across teams and repos. Auto-filters bot noise.
 

@@ -4,10 +4,10 @@
 
 ```bash
 # With GitHub CLI auth (most secure)
-docker run --rm -v ~/.config/gh:/root/.config/gh:ro bjess9/pr-pilot:latest
+docker run --rm -v ~/.config/gh:/root/.config/gh:ro ghcr.io/bjess9/pr-pilot:latest
 
-# With token (less secure)
-docker run --rm -e GITHUB_TOKEN=ghp_xxx bjess9/pr-pilot:latest
+# With token (less secure)  
+docker run --rm -e GITHUB_TOKEN=ghp_xxx ghcr.io/bjess9/pr-pilot:latest
 ```
 
 ## Custom Config
@@ -17,7 +17,7 @@ docker run --rm -e GITHUB_TOKEN=ghp_xxx bjess9/pr-pilot:latest
 docker run --rm \
   -v ~/.prpilot_config.yaml:/root/.prpilot_config.yaml:ro \
   -v ~/.config/gh:/root/.config/gh:ro \
-  bjess9/pr-pilot:latest
+  ghcr.io/bjess9/pr-pilot:latest
 ```
 
 ## Development

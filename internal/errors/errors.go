@@ -36,7 +36,7 @@ const (
 	ErrorTypeOrganizationNotFound ErrorType = "organization_not_found"
 )
 
-// PRPilotError represents a domain-specific error in the PR Pilot application
+// PRPilotError represents a domain-specific error in the PR Compass application
 type PRPilotError struct {
 	Type        ErrorType
 	Message     string

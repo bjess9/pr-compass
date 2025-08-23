@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bjess9/pr-pilot/internal/config"
-	"github.com/bjess9/pr-pilot/internal/github"
-	"github.com/bjess9/pr-pilot/internal/ui"
+	"github.com/bjess9/pr-compass/internal/config"
+	"github.com/bjess9/pr-compass/internal/github"
+	"github.com/bjess9/pr-compass/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

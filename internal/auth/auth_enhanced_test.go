@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bjess9/pr-pilot/internal/errors"
+	"github.com/bjess9/pr-compass/internal/errors"
 )
 
 // TestGetGitHubCLIToken tests the GitHub CLI token retrieval

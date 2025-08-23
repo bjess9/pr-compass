@@ -3,8 +3,8 @@
 ## Quick Start
 
 ```bash
-git clone https://github.com/bjess9/pr-pilot.git
-cd pr-pilot
+git clone https://github.com/bjess9/pr-compass.git
+cd pr-compass
 make build
 make test
 ```

@@ -4,14 +4,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bjess9/pr-pilot/internal/github"
+	"github.com/bjess9/pr-compass/internal/github"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // User Story: As a user starting the application, I want to see a loading indicator
 // so I know the system is working and fetching my PR data
 func TestUserSeesLoadingIndicatorOnStartup(t *testing.T) {
-	// Given a user starts PR Pilot
+	// Given a user starts PR Compass
 	app := InitialModel("user-token")
 
 	// When the application initializes
@@ -61,7 +61,7 @@ func TestUserSeesNavigationHelpAfterPRsLoad(t *testing.T) {
 // User Story: As a user, I want to quit the application easily
 // so I can exit when I'm done reviewing PRs
 func TestUserCanQuitApplication(t *testing.T) {
-	// Given a user is using PR Pilot
+	// Given a user is using PR Compass
 	app := InitialModel("user-token")
 
 	// When they press Ctrl+C to quit

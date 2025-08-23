@@ -17,7 +17,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pr-pilot ./cmd/pr-pilot
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pr-compass ./cmd/pr-compass
 
 # Final stage
 FROM alpine:latest
@@ -31,7 +31,7 @@ RUN apk add --no-cache github-cli
 WORKDIR /root/
 
 # Copy the binary from builder stage
-COPY --from=builder /app/pr-pilot .
+COPY --from=builder /app/pr-compass .
 
 # Create config directory
 RUN mkdir -p /root/.config
@@ -41,7 +41,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD ./pr-pilot --version || exit 1
+  CMD ./pr-compass --version || exit 1
 
 # Run the binary
-ENTRYPOINT ["./pr-pilot"]
+ENTRYPOINT ["./pr-compass"]

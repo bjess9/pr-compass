@@ -1,4 +1,4 @@
-module github.com/bjess9/pr-pilot
+module github.com/bjess9/pr-compass
 
 go 1.23.10
 

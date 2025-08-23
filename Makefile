@@ -1,13 +1,13 @@
-# PR Pilot Makefile
+# PR Compass Makefile
 
 .PHONY: build test test-unit test-integration test-all clean run-tests help
 
 # Build the application
 build:
-	@echo "🔨 Building PR Pilot..."
-	go build -buildvcs=false -o pr-pilot ./cmd/pr-pilot
+	@echo "🔨 Building PR Compass..."
+	go build -buildvcs=false -o pr-compass ./cmd/pr-compass
 	@echo "📋 Creating Windows executable..."
-	@cp pr-pilot pr-pilot.exe 2>/dev/null || echo "Windows executable created"
+	@cp pr-compass pr-compass.exe 2>/dev/null || echo "Windows executable created"
 
 # Run all tests
 test: test-unit test-integration
@@ -47,14 +47,14 @@ test-ci:
 # Clean build artifacts and test files
 clean:
 	@echo "🧹 Cleaning up..."
-	rm -f pr-pilot pr-pilot.exe
+	rm -f pr-compass pr-compass.exe
 	rm -f coverage.out coverage.html
 	rm -rf /tmp/prpilot_test* test/fixtures/temp*
 
 # Run the application in development mode
 dev: build
-	@echo "🚀 Running PR Pilot in development mode..."
-	./pr-pilot
+	@echo "🚀 Running PR Compass in development mode..."
+	./pr-compass
 
 # Configure for development (creates example config)
 dev-config:
@@ -113,11 +113,11 @@ release-check: test lint security
 
 # Show available targets
 help:
-	@echo "PR Pilot Development Commands"
+	@echo "PR Compass Development Commands"
 	@echo "============================="
 	@echo ""
 	@echo "Building:"
-	@echo "  build        - Build the PR Pilot binary"
+	@echo "  build        - Build the PR Compass binary"
 	@echo "  clean        - Clean build artifacts"
 	@echo ""
 	@echo "Testing:"

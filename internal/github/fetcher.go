@@ -3,7 +3,7 @@ package github
 import (
 	"context"
 
-	"github.com/bjess9/pr-pilot/internal/config"
+	"github.com/bjess9/pr-compass/internal/config"
 	"github.com/google/go-github/v55/github"
 )
 

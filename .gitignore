@@ -24,8 +24,8 @@ go.work.sum
 .env
 config.env
 test_config.yaml
-pr-pilot
-pr-pilot.exe
+pr-compass
+pr-compass.exe
 
 # Personal config files (auto-ignore user configs to prevent accidental commits)
 *_config.yaml

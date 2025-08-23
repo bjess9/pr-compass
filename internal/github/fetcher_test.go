@@ -3,7 +3,7 @@ package github
 import (
 	"testing"
 
-	"github.com/bjess9/pr-pilot/internal/config"
+	"github.com/bjess9/pr-compass/internal/config"
 )
 
 // TestReposFetcher tests the ReposFetcher implementation

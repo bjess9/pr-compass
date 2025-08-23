@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bjess9/pr-pilot/internal/batch"
-	"github.com/bjess9/pr-pilot/internal/config"
-	"github.com/bjess9/pr-pilot/internal/github"
+	"github.com/bjess9/pr-compass/internal/batch"
+	"github.com/bjess9/pr-compass/internal/config"
+	"github.com/bjess9/pr-compass/internal/github"
 	gh "github.com/google/go-github/v55/github"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -162,144 +162,6 @@ func (m *model) fetchPRs() tea.Msg {
 // Background enhancement command that fetches individual PR details
 func (m *model) enhancePRs() tea.Cmd {
 	return m.enhancePRsWithBatch()
-}
-
-// enhancePRsIndividually creates commands for each PR to be enhanced individually
-func (m *model) enhancePRsIndividually() []tea.Cmd {
-	// Limit to top 20 PRs for better performance (since refresh is now 5 min)
-	prsToEnhance := m.prs
-	if len(prsToEnhance) > 20 {
-		prsToEnhance = prsToEnhance[:20]
-	}
-
-	var cmds []tea.Cmd
-
-	// Create a command for each PR with staggered delays
-	for i, pr := range prsToEnhance {
-		cmds = append(cmds, m.enhanceSinglePR(pr, time.Duration(i)*time.Second))
-	}
-
-	return cmds
-}
-
-// enhanceSinglePR creates a command to enhance a single PR with a delay
-func (m *model) enhanceSinglePR(pr *gh.PullRequest, delay time.Duration) tea.Cmd {
-	return func() tea.Msg {
-		// Create timeout context for enhancement (10 seconds per PR)
-		ctx, cancel := context.WithTimeout(m.ctx, 10*time.Second)
-		defer cancel()
-
-		// Check if context is already canceled before starting
-		select {
-		case <-ctx.Done():
-			return prEnhancementUpdateMsg{
-				prData: enhancedPRData{Number: pr.GetNumber()},
-				error:  ctx.Err(),
-			}
-		default:
-		}
-
-		// Staggered delay for rate limiting
-		select {
-		case <-ctx.Done():
-			return prEnhancementUpdateMsg{
-				prData: enhancedPRData{Number: pr.GetNumber()},
-				error:  ctx.Err(),
-			}
-		case <-time.After(delay):
-		}
-
-		// Get GitHub client
-		client, err := github.NewClient(m.token)
-		if err != nil {
-			return errMsg{err}
-		}
-
-		// Fetch enhanced data for this PR
-		enhanced, err := m.fetchEnhancedPRData(ctx, client, pr)
-		if err != nil {
-			// Return an error for this specific PR, don't crash the whole thing
-			return prEnhancementUpdateMsg{
-				prData: enhancedPRData{Number: pr.GetNumber()}, // Empty data indicates error
-				error:  err,
-			}
-		}
-
-		return prEnhancementUpdateMsg{prData: enhanced}
-	}
-}
-
-// fetchEnhancedPRData gets detailed PR information from individual API call
-func (m *model) fetchEnhancedPRData(ctx context.Context, client *gh.Client, pr *gh.PullRequest) (enhancedPRData, error) {
-	// Validate PR structure to avoid nil pointer panics
-	if pr == nil {
-		return enhancedPRData{}, fmt.Errorf("PR is nil")
-	}
-	if pr.GetBase() == nil || pr.GetBase().GetRepo() == nil {
-		return enhancedPRData{}, fmt.Errorf("PR base or repository is nil for PR #%d", pr.GetNumber())
-	}
-	if pr.GetBase().GetRepo().GetOwner() == nil {
-		return enhancedPRData{}, fmt.Errorf("PR repository owner is nil for PR #%d", pr.GetNumber())
-	}
-
-	owner := pr.GetBase().GetRepo().GetOwner().GetLogin()
-	repo := pr.GetBase().GetRepo().GetName()
-	number := pr.GetNumber()
-
-	// Additional validation for required fields
-	if owner == "" {
-		return enhancedPRData{}, fmt.Errorf("PR owner is empty for PR #%d", number)
-	}
-	if repo == "" {
-		return enhancedPRData{}, fmt.Errorf("PR repository name is empty for PR #%d", number)
-	}
-
-	// Get detailed PR data
-	detailedPR, _, err := client.PullRequests.Get(ctx, owner, repo, number)
-	if err != nil {
-		return enhancedPRData{}, err
-	}
-
-	// Get review status
-	reviews, _, err := client.PullRequests.ListReviews(ctx, owner, repo, number, nil)
-	reviewStatus := "unknown"
-	if err == nil {
-		reviewStatus = determineReviewStatus(reviews)
-	}
-
-	// Get checks status
-	checksStatus := "unknown"
-	if pr.GetHead() != nil {
-		if sha := pr.GetHead().GetSHA(); sha != "" {
-			checks, _, err := client.Checks.ListCheckRunsForRef(ctx, owner, repo, sha, nil)
-			if err == nil && checks != nil {
-				checksStatus = determineChecksStatus(checks.CheckRuns)
-			}
-		}
-	}
-
-	// Determine mergeable status
-	mergeableStatus := "unknown"
-	if detailedPR.Mergeable != nil {
-		if *detailedPR.Mergeable {
-			mergeableStatus = "clean"
-		} else {
-			mergeableStatus = "conflicts"
-		}
-	}
-
-	return enhancedPRData{
-		Number:         number,
-		Comments:       detailedPR.GetComments(),
-		ReviewComments: detailedPR.GetReviewComments(),
-		ReviewStatus:   reviewStatus,
-		ChecksStatus:   checksStatus,
-		Mergeable:      mergeableStatus,
-		Additions:      detailedPR.GetAdditions(),
-		Deletions:      detailedPR.GetDeletions(),
-		ChangedFiles:   detailedPR.GetChangedFiles(),
-		EnhancedAt:     time.Now(),
-	}, nil
 }
 
 // listenForBatchResults creates a command that listens for streaming batch results
@@ -719,7 +581,7 @@ func (m *model) View() string {
 	m.table.SetStyles(tableStyles())
 
 	// Title
-	title := titleStyle.Render("PR Pilot - Pull Request Monitor")
+	title := titleStyle.Render("PR Compass - Pull Request Monitor")
 
 	// Table
 	tableView := m.table.View()

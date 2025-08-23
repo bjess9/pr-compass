@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  pr-pilot:
+  pr-compass:
     build: 
       context: .
       dockerfile: Dockerfile
-    container_name: pr-pilot-dev
+    container_name: pr-compass-dev
     environment:
       # GitHub authentication - set these in your .env file
       - GITHUB_TOKEN=${GITHUB_TOKEN}
@@ -17,7 +17,7 @@ services:
       # Optional: Mount GitHub CLI config if using gh auth
       - ~/.config/gh:/root/.config/gh:ro
     networks:
-      - pr-pilot-network
+      - pr-compass-network
     restart: unless-stopped
     # Override the default entrypoint for development
     # command: ["tail", "-f", "/dev/null"]  # Uncomment to keep container running for debugging
@@ -25,32 +25,32 @@ services:
   # Optional: Development database if we add data persistence later
   # postgres:
   #   image: postgres:15-alpine
-  #   container_name: pr-pilot-db
+  #   container_name: pr-compass-db
   #   environment:
-  #     POSTGRES_DB: prpilot
-  #     POSTGRES_USER: prpilot
-  #     POSTGRES_PASSWORD: prpilot_dev
+  #     POSTGRES_DB: prcompass
+  #     POSTGRES_USER: prcompass
+  #     POSTGRES_PASSWORD: prcompass_dev
   #   volumes:
   #     - postgres_data:/var/lib/postgresql/data
   #   ports:
   #     - "5432:5432"
   #   networks:
-  #     - pr-pilot-network
+  #     - pr-compass-network
 
   # Optional: Redis for caching (future feature)
   # redis:
   #   image: redis:7-alpine
-  #   container_name: pr-pilot-redis
+  #   container_name: pr-compass-redis
   #   ports:
   #     - "6379:6379"
   #   networks:
-  #     - pr-pilot-network
+  #     - pr-compass-network
   #   command: redis-server --appendonly yes
   #   volumes:
   #     - redis_data:/data
 
 networks:
-  pr-pilot-network:
+  pr-compass-network:
     driver: bridge
 
 # volumes:

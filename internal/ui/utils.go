@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bjess9/pr-pilot/internal/errors"
+	"github.com/bjess9/pr-compass/internal/errors"
 	gh "github.com/google/go-github/v55/github"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -546,7 +546,7 @@ func getPRLabelsDisplay(pr *gh.PullRequest) string {
 }
 
 func loadingView() string {
-	title := titleStyle.Render("PR Pilot - Pull Request Monitor")
+	title := titleStyle.Render("PR Compass - Pull Request Monitor")
 	message := statusStyle.Render("⏳ Loading pull requests...")
 	help := helpStyle.Render("Press 'q' to quit")
 
@@ -554,7 +554,7 @@ func loadingView() string {
 }
 
 func errorView(err error) string {
-	title := titleStyle.Render("PR Pilot - Pull Request Monitor")
+	title := titleStyle.Render("PR Compass - Pull Request Monitor")
 
 	var message string
 

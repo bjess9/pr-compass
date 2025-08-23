@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bjess9/pr-pilot/internal/config"
-	"github.com/bjess9/pr-pilot/internal/errors"
+	"github.com/bjess9/pr-compass/internal/config"
+	"github.com/bjess9/pr-compass/internal/errors"
 	"github.com/google/go-github/v55/github"
 )
 

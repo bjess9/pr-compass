@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bjess9/pr-pilot/internal/errors"
+	"github.com/bjess9/pr-compass/internal/errors"
 	"github.com/spf13/viper"
 )
 

@@ -151,17 +151,17 @@ exclude_titles: []
 
 ```bash
 # Mount GitHub CLI config:
-docker run -v ~/.config/gh:/root/.config/gh:ro pr-pilot
+docker run -v ~/.config/gh:/root/.config/gh:ro pr-compass
 
 # Or use environment token:
-docker run -e GITHUB_TOKEN=$GITHUB_TOKEN pr-pilot
+docker run -e GITHUB_TOKEN=$GITHUB_TOKEN pr-compass
 ```
 
 ### Config not found (Docker)
 
 ```bash
 # Mount config directory:
-docker run -v $(pwd)/config:/root/.config pr-pilot
+docker run -v $(pwd)/config:/root/.config pr-compass
 ```
 
 ## Debug Mode
@@ -171,14 +171,14 @@ docker run -v $(pwd)/config:/root/.config pr-pilot
 ```bash
 # Set log level (when implemented):
 export LOG_LEVEL=debug
-./pr-pilot
+./pr-compass
 ```
 
 ### Test configuration
 
 ```bash
 # Verify config syntax:
-./pr-pilot --version  # Should work if binary is OK
+./pr-compass --version  # Should work if binary is OK
 ```
 
 ### Test authentication
@@ -252,6 +252,6 @@ exclude_bots: true
 **Always include:**
 
 - OS and Go version
-- PR Pilot version (`./pr-pilot --version`)
+- PR Compass version (`./pr-compass --version`)
 - Error message (full)
 - Configuration (remove sensitive data)

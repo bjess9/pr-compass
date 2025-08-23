@@ -1,11 +1,11 @@
-# PR Pilot ✈️
+# PR Compass 🧭
 
-[![CI Status](https://github.com/bjess9/pr-pilot/workflows/CI/badge.svg)](https://github.com/bjess9/pr-pilot/actions)
-[![Docker Builds](https://github.com/bjess9/pr-pilot/workflows/Docker%20Build%20and%20Push/badge.svg)](https://github.com/bjess9/pr-pilot/actions)
-[![Go Report Card](https://goreportcard.com/badge/github.com/bjess9/pr-pilot)](https://goreportcard.com/report/github.com/bjess9/pr-pilot)
-[![License](https://img.shields.io/github/license/bjess9/pr-pilot)](LICENSE)
-[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/bjess9/pr-pilot/pkgs/container/pr-pilot)
-[![Coverage](https://coveralls.io/repos/github/bjess9/pr-pilot/badge.svg?branch=main)](https://coveralls.io/github/bjess9/pr-pilot?branch=main)
+[![CI Status](https://github.com/bjess9/pr-compass/workflows/CI/badge.svg)](https://github.com/bjess9/pr-compass/actions)
+[![Docker Builds](https://github.com/bjess9/pr-compass/workflows/Docker%20Build%20and%20Push/badge.svg)](https://github.com/bjess9/pr-compass/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bjess9/pr-compass)](https://goreportcard.com/report/github.com/bjess9/pr-compass)
+[![License](https://img.shields.io/github/license/bjess9/pr-compass)](LICENSE)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/bjess9/pr-compass/pkgs/container/pr-compass)
+[![Coverage](https://coveralls.io/repos/github/bjess9/pr-compass/badge.svg?branch=main)](https://coveralls.io/github/bjess9/pr-compass?branch=main)
 
 TUI for tracking PRs across teams and repos. Auto-filters bot noise.
 
@@ -29,8 +29,8 @@ TUI for tracking PRs across teams and repos. Auto-filters bot noise.
 ### Option 2: Build from Source
 
 ```bash
-git clone https://github.com/bjess9/pr-pilot.git
-cd pr-pilot
+git clone https://github.com/bjess9/pr-compass.git
+cd pr-compass
 make build
 ```
 
@@ -62,8 +62,8 @@ include_drafts: true
 **3. Run:**
 
 ```bash
-./pr-pilot        # Linux/macOS
-# or pr-pilot.exe # Windows
+./pr-compass        # Linux/macOS
+# or pr-compass.exe # Windows
 ```
 
 ## Usage
@@ -92,9 +92,9 @@ Five modes available: `topics` (recommended), `organization`, `repos`, `teams`, 
 
 ## Security
 
-PR Pilot handles GitHub authentication tokens securely:
+PR Compass handles GitHub authentication tokens securely:
 
-- ✅ **No token persistence by app** - PR Pilot never writes tokens to files or databases
+- ✅ **No token persistence by app** - PR Compass never writes tokens to files or databases
 - ✅ **External token management** - uses environment variables or GitHub CLI's secure storage
 - ✅ **Minimal permissions** - requires only `repo` and `read:org` scopes
 - ✅ **Secure API communication** - all requests use HTTPS with proper validation

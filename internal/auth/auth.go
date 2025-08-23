@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/bjess9/pr-pilot/internal/errors"
+	"github.com/bjess9/pr-compass/internal/errors"
 )
 
 // getGitHubCLIToken attempts to get the current GitHub CLI token

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bjess9/pr-pilot/internal/config"
+	"github.com/bjess9/pr-compass/internal/config"
 )
 
 // User Story: As a team lead, I want to see all PRs from repositories tagged with my team's topic

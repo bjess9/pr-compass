@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bjess9/pr-pilot/internal/config"
+	"github.com/bjess9/pr-compass/internal/config"
 )
 
 func TestMockClient_FetchPRsFromConfig_ReposMode(t *testing.T) {

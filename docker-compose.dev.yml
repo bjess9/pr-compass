@@ -4,7 +4,7 @@ version: '3.8'
 # Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 services:
-  pr-pilot:
+  pr-compass:
     # Override build for development - use local source with volume mounting
     build:
       context: .
@@ -35,13 +35,13 @@ services:
   # Development tools container
   dev-tools:
     image: golang:1.21-alpine
-    container_name: pr-pilot-dev-tools
+    container_name: pr-compass-dev-tools
     working_dir: /app
     volumes:
       - ./:/app
       - go-mod-cache:/go/pkg/mod
     networks:
-      - pr-pilot-network
+      - pr-compass-network
     command: ["tail", "-f", "/dev/null"]
     environment:
       - GO_ENV=development

@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bjess9/pr-compass/internal/cache"
 	"github.com/bjess9/pr-compass/internal/config"
 	"github.com/bjess9/pr-compass/internal/errors"
 	"github.com/google/go-github/v55/github"
@@ -105,6 +106,30 @@ func FetchPRsFromConfig(ctx context.Context, cfg *config.Config, token string) (
 	fetcher := NewFetcher(cfg)
 
 	return fetcher.FetchPRs(ctx, client, filter)
+}
+
+// FetchPRsFromConfigWithCache fetches PRs using caching for improved performance
+func FetchPRsFromConfigWithCache(ctx context.Context, cfg *config.Config, token string, prCache *cache.PRCache) ([]*github.PullRequest, error) {
+	client, err := NewClient(token)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create filter based on config
+	filter := createFilterFromConfig(cfg)
+
+	// Create appropriate fetcher based on configuration
+	baseFetcher := NewFetcher(cfg)
+
+	// If cache is provided, wrap fetcher with caching (5 minute TTL)
+	if prCache != nil {
+		cacheTTL := 5 * time.Minute
+		cachedFetcher := NewCachedFetcher(baseFetcher, prCache, cacheTTL)
+		return cachedFetcher.FetchPRs(ctx, client, filter)
+	}
+
+	// Fallback to direct fetching without cache
+	return baseFetcher.FetchPRs(ctx, client, filter)
 }
 
 // createFilterFromConfig creates a PRFilter from configuration settings

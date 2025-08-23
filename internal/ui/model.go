@@ -3,10 +3,12 @@ package ui
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
 	"github.com/bjess9/pr-compass/internal/batch"
+	"github.com/bjess9/pr-compass/internal/cache"
 	"github.com/bjess9/pr-compass/internal/config"
 	"github.com/bjess9/pr-compass/internal/github"
 	gh "github.com/google/go-github/v55/github"
@@ -87,6 +89,9 @@ type model struct {
 	// Context for cancellation support
 	ctx    context.Context
 	cancel context.CancelFunc
+
+	// Cache for improved performance
+	prCache *cache.PRCache
 }
 
 func InitialModel(token string) model {
@@ -120,6 +125,13 @@ func InitialModel(token string) model {
 	// Create batch manager with 5 concurrent workers for optimal performance
 	batchManager := batch.NewManager(5, enhancePRWorker)
 
+	// Initialize PR cache
+	prCache, err := cache.NewPRCache()
+	if err != nil {
+		log.Printf("Warning: Failed to initialize PR cache: %v", err)
+		prCache = nil // Continue without caching
+	}
+
 	return model{
 		table:               t,
 		token:               token,
@@ -128,6 +140,7 @@ func InitialModel(token string) model {
 		batchManager:        batchManager,
 		ctx:                 ctx,
 		cancel:              cancel,
+		prCache:             prCache,
 	}
 }
 
@@ -152,7 +165,15 @@ func (m *model) fetchPRs() tea.Msg {
 	if err != nil {
 		return errMsg{err}
 	}
-	prs, err := github.FetchPRsFromConfig(ctx, cfg, m.token)
+
+	var prs []*gh.PullRequest
+	// Use cached fetching if cache is available
+	if m.prCache != nil {
+		prs, err = github.FetchPRsFromConfigWithCache(ctx, cfg, m.token, m.prCache)
+	} else {
+		prs, err = github.FetchPRsFromConfig(ctx, cfg, m.token)
+	}
+	
 	if err != nil {
 		return errMsg{err}
 	}

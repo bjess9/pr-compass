@@ -37,7 +37,7 @@ Terminal-based GitHub pull request monitoring across multiple repositories.
 # Install
 docker pull ghcr.io/bjess9/pr-compass:latest
 
-# Authenticate  
+# Authenticate
 gh auth login
 
 # Configure
@@ -55,7 +55,7 @@ docker run --rm -v ~/.config/gh:/root/.config/gh:ro ghcr.io/bjess9/pr-compass:la
 # Docker
 docker pull ghcr.io/bjess9/pr-compass:latest
 
-# Build from source  
+# Build from source
 git clone https://github.com/bjess9/pr-compass.git && cd pr-compass && make build
 ```
 
@@ -67,14 +67,14 @@ Supports `topics`, `organization`, `repos`, `teams`, `search` modes.
 
 ## Usage
 
-| Key | Action | Description |
-|:---:|:------:|:------------|
-| `↑` `k` | Navigate up | Move selection up |
+|   Key   |    Action     | Description         |
+| :-----: | :-----------: | :------------------ |
+| `↑` `k` |  Navigate up  | Move selection up   |
 | `↓` `j` | Navigate down | Move selection down |
-| `Enter` | Open PR | Open in browser |
-| `r` | Refresh | Fetch latest data |
-| `f` | Filter | Draft/Open/All |
-| `q` | Quit | Exit |
+| `Enter` |    Open PR    | Open in browser     |
+|   `r`   |    Refresh    | Fetch latest data   |
+|   `f`   |    Filter     | Draft/Open/All      |
+|   `q`   |     Quit      | Exit                |
 
 **More shortcuts:** `h` for help
 

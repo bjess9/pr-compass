@@ -115,19 +115,10 @@ max_age_days: 30 # Only show PRs from last 30 days
 ### 🐳 Docker (Recommended)
 
 ```bash
-# Quick run
-docker run -it --rm \
-  -e GITHUB_TOKEN=$GITHUB_TOKEN \
-  -v ~/.prcompass_config.yaml:/root/.prcompass_config.yaml:ro \
-  ghcr.io/bjess9/pr-compass:latest
-
-# Using Docker Compose
-git clone https://github.com/bjess9/pr-compass.git
-cd pr-compass
-docker-compose up
+docker pull ghcr.io/bjess9/pr-compass:latest
 ```
 
-**📚 Full Docker guide**: [DOCKER.md](DOCKER.md)
+**📚 Full Docker setup**: [DOCKER.md](DOCKER.md)
 
 ### 🔧 Build from Source
 
@@ -153,41 +144,9 @@ Download the latest release from [GitHub Releases](https://github.com/bjess9/pr-
 
 ## ⚙️ Configuration
 
-PR Compass supports **5 flexible configuration modes**:
+PR Compass supports **5 flexible configuration modes**: `topics` (recommended), `organization`, `repos`, `teams`, `search`.
 
-| Mode               | Use Case                                       | Configuration                              |
-| ------------------ | ---------------------------------------------- | ------------------------------------------ |
-| **`topics`** ⭐    | **Recommended** - Track repos by GitHub topics | `topics: ['backend', 'frontend']`          |
-| **`organization`** | Monitor entire org                             | `organization: 'your-org'`                 |
-| **`repos`**        | Specific repositories                          | `repositories: ['org/repo1', 'org/repo2']` |
-| **`teams`**        | Team-based tracking                            | `teams: ['backend-team']`                  |
-| **`search`**       | Custom search queries                          | `search_queries: ['label:urgent']`         |
-
-### 📋 **Complete Configuration Example**
-
-```yaml
-# ~/.prcompass_config.yaml
-mode: 'topics'
-topics: ['web', 'api', 'infrastructure']
-topic_org: 'acme-corp'
-
-# Filtering
-exclude_bots: true
-include_drafts: true
-max_age_days: 14
-
-# Display preferences
-sort_by: 'updated' # updated, created, comments
-max_results: 50
-show_descriptions: true
-
-# Performance tuning
-api_timeout: 30
-concurrent_requests: 5
-cache_ttl_minutes: 5
-```
-
-**📚 Detailed configuration guide**: [docs/configuration.md](docs/configuration.md)
+**📚 Complete configuration guide**: [docs/configuration.md](docs/configuration.md)
 
 ---
 
@@ -222,19 +181,7 @@ Each PR shows:
 
 ## 🐳 Docker
 
-Full Docker support with multi-architecture builds (AMD64/ARM64):
-
-```bash
-# Development with live config reload
-docker-compose -f docker-compose.dev.yml up
-
-# Production deployment
-docker run -d \
-  --name pr-compass \
-  -e GITHUB_TOKEN=$GITHUB_TOKEN \
-  -v ~/.prcompass_config.yaml:/root/.prcompass_config.yaml:ro \
-  ghcr.io/bjess9/pr-compass:latest
-```
+Full Docker support with multi-architecture builds (AMD64/ARM64).
 
 **📚 Complete Docker documentation**: [DOCKER.md](DOCKER.md)
 
@@ -242,107 +189,21 @@ docker run -d \
 
 ## 🔒 Security
 
-PR Compass follows **security-first principles**:
-
-- ✅ **Zero Token Persistence** - Never writes tokens to disk
-- ✅ **External Token Management** - Leverages GitHub CLI or environment variables
-- ✅ **Minimal Permissions** - Requires only `repo` and `read:org` scopes
-- ✅ **Secure Communication** - All API calls use HTTPS with proper validation
-- ✅ **Container Security** - Docker images scanned with Trivy, runs as non-root user
-
-### 🛡️ **Token Security Best Practices**
-
-1. **Use GitHub CLI** (recommended):
-
-   ```bash
-   gh auth login --scopes repo,read:org
-   ```
-
-2. **Environment Variables** (for CI/CD):
-
-   ```bash
-   export GITHUB_TOKEN="ghp_your_token_here"
-   ```
-
-3. **Avoid** storing tokens in config files or shell history
+PR Compass never stores GitHub tokens and uses existing authentication (GitHub CLI or environment variables). Requires only `repo` and `read:org` scopes.
 
 ---
 
 ## 🛠️ Development
 
-### 🏗️ **Local Development**
-
-```bash
-# Setup
-git clone https://github.com/bjess9/pr-compass.git
-cd pr-compass
-make dev-setup
-
-# Run tests
-make test
-
-# Build and run
-make dev
-
-# Watch mode for development
-make test-watch
-```
-
-### 🧪 **Testing**
-
-```bash
-# Run all tests
-make test
-
-# Run with coverage
-make test-coverage
-
-# Integration tests
-make test-integration
-
-# Lint code
-make lint
-```
-
-### 📊 **Project Stats**
-
-- **Language**: Go 1.23+
-- **Test Coverage**: Good coverage across core functionality
-- **Dependencies**: Minimal dependencies
-- **CI/CD**: GitHub Actions with automated testing
-- **Docker**: Multi-arch builds (AMD64/ARM64)
+**📚 Development setup**: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! PR Compass is built by developers, for developers.
+We welcome contributions! See our detailed guide for setup, testing, and PR guidelines.
 
-### 🚀 **How to Contribute**
-
-1. **🍴 Fork the repository**
-2. **🌟 Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **✍️ Make your changes** with tests
-4. **✅ Ensure tests pass**: `make test`
-5. **📝 Submit a pull request**
-
-### 🐛 **Bug Reports**
-
-Found a bug? Please [open an issue](https://github.com/bjess9/pr-compass/issues/new) with:
-
-- Steps to reproduce
-- Expected vs actual behavior
-- System information (OS, Go version)
-
-### 💡 **Feature Requests**
-
-Have an idea? We'd love to hear it! [Open a feature request](https://github.com/bjess9/pr-compass/issues/new) with:
-
-- Use case description
-- Proposed implementation
-- Why it would benefit the community
-
-**📚 Detailed contributing guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
+**📚 Contributing guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
 
@@ -360,10 +221,8 @@ Have an idea? We'd love to hear it! [Open a feature request](https://github.com/
 
 ## 🌟 Support
 
-- 📖 **Documentation**: Comprehensive guides in [docs/](docs/)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/bjess9/pr-compass/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/bjess9/pr-compass/discussions)
-- 🔒 **Security**: Report vulnerabilities via [GitHub Security](https://github.com/bjess9/pr-compass/security)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/bjess9/pr-compass/issues)  
+- 📖 **Documentation**: [docs/](docs/) folder
 
 ---
 

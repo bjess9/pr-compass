@@ -10,9 +10,9 @@ type ErrorType string
 
 const (
 	// Authentication error types
-	ErrorTypeAuthTokenInvalid    ErrorType = "auth_token_invalid"
-	ErrorTypeAuthTokenMissing    ErrorType = "auth_token_missing"
-	ErrorTypeAuthStorageFailed   ErrorType = "auth_storage_failed"
+	ErrorTypeAuthTokenInvalid     ErrorType = "auth_token_invalid"
+	ErrorTypeAuthTokenMissing     ErrorType = "auth_token_missing"
+	ErrorTypeAuthStorageFailed    ErrorType = "auth_storage_failed"
 	ErrorTypeAuthPermissionDenied ErrorType = "auth_permission_denied"
 
 	// Configuration error types
@@ -28,11 +28,11 @@ const (
 	ErrorTypeGitHubUnknown      ErrorType = "github_unknown"
 
 	// Context error types
-	ErrorTypeTimeout    ErrorType = "timeout"
-	ErrorTypeCancelled  ErrorType = "cancelled"
-	
+	ErrorTypeTimeout   ErrorType = "timeout"
+	ErrorTypeCancelled ErrorType = "cancelled"
+
 	// Repository/Resource error types
-	ErrorTypeRepositoryInvalid ErrorType = "repository_invalid"
+	ErrorTypeRepositoryInvalid    ErrorType = "repository_invalid"
 	ErrorTypeOrganizationNotFound ErrorType = "organization_not_found"
 )
 
@@ -59,7 +59,7 @@ func (e *PRPilotError) UserFriendlyError() string {
 	if msg == "" {
 		msg = e.Message
 	}
-	
+
 	if e.Suggestion != "" {
 		return fmt.Sprintf("%s\n\nSuggestion: %s", msg, e.Suggestion)
 	}
@@ -154,7 +154,7 @@ func NewGitHubRateLimitError(resetTime string, cause error) *PRPilotError {
 	if resetTime != "" {
 		suggestion = fmt.Sprintf("Wait until %s for rate limit reset, or use a different token", resetTime)
 	}
-	
+
 	return &PRPilotError{
 		Type:        ErrorTypeGitHubRateLimit,
 		Message:     "GitHub API rate limit exceeded",

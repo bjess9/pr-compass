@@ -640,8 +640,8 @@ func TestGetPRActivityEnhanced(t *testing.T) {
 // TestTableCreationNilSafety tests the nil pointer safety fixes added to table creation
 func TestTableCreationNilSafety(t *testing.T) {
 	tests := []struct {
-		name        string
-		pr          *github.PullRequest
+		name         string
+		pr           *github.PullRequest
 		expectAuthor string
 		expectRepo   string
 	}{

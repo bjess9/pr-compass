@@ -70,7 +70,7 @@ type model struct {
 	enhancementMutex sync.RWMutex
 	enhancing        bool
 	enhancedCount    int
-	
+
 	// Context for cancellation support
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -114,7 +114,7 @@ func (m *model) fetchPRs() tea.Msg {
 	// Create a timeout context for fetching PRs (30 seconds should be enough)
 	ctx, cancel := context.WithTimeout(m.ctx, 30*time.Second)
 	defer cancel()
-	
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return errMsg{err}

@@ -12,16 +12,19 @@ make test
 ## Development
 
 ### Requirements
+
 - Go 1.20+
 - GitHub CLI (`gh`) or GitHub token
 
 ### Setup
+
 ```bash
 make dev-setup    # Install dependencies
 make test-watch   # TDD mode
 ```
 
 ### Code Style
+
 - Run `gofmt` before committing
 - Follow Go best practices
 - Add tests for new features
@@ -36,6 +39,7 @@ make test-ci       # CI simulation
 ```
 
 ### Test Requirements
+
 - Unit tests for all new functions
 - Integration tests for main flows
 - Coverage > 80% for new packages
@@ -44,6 +48,7 @@ make test-ci       # CI simulation
 ## Pull Requests
 
 ### Process
+
 1. Fork → feature branch
 2. Add tests
 3. Run `make test lint`
@@ -51,6 +56,7 @@ make test-ci       # CI simulation
 5. Address review feedback
 
 ### PR Guidelines
+
 - Clear, descriptive title
 - Reference related issues
 - Include test coverage
@@ -60,14 +66,18 @@ make test-ci       # CI simulation
 ## Issues
 
 ### Bug Reports
+
 Include:
+
 - Steps to reproduce
 - Expected vs actual behavior
 - Environment (OS, Go version)
 - Configuration (sanitized)
 
 ### Feature Requests
+
 Include:
+
 - Use case description
 - Proposed solution
 - Alternative approaches considered
@@ -84,15 +94,17 @@ Include:
 ## Code Quality
 
 ### Required Checks
+
 - All tests pass
 - No linter warnings
 - Security scan clean
 - Dependencies up to date
 
 ### Automation
+
 - CI runs on all PRs
 - Security scanning enabled
 - Coverage tracking active
-- Multi-platform testing
+- Linux testing (Docker deployment)
 
 That's it. Keep it simple, test thoroughly, submit clean PRs.

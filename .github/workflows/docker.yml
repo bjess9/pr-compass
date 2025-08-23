@@ -68,7 +68,7 @@ jobs:
     - name: Test Docker image
       if: github.event_name == 'pull_request'
       run: |
-        docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} --version
+        docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }} --version
 
   security-scan:
     runs-on: ubuntu-latest

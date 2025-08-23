@@ -105,6 +105,6 @@ PR Pilot handles GitHub authentication tokens securely:
 
 **📚 Development guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
 
-**CI/CD**: Multi-platform testing, security scanning, Docker builds, automated releases.
+**CI/CD**: Linux testing, security scanning, Docker builds, automated releases.
 
 **📚 Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)

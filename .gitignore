@@ -10,6 +10,8 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+coverage.html
+coverage-summary.txt
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
@@ -33,3 +35,6 @@ local_config.yaml
 dev_config.yaml
 work_config.yaml
 user_config.yaml
+
+# TODO list (workspace-specific)
+TODO.md

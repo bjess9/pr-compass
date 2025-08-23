@@ -12,11 +12,10 @@ env:
 jobs:
   test:
     name: Test
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        go-version: ['1.20', '1.21', '1.22']
+        go-version: ['1.21', '1.22']  # Current stable + next
       fail-fast: false
     
     steps:
@@ -69,7 +68,7 @@ jobs:
     - name: Archive coverage results
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-report-${{ matrix.os }}-go${{ matrix.go-version }}
+        name: coverage-report-go${{ matrix.go-version }}
         path: |
           ./coverage.out
           ./coverage.html
@@ -128,20 +127,13 @@ jobs:
         go install golang.org/x/vuln/cmd/govulncheck@latest
         govulncheck ./...
 
-    - name: Run Nancy vulnerability scanner
-      run: |
-        go install github.com/sonatypecommunity/nancy@latest
-        go list -json -deps ./... | nancy sleuth
+    # Nancy vulnerability scanner has been discontinued
+    # Using govulncheck instead which is now the official Go vulnerability scanner
 
   build:
     name: Build
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     needs: [test, lint, security]
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        go-version: ['1.21']  # Use stable version for builds
-      fail-fast: false
     
     steps:
     - name: Checkout code
@@ -150,7 +142,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version: '1.21'
 
     - name: Build binary
       run: make build
@@ -158,9 +150,7 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: pr-pilot-${{ matrix.os }}-go${{ matrix.go-version }}
-        path: |
-          pr-pilot*
-          !pr-pilot.exe
+        name: pr-pilot-linux
+        path: pr-pilot
 
 

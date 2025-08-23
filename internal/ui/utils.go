@@ -80,7 +80,7 @@ func createTableColumns() []table.Column {
 	filesWidth := max(minFilesWidth, totalWidth*10/100)      // 10% - Files only
 	createdWidth := max(minCreatedWidth, totalWidth*9/100)   // 9%  - Created time
 	updatedWidth := max(minUpdatedWidth, totalWidth*9/100)   // 9%  - Updated time
-	
+
 	return []table.Column{
 		{Title: "📋 Pull Request", Width: prNameWidth}, // PR title only (no number)
 		{Title: "👤 Author", Width: authorWidth},       // Author only
@@ -127,7 +127,7 @@ func createTableRows(prs []*gh.PullRequest) []table.Row {
 		if len(repoParts) == 2 {
 			repoName = repoParts[1] // Just the repo name
 		}
-		
+
 		// Status + CI (compact single-line format)
 		mergeStatus := getPRStatusIndicator(pr)
 		ciStatus := "CI:?" // Default CI indicator
@@ -135,7 +135,7 @@ func createTableRows(prs []*gh.PullRequest) []table.Row {
 
 		// Review Status
 		reviews := getPRReviewIndicator(pr)
-		
+
 		// Comments (split from activity)
 		comments := getPRCommentCount(pr)
 
@@ -490,17 +490,17 @@ func getPRLabelsDisplay(pr *gh.PullRequest) string {
 	if len(pr.Labels) == 0 {
 		return ""
 	}
-	
+
 	// Show up to 3-4 labels, prioritize certain important ones
 	importantLabels := []string{}
 	otherLabels := []string{}
-	
+
 	for _, label := range pr.Labels {
 		labelName := label.GetName()
 		// Prioritize certain label patterns
 		if strings.Contains(strings.ToLower(labelName), "bug") ||
-		   strings.Contains(strings.ToLower(labelName), "urgent") ||
-		   strings.Contains(strings.ToLower(labelName), "breaking") ||
+			strings.Contains(strings.ToLower(labelName), "urgent") ||
+			strings.Contains(strings.ToLower(labelName), "breaking") ||
 			strings.Contains(strings.ToLower(labelName), "security") ||
 			strings.Contains(strings.ToLower(labelName), "critical") ||
 			strings.Contains(strings.ToLower(labelName), "hotfix") {
@@ -509,14 +509,14 @@ func getPRLabelsDisplay(pr *gh.PullRequest) string {
 			otherLabels = append(otherLabels, labelName)
 		}
 	}
-	
+
 	// Combine important first, then others
 	allLabels := append(importantLabels, otherLabels...)
-	
+
 	if len(allLabels) == 0 {
 		return ""
 	}
-	
+
 	// Build result string, fitting as many labels as possible
 	result := ""
 	maxWidth := 35 // Increased from 15 to show more labels
@@ -528,7 +528,7 @@ func getPRLabelsDisplay(pr *gh.PullRequest) string {
 			candidate := result + ", " + label
 			if len(candidate) <= maxWidth {
 				result = candidate
-	} else {
+			} else {
 				// Add count of remaining labels if there are more
 				remaining := len(allLabels) - i
 				if remaining > 0 {
@@ -541,7 +541,7 @@ func getPRLabelsDisplay(pr *gh.PullRequest) string {
 			}
 		}
 	}
-	
+
 	return result
 }
 
@@ -555,9 +555,9 @@ func loadingView() string {
 
 func errorView(err error) string {
 	title := titleStyle.Render("PR Pilot - Pull Request Monitor")
-	
+
 	var message string
-	
+
 	// Check if this is a domain-specific error
 	if prErr, isPRError := errors.IsPRPilotError(err); isPRError {
 		// Use user-friendly error message with suggestions
@@ -570,7 +570,7 @@ func errorView(err error) string {
 			Foreground(lipgloss.Color(ErrorColor)).
 			Render(fmt.Sprintf("❌ Error: %v", err))
 	}
-	
+
 	help := helpStyle.Render("Press 'q' to quit")
 
 	return title + "\n" + baseStyle.Render(message+"\n\n"+help)

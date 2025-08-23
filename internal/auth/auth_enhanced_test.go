@@ -13,7 +13,7 @@ import (
 func TestGetGitHubCLIToken(t *testing.T) {
 	// We can't easily mock exec.Command in this test setup without significant refactoring,
 	// but we can test the behavior indirectly and document what should happen
-	
+
 	t.Run("function exists and doesn't panic", func(t *testing.T) {
 		// This test ensures the function can be called without panicking
 		defer func() {
@@ -21,9 +21,9 @@ func TestGetGitHubCLIToken(t *testing.T) {
 				t.Errorf("getGitHubCLIToken() panicked: %v", r)
 			}
 		}()
-		
+
 		token := getGitHubCLIToken()
-		
+
 		// Token can be empty (if gh CLI not installed/authenticated) or valid
 		if token != "" {
 			t.Logf("GitHub CLI token retrieved: %s", maskToken(token))
@@ -49,17 +49,17 @@ func TestAuthenticate(t *testing.T) {
 	}()
 
 	tests := []struct {
-		name          string
-		envToken      string
-		expectError   bool
-		expectSource  string
-		setupFunc     func()
-		cleanupFunc   func()
+		name         string
+		envToken     string
+		expectError  bool
+		expectSource string
+		setupFunc    func()
+		cleanupFunc  func()
 	}{
 		{
-			name:        "valid environment token",
-			envToken:    "ghp_1234567890abcdefghijklmnopqrstuvwxyz",
-			expectError: false,
+			name:         "valid environment token",
+			envToken:     "ghp_1234567890abcdefghijklmnopqrstuvwxyz",
+			expectError:  false,
 			expectSource: "GITHUB_TOKEN environment variable",
 			setupFunc: func() {
 				os.Setenv("GITHUB_TOKEN", "ghp_1234567890abcdefghijklmnopqrstuvwxyz")
@@ -69,9 +69,9 @@ func TestAuthenticate(t *testing.T) {
 			},
 		},
 		{
-			name:        "invalid environment token format",
-			envToken:    "invalid_token",
-			expectError: true, // Should fall back to CLI token, but if that fails too, should error
+			name:         "invalid environment token format",
+			envToken:     "invalid_token",
+			expectError:  true, // Should fall back to CLI token, but if that fails too, should error
 			expectSource: "",
 			setupFunc: func() {
 				os.Setenv("GITHUB_TOKEN", "invalid_token")
@@ -81,9 +81,9 @@ func TestAuthenticate(t *testing.T) {
 			},
 		},
 		{
-			name:        "empty environment token",
-			envToken:    "",
-			expectError: true, // Will try CLI token, but likely fail in test environment
+			name:         "empty environment token",
+			envToken:     "",
+			expectError:  true, // Will try CLI token, but likely fail in test environment
 			expectSource: "",
 			setupFunc: func() {
 				os.Unsetenv("GITHUB_TOKEN")
@@ -91,9 +91,9 @@ func TestAuthenticate(t *testing.T) {
 			cleanupFunc: func() {},
 		},
 		{
-			name:        "valid legacy token",
-			envToken:    "1234567890abcdefghijklmnopqrstuvwxyz1234",
-			expectError: false,
+			name:         "valid legacy token",
+			envToken:     "1234567890abcdefghijklmnopqrstuvwxyz1234",
+			expectError:  false,
 			expectSource: "GITHUB_TOKEN environment variable",
 			setupFunc: func() {
 				os.Setenv("GITHUB_TOKEN", "1234567890abcdefghijklmnopqrstuvwxyz1234")
@@ -166,7 +166,7 @@ func TestAuthenticateWithRealEnvironment(t *testing.T) {
 		if err != nil {
 			// This is expected if no authentication is available
 			t.Logf("No authentication available (expected in test environment): %v", err)
-			
+
 			// Verify error type
 			if prErr, ok := errors.IsPRPilotError(err); ok {
 				if !prErr.IsType(errors.ErrorTypeAuthTokenMissing) {
@@ -191,7 +191,7 @@ func TestAuthenticateWithRealEnvironment(t *testing.T) {
 			t.Logf("GitHub CLI not available in test environment: %v", err)
 		} else {
 			t.Logf("GitHub CLI is available")
-			
+
 			// Try to get status
 			cmd := exec.Command("gh", "auth", "status")
 			output, err := cmd.CombinedOutput()
@@ -280,7 +280,7 @@ func TestAuthenticateErrorHandling(t *testing.T) {
 				if !prErr.IsType(errors.ErrorTypeAuthTokenMissing) {
 					t.Errorf("Expected AuthTokenMissing error, got %s", prErr.Type)
 				}
-				
+
 				// Check error message contains helpful information
 				userMsg := prErr.UserFriendlyError()
 				if !strings.Contains(userMsg, "GitHub") {
@@ -303,7 +303,7 @@ func TestValidateTokenEdgeCases(t *testing.T) {
 		{"token with newlines", "ghp_1234567890abcdefghijklmnopqrstuvwxyz\n", true},
 		{"token with tabs", "\tghp_1234567890abcdefghijklmnopqrstuvwxyz\t", true},
 		{"token with spaces", "  ghp_1234567890abcdefghijklmnopqrstuvwxyz  ", true},
-		{"39 char legacy token", "123456789abcdefghijklmnopqrstuvwxyz123", false}, // too short
+		{"39 char legacy token", "123456789abcdefghijklmnopqrstuvwxyz123", false},  // too short
 		{"41 char legacy token", "123456789abcdefghijklmnopqrstuvwxyz12345", true}, // Actual behavior: returns true (validation logic allows this)
 		{"exactly 40 chars no prefix", "1234567890abcdefghijklmnopqrstuvwxyz1234", true},
 		{"github_pat with underscore", "github_pat_test_1234567890abcdefghijklmnop", true},
@@ -417,7 +417,7 @@ func TestAuthenticationIntegration(t *testing.T) {
 				if prErr, ok := errors.IsPRPilotError(err); ok {
 					userMsg := prErr.UserFriendlyError()
 					t.Logf("User-friendly error message: %s", userMsg)
-					
+
 					// Should contain helpful suggestions
 					if !strings.Contains(userMsg, "export") && !strings.Contains(userMsg, "gh auth") {
 						t.Error("Error message should provide setup instructions")
@@ -425,7 +425,7 @@ func TestAuthenticationIntegration(t *testing.T) {
 				}
 			} else {
 				t.Logf("Authentication successful: %s", maskToken(token))
-				
+
 				// Verify token is valid
 				if !validateToken(token) {
 					t.Errorf("Returned token is invalid format: %s", maskToken(token))

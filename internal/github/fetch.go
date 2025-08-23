@@ -229,7 +229,7 @@ func fetchOpenPRsWithFilter(ctx context.Context, client *github.Client, repos []
 			wg.Wait()
 			close(done)
 		}()
-		
+
 		select {
 		case <-done:
 			// All goroutines completed normally
@@ -251,7 +251,7 @@ func fetchOpenPRsWithFilter(ctx context.Context, client *github.Client, repos []
 		}
 		allPRs = append(allPRs, result.prs...)
 	}
-	
+
 	// Log summary if any repos were skipped
 	if len(skippedRepos) > 0 {
 		log.Printf("Warning: Failed to fetch PRs from %d repositories: %v", len(skippedRepos), skippedRepos)
@@ -425,7 +425,7 @@ func fetchPRsFromSearchWithFilter(ctx context.Context, client *github.Client, qu
 				wg.Wait()
 				close(done)
 			}()
-			
+
 			select {
 			case <-done:
 				// All goroutines completed normally
@@ -448,7 +448,7 @@ func fetchPRsFromSearchWithFilter(ctx context.Context, client *github.Client, qu
 				allPRs = append(allPRs, result.pr)
 			}
 		}
-		
+
 		// Log summary of failed PR fetches
 		if failedPRs > 0 {
 			log.Printf("Warning: Failed to fetch details for %d PRs from search results", failedPRs)

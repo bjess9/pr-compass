@@ -14,10 +14,12 @@ import (
 const version = "v0.1.0-pre"
 
 func main() {
-	// Check for version flag
-	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
-		fmt.Printf("PR Pilot %s\n", version)
-		return
+	// Check for version flag first
+	for _, arg := range os.Args[1:] {
+		if arg == "--version" || arg == "-v" {
+			fmt.Printf("PR Pilot %s\n", version)
+			return
+		}
 	}
 
 	if !config.ConfigExists() {

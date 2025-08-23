@@ -21,7 +21,7 @@ func TestReposFetcher(t *testing.T) {
 	if len(fetcher.Repos) != len(expectedRepos) {
 		t.Errorf("Expected %d repos, got %d", len(expectedRepos), len(fetcher.Repos))
 	}
-	
+
 	for i, repo := range fetcher.Repos {
 		if repo != expectedRepos[i] {
 			t.Errorf("Expected repo[%d] = %s, got %s", i, expectedRepos[i], repo)
@@ -58,11 +58,11 @@ func TestTeamsFetcher(t *testing.T) {
 	// Test the structure without calling FetchPRs to avoid panics
 	expectedOrg := "testorg"
 	expectedTeams := []string{"backend-team", "frontend-team"}
-	
+
 	if fetcher.Organization != expectedOrg {
 		t.Errorf("Expected organization %s, got %s", expectedOrg, fetcher.Organization)
 	}
-	
+
 	if len(fetcher.Teams) != len(expectedTeams) {
 		t.Errorf("Expected %d teams, got %d", len(expectedTeams), len(fetcher.Teams))
 	}
@@ -97,11 +97,11 @@ func TestTopicsFetcher(t *testing.T) {
 	// Test the structure without calling FetchPRs to avoid panics
 	expectedOrg := "testorg"
 	expectedTopics := []string{"backend", "api"}
-	
+
 	if fetcher.Organization != expectedOrg {
 		t.Errorf("Expected organization %s, got %s", expectedOrg, fetcher.Organization)
 	}
-	
+
 	if len(fetcher.Topics) != len(expectedTopics) {
 		t.Errorf("Expected %d topics, got %d", len(expectedTopics), len(fetcher.Topics))
 	}
@@ -110,10 +110,10 @@ func TestTopicsFetcher(t *testing.T) {
 // TestNewFetcher tests the factory function for creating fetchers
 func TestNewFetcher(t *testing.T) {
 	tests := []struct {
-		name           string
-		config         *config.Config
-		expectedType   PRFetcher
-		description    string
+		name         string
+		config       *config.Config
+		expectedType PRFetcher
+		description  string
 	}{
 		{
 			name: "creates ReposFetcher for repos mode",
@@ -280,19 +280,19 @@ func TestFetcherFieldAssignment(t *testing.T) {
 			Mode:  "repos",
 			Repos: []string{"owner/repo1", "owner/repo2", "owner/repo3"},
 		}
-		
+
 		fetcher := NewFetcher(cfg).(*ReposFetcher)
-		
+
 		if len(fetcher.Repos) != 3 {
 			t.Errorf("Expected 3 repos, got %d", len(fetcher.Repos))
 		}
-		
+
 		expectedRepos := map[string]bool{
 			"owner/repo1": true,
 			"owner/repo2": true,
 			"owner/repo3": true,
 		}
-		
+
 		for _, repo := range fetcher.Repos {
 			if !expectedRepos[repo] {
 				t.Errorf("Unexpected repo: %s", repo)
@@ -307,18 +307,18 @@ func TestFetcherFieldAssignment(t *testing.T) {
 			Organization: "myorg",
 			Teams:        []string{"backend", "frontend", "devops"},
 		}
-		
+
 		fetcher := NewFetcher(cfg).(*TeamsFetcher)
-		
+
 		if fetcher.Organization != "myorg" {
 			t.Errorf("Expected organization 'myorg', got '%s'", fetcher.Organization)
 		}
-		
+
 		if len(fetcher.Teams) != 3 {
 			t.Errorf("Expected 3 teams, got %d", len(fetcher.Teams))
 		}
 	})
-	
+
 	// Test TopicsFetcher field assignment
 	t.Run("TopicsFetcher fields", func(t *testing.T) {
 		cfg := &config.Config{
@@ -326,13 +326,13 @@ func TestFetcherFieldAssignment(t *testing.T) {
 			TopicOrg: "topicorg",
 			Topics:   []string{"backend", "api", "microservice"},
 		}
-		
+
 		fetcher := NewFetcher(cfg).(*TopicsFetcher)
-		
+
 		if fetcher.Organization != "topicorg" {
 			t.Errorf("Expected organization 'topicorg', got '%s'", fetcher.Organization)
 		}
-		
+
 		if len(fetcher.Topics) != 3 {
 			t.Errorf("Expected 3 topics, got %d", len(fetcher.Topics))
 		}

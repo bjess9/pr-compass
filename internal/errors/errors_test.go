@@ -98,7 +98,7 @@ func TestPRPilotError_UserFriendlyError(t *testing.T) {
 // TestPRPilotError_Unwrap tests the Unwrap() method
 func TestPRPilotError_Unwrap(t *testing.T) {
 	originalErr := errors.New("original error")
-	
+
 	tests := []struct {
 		name     string
 		err      *PRPilotError
@@ -139,9 +139,9 @@ func TestPRPilotError_IsType(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		checkType  ErrorType
-		expected   bool
+		name      string
+		checkType ErrorType
+		expected  bool
 	}{
 		{
 			name:      "matches correct type",

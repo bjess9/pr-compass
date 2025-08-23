@@ -159,7 +159,7 @@ func TestWaitGroupCleanupWithMultipleGoroutines(t *testing.T) {
 
 	// Test the cleanup waits for all goroutines
 	start := time.Now()
-	
+
 	done := make(chan struct{})
 	go func() {
 		defer close(done)

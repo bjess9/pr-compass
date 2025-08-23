@@ -24,13 +24,7 @@ TUI for tracking PRs across teams and repos. Auto-filters bot noise.
 
 ### Option 1: Docker (Recommended)
 
-```bash
-# Pull and run directly
-docker run --rm -e GITHUB_TOKEN=your_token bjess9/pr-pilot:latest
-
-# Or using GitHub CLI authentication
-docker run --rm -v ~/.config/gh:/root/.config/gh:ro bjess9/pr-pilot:latest
-```
+**📚 See**: [DOCKER.md](DOCKER.md)
 
 ### Option 2: Build from Source
 
@@ -63,7 +57,7 @@ exclude_bots: true
 include_drafts: true
 ```
 
-See [example_config.yaml](example_config.yaml) for all options.
+**📚 Detailed config options**: See [docs/configuration.md](docs/configuration.md)
 
 **3. Run:**
 
@@ -88,78 +82,13 @@ PRs are sorted by **most recent activity** (last updated), not creation date.
 
 ## Config Modes
 
-```yaml
-# By topic (recommended for teams)
-mode: "topics"
-topics: ["team-backend"]
-topic_org: "company"
+Five modes available: `topics` (recommended), `organization`, `repos`, `teams`, `search`.
 
-# By organization
-mode: "organization"
-organization: "company"
-
-# By specific repos
-mode: "repos"
-repos: ["company/api", "company/web"]
-
-# By teams
-mode: "teams"
-organization: "company"
-teams: ["backend-team"]
-
-# Custom search
-mode: "search"
-search_query: "org:company is:pr is:open author:@me"
-```
-
-## Filtering
-
-```yaml
-exclude_bots: true # Filters renovate/dependabot (default)
-include_drafts: true # Show draft PRs
-exclude_authors: ['ci-bot'] # Custom author exclusions
-exclude_titles: ['chore:', 'docs:'] # Title pattern exclusions
-```
+**📚 Full configuration guide**: [docs/configuration.md](docs/configuration.md)
 
 ## 🐳 Docker Support
 
-PR Pilot offers full Docker support for easy deployment and development:
-
-### Quick Start
-
-```bash
-# Using environment token
-docker run --rm -e GITHUB_TOKEN=ghp_your_token bjess9/pr-pilot:latest
-
-# Using GitHub CLI authentication (recommended)
-docker run --rm -v ~/.config/gh:/root/.config/gh:ro bjess9/pr-pilot:latest
-
-# With custom configuration
-docker run --rm -v $(pwd)/config:/root/.config -e GITHUB_TOKEN=your_token bjess9/pr-pilot:latest
-```
-
-### Development with Docker Compose
-
-```bash
-# Start development environment
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
-
-# Access development container
-docker-compose exec pr-pilot sh
-
-# Run tests inside container
-docker-compose exec pr-pilot go test ./...
-```
-
-### Available Images
-
-- `bjess9/pr-pilot:latest` - Latest stable release
-- `bjess9/pr-pilot:v1.0.0` - Specific version
-- `bjess9/pr-pilot:main` - Latest development build
-
-**Multi-architecture support**: Images are available for `linux/amd64` and `linux/arm64`.
-
-📚 **For detailed Docker usage**, see [DOCKER.md](DOCKER.md)
+**📚 Docker usage**: [DOCKER.md](DOCKER.md)
 
 ## Security
 
@@ -174,47 +103,8 @@ PR Pilot handles GitHub authentication tokens securely:
 
 ## Development
 
-### Local Development
+**📚 Development guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
 
-```bash
-make test            # Run all tests
-make test-coverage   # Generate coverage report
-make build           # Build binary
-make clean           # Clean build artifacts
-make help            # Show all commands
-```
+**CI/CD**: Multi-platform testing, security scanning, Docker builds, automated releases.
 
-### Docker Development
-
-```bash
-# Start development environment
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
-
-# Access development container
-docker-compose exec pr-pilot sh
-
-# Or use the development tools container
-docker-compose exec dev-tools sh
-```
-
-### CI/CD Pipeline
-
-The project includes a comprehensive CI/CD pipeline with:
-
-- ✅ **Multi-platform testing**: Ubuntu, Windows, macOS
-- ✅ **Multiple Go versions**: 1.20, 1.21, 1.22
-- ✅ **Security scanning**: Gosec, govulncheck, Nancy
-- ✅ **Coverage reporting**: Codecov, Coveralls
-- ✅ **Docker builds**: Multi-architecture (amd64/arm64)
-- ✅ **Automated releases**: Docker Hub integration
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass: `make test`
-5. Check security: `make security-scan` (if available)
-6. Submit a pull request
-
-That's it. Simple setup, comprehensive testing, Docker-ready deployment.
+**📚 Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)

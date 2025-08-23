@@ -2,12 +2,14 @@ package cache
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/go-github/v55/github"
@@ -38,7 +40,7 @@ func NewPRCache() (*PRCache, error) {
 	}
 
 	cacheDir := filepath.Join(homeDir, ".cache", "pr-compass")
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -47,7 +49,7 @@ func NewPRCache() (*PRCache, error) {
 
 // NewPRCacheWithDir creates a new PR cache instance with custom directory (for testing)
 func NewPRCacheWithDir(cacheDir string) (*PRCache, error) {
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -56,7 +58,7 @@ func NewPRCacheWithDir(cacheDir string) (*PRCache, error) {
 
 // generateCacheKey creates a cache key from configuration parameters
 func (c *PRCache) generateCacheKey(params ...string) string {
-	hash := md5.Sum([]byte(fmt.Sprintf("%v", params)))
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%v", params)))
 	return hex.EncodeToString(hash[:])[:16] // Use first 16 chars for shorter filenames
 }
 
@@ -80,8 +82,23 @@ func (c *PRCache) RemoveCacheFile(path string) error {
 	return c.removeCacheFile(path)
 }
 
+// isValidCachePath validates that the path is within the cache directory to prevent directory traversal
+func (c *PRCache) isValidCachePath(path string) bool {
+	cleanPath := filepath.Clean(path)
+	cleanCacheDir := filepath.Clean(c.cacheDir)
+	
+	// Check if the path is within the cache directory
+	return strings.HasPrefix(cleanPath, cleanCacheDir)
+}
+
 // saveCacheEntry saves a cache entry to disk
 func (c *PRCache) saveCacheEntry(path string, entry interface{}) error {
+	// Validate that path is within cache directory to prevent directory traversal
+	if !c.isValidCachePath(path) {
+		return fmt.Errorf("invalid cache path: %s", path)
+	}
+	
+	// #nosec G304 - path is validated above to prevent directory traversal
 	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("failed to create cache file: %w", err)
@@ -94,6 +111,12 @@ func (c *PRCache) saveCacheEntry(path string, entry interface{}) error {
 
 // loadCacheEntry loads a cache entry from disk
 func (c *PRCache) loadCacheEntry(path string, entry interface{}) error {
+	// Validate that path is within cache directory to prevent directory traversal
+	if !c.isValidCachePath(path) {
+		return fmt.Errorf("invalid cache path: %s", path)
+	}
+	
+	// #nosec G304 - path is validated above to prevent directory traversal
 	file, err := os.Open(path)
 	if err != nil {
 		return err // File doesn't exist or can't be opened
@@ -114,9 +137,11 @@ func (c *PRCache) GetPRList(cacheKey string) ([]*github.PullRequest, bool) {
 	}
 
 	if entry.IsExpired() {
-		// Clean up expired cache file
-		os.Remove(path)
-		return nil, false
+					// Clean up expired cache file
+			if err := os.Remove(path); err != nil {
+				log.Printf("Warning: Failed to remove expired cache file %s: %v", path, err)
+			}
+			return nil, false
 	}
 
 	return entry.Data, true
@@ -156,9 +181,11 @@ func (c *PRCache) GetEnhancedPRData(prKey string) (map[string]EnhancedPRData, bo
 	}
 
 	if entry.IsExpired() {
-		// Clean up expired cache file
-		os.Remove(path)
-		return nil, false
+					// Clean up expired cache file
+			if err := os.Remove(path); err != nil {
+				log.Printf("Warning: Failed to remove expired cache file %s: %v", path, err)
+			}
+			return nil, false
 	}
 
 	return entry.Data, true
@@ -201,7 +228,9 @@ func (c *PRCache) CleanExpiredEntries(ctx context.Context) error {
 		var entry CacheEntry[interface{}]
 		if err := c.loadCacheEntry(file, &entry); err == nil {
 			if entry.IsExpired() {
-				os.Remove(file)
+				if err := os.Remove(file); err != nil {
+					log.Printf("Warning: Failed to remove expired cache file %s: %v", file, err)
+				}
 			}
 		}
 	}

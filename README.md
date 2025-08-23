@@ -4,7 +4,7 @@
 
 **Navigate Your GitHub Pull Requests with Confidence**
 
-*A blazing-fast, terminal-based pull request monitoring tool for developers and teams*
+_A terminal-based pull request monitoring tool for developers and teams_
 
 [![CI Status](https://github.com/bjess9/pr-compass/workflows/CI/badge.svg)](https://github.com/bjess9/pr-compass/actions)
 [![Docker Builds](https://github.com/bjess9/pr-compass/workflows/Docker%20Build%20and%20Push/badge.svg)](https://github.com/bjess9/pr-compass/actions)
@@ -22,50 +22,47 @@
 
 ## 🎯 What is PR Compass?
 
-PR Compass is a **powerful terminal-based interface** that gives you complete visibility into GitHub pull requests across your entire organization. Built for developers who need to stay on top of code reviews, track team progress, and never miss important PRs.
+PR Compass is a **terminal-based interface** for monitoring GitHub pull requests across multiple repositories. Built for developers who need to stay on top of code reviews and track PR activity.
 
 ### 🚀 Why PR Compass?
 
-- **🔍 Smart Filtering** - Automatically filters out bot noise while surfacing PRs that need your attention
-- **⚡ Lightning Fast** - Native Go performance with concurrent API calls and smart caching
+- **🔍 Multi-Repository View** - See PRs from multiple repos in one place
+- **⚡ Efficient Navigation** - Keyboard shortcuts and clean interface
 - **🎛️ Flexible Configuration** - Track by repositories, topics, teams, or organizations
-- **🧹 Clean Interface** - Beautiful TUI that focuses on what matters most
-- **🐳 Docker Ready** - Run anywhere with containerized deployment
-- **🔒 Security First** - Never stores tokens, integrates with GitHub CLI securely
+- **🧹 Clean Interface** - Simple TUI that focuses on what matters
+- **🐳 Docker Support** - Run with Docker if preferred
+- **🔒 Secure** - Uses existing GitHub authentication, no token storage
 
 ---
 
 ## ✨ Features
 
-### 🎪 **Smart PR Discovery**
-- **Multi-Repository Tracking** - Monitor PRs across your entire organization
-- **Topic-Based Organization** - Group repositories by topics for better organization  
-- **Team-Focused Views** - Track PRs for specific GitHub teams
-- **Bot Noise Filtering** - Automatically hide Dependabot and other automated PRs
+### 📋 **PR Management**
 
-### ⚡ **Performance & Efficiency**
-- **Concurrent Processing** - Parallel API calls with intelligent batching
-- **Real-Time Updates** - Live progress indicators during data fetching
-- **Smart Caching** - Reduced API calls with intelligent caching strategies
-- **Rate Limit Handling** - Automatic exponential backoff and retry logic
+- **Multi-Repository View** - Monitor PRs across multiple repositories
+- **Flexible Organization** - Group by topics, organizations, or teams
+- **Bot Filtering** - Hide automated PRs (Dependabot, etc.)
+- **Draft Support** - Show or hide draft pull requests
 
-### 🎨 **Developer Experience**
-- **Intuitive Keyboard Navigation** - Vim-inspired shortcuts for power users
-- **Rich PR Information** - Status, reviewers, labels, and change summaries
-- **Flexible Sorting** - Sort by activity, creation date, or priority
-- **Quick Actions** - Open PRs in browser with a single keypress
+### ⚡ **Interface & Navigation**
 
-### 🛠️ **Enterprise Ready**
-- **Multiple Authentication Methods** - GitHub CLI, environment variables, or direct tokens
-- **Docker Support** - Full containerization with development and production configs
-- **Secure Token Handling** - No token persistence, external token management
-- **CI/CD Integration** - Automated testing, security scanning, and releases
+- **Keyboard Navigation** - Vim-style shortcuts for efficient browsing
+- **PR Information** - View status, reviewers, labels, and summaries
+- **Sorting Options** - Sort by activity, creation date, or comments
+- **Quick Actions** - Open PRs in browser with a keypress
+
+### 🔧 **Configuration**
+
+- **Multiple Auth Methods** - GitHub CLI, environment variables, or tokens
+- **Flexible Modes** - Track by repos, topics, teams, organizations, or search
+- **Docker Support** - Run locally or in containers
+- **YAML Configuration** - Simple config file setup
 
 ---
 
 ## 🚀 Quick Start
 
-Get up and running in under 2 minutes:
+Get up and running quickly:
 
 ### 1️⃣ **Install**
 
@@ -98,9 +95,9 @@ topics: ['backend', 'frontend', 'infrastructure']
 topic_org: 'your-organization'
 
 # Filter configuration
-exclude_bots: true      # Hide bot PRs (Dependabot, etc.)
-include_drafts: true    # Show draft PRs
-max_age_days: 30       # Only show PRs from last 30 days
+exclude_bots: true # Hide bot PRs (Dependabot, etc.)
+include_drafts: true # Show draft PRs
+max_age_days: 30 # Only show PRs from last 30 days
 ```
 
 ### 4️⃣ **Launch**
@@ -109,7 +106,7 @@ max_age_days: 30       # Only show PRs from last 30 days
 ./pr-compass
 ```
 
-**🎉 That's it!** You'll see a beautiful interface showing all relevant PRs across your organization.
+**🎉 That's it!** You'll see a clean interface showing PRs from your configured repositories.
 
 ---
 
@@ -158,13 +155,13 @@ Download the latest release from [GitHub Releases](https://github.com/bjess9/pr-
 
 PR Compass supports **5 flexible configuration modes**:
 
-| Mode | Use Case | Configuration |
-|------|----------|---------------|
-| **`topics`** ⭐ | **Recommended** - Track repos by GitHub topics | `topics: ['backend', 'frontend']` |
-| **`organization`** | Monitor entire org | `organization: 'your-org'` |
-| **`repos`** | Specific repositories | `repositories: ['org/repo1', 'org/repo2']` |
-| **`teams`** | Team-based tracking | `teams: ['backend-team']` |
-| **`search`** | Custom search queries | `search_queries: ['label:urgent']` |
+| Mode               | Use Case                                       | Configuration                              |
+| ------------------ | ---------------------------------------------- | ------------------------------------------ |
+| **`topics`** ⭐    | **Recommended** - Track repos by GitHub topics | `topics: ['backend', 'frontend']`          |
+| **`organization`** | Monitor entire org                             | `organization: 'your-org'`                 |
+| **`repos`**        | Specific repositories                          | `repositories: ['org/repo1', 'org/repo2']` |
+| **`teams`**        | Team-based tracking                            | `teams: ['backend-team']`                  |
+| **`search`**       | Custom search queries                          | `search_queries: ['label:urgent']`         |
 
 ### 📋 **Complete Configuration Example**
 
@@ -179,8 +176,8 @@ exclude_bots: true
 include_drafts: true
 max_age_days: 14
 
-# Display preferences  
-sort_by: 'updated'        # updated, created, comments
+# Display preferences
+sort_by: 'updated' # updated, created, comments
 max_results: 50
 show_descriptions: true
 
@@ -198,22 +195,23 @@ cache_ttl_minutes: 5
 
 ### ⌨️ **Keyboard Shortcuts**
 
-| Key | Action | Description |
-|-----|--------|-------------|
-| `↑` `k` | Navigate up | Move selection up |
-| `↓` `j` | Navigate down | Move selection down |  
-| `Enter` `o` | Open PR | Open in default browser |
-| `r` | Refresh | Fetch latest PR data |
-| `f` | Filter by status | Draft/Open/All |
-| `s` | Sort options | Updated/Created/Comments |
-| `d` | Toggle drafts | Show/hide draft PRs |
-| `c` | Clear filters | Reset all filters |
-| `h` `?` | Help | Show help screen |
-| `q` `Esc` | Quit | Exit application |
+| Key         | Action           | Description              |
+| ----------- | ---------------- | ------------------------ |
+| `↑` `k`     | Navigate up      | Move selection up        |
+| `↓` `j`     | Navigate down    | Move selection down      |
+| `Enter` `o` | Open PR          | Open in default browser  |
+| `r`         | Refresh          | Fetch latest PR data     |
+| `f`         | Filter by status | Draft/Open/All           |
+| `s`         | Sort options     | Updated/Created/Comments |
+| `d`         | Toggle drafts    | Show/hide draft PRs      |
+| `c`         | Clear filters    | Reset all filters        |
+| `h` `?`     | Help             | Show help screen         |
+| `q` `Esc`   | Quit             | Exit application         |
 
 ### 📊 **PR Information Display**
 
 Each PR shows:
+
 - **Status indicators** (🟢 approved, 🟡 pending, 🔴 changes requested)
 - **Author and repository** information
 - **Labels and assignees**
@@ -255,11 +253,13 @@ PR Compass follows **security-first principles**:
 ### 🛡️ **Token Security Best Practices**
 
 1. **Use GitHub CLI** (recommended):
+
    ```bash
    gh auth login --scopes repo,read:org
    ```
 
 2. **Environment Variables** (for CI/CD):
+
    ```bash
    export GITHUB_TOKEN="ghp_your_token_here"
    ```
@@ -307,10 +307,10 @@ make lint
 ### 📊 **Project Stats**
 
 - **Language**: Go 1.23+
-- **Test Coverage**: 85%+ 
-- **Dependencies**: Minimal, security-focused
-- **CI/CD**: GitHub Actions with security scanning
-- **Container**: Multi-arch builds (AMD64/ARM64)
+- **Test Coverage**: Good coverage across core functionality
+- **Dependencies**: Minimal dependencies
+- **CI/CD**: GitHub Actions with automated testing
+- **Docker**: Multi-arch builds (AMD64/ARM64)
 
 ---
 
@@ -329,13 +329,15 @@ We welcome contributions! PR Compass is built by developers, for developers.
 ### 🐛 **Bug Reports**
 
 Found a bug? Please [open an issue](https://github.com/bjess9/pr-compass/issues/new) with:
+
 - Steps to reproduce
-- Expected vs actual behavior  
+- Expected vs actual behavior
 - System information (OS, Go version)
 
 ### 💡 **Feature Requests**
 
 Have an idea? We'd love to hear it! [Open a feature request](https://github.com/bjess9/pr-compass/issues/new) with:
+
 - Use case description
 - Proposed implementation
 - Why it would benefit the community
@@ -346,13 +348,13 @@ Have an idea? We'd love to hear it! [Open a feature request](https://github.com/
 
 ## 📚 Documentation
 
-| Document | Description |
-|----------|-------------|
-| [Configuration Guide](docs/configuration.md) | Detailed configuration options and examples |
-| [Docker Guide](DOCKER.md) | Docker deployment and development setup |
-| [Architecture](docs/architecture.md) | Technical design decisions and project structure |
-| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
-| [Contributing](CONTRIBUTING.md) | Development setup and contribution guidelines |
+| Document                                     | Description                                      |
+| -------------------------------------------- | ------------------------------------------------ |
+| [Configuration Guide](docs/configuration.md) | Detailed configuration options and examples      |
+| [Docker Guide](DOCKER.md)                    | Docker deployment and development setup          |
+| [Architecture](docs/architecture.md)         | Technical design decisions and project structure |
+| [Troubleshooting](docs/troubleshooting.md)   | Common issues and solutions                      |
+| [Contributing](CONTRIBUTING.md)              | Development setup and contribution guidelines    |
 
 ---
 
@@ -373,7 +375,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 <div align="center">
 
-**Built with ❤️ by developers, for developers**
+**Built for developers who work with pull requests**
 
 [⭐ Star this repository](https://github.com/bjess9/pr-compass) if PR Compass helps you stay on top of your pull requests!
 

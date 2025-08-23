@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bjess9/pr-pilot/internal/batch"
 	"github.com/bjess9/pr-pilot/internal/config"
 	"github.com/bjess9/pr-pilot/internal/github"
 	gh "github.com/google/go-github/v55/github"
@@ -51,6 +52,11 @@ type prEnhancementUpdateMsg struct {
 	error  error
 }
 type prEnhancementCompleteMsg struct{}
+type prBatchEnhancementMsg struct {
+	enhancedData   map[int]enhancedPRData
+	processedCount int
+	successCount   int
+}
 
 type model struct {
 	table               table.Model
@@ -71,6 +77,9 @@ type model struct {
 	enhancing        bool
 	enhancedCount    int
 
+	// Batch processing for concurrent PR enhancement
+	batchManager *batch.Manager[*gh.PullRequest, enhancedPRData]
+
 	// Context for cancellation support
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -88,11 +97,31 @@ func InitialModel(token string) model {
 	// Create context with cancellation support for proper resource cleanup
 	ctx, cancel := context.WithCancel(context.Background())
 
+	// Create worker function for batch PR enhancement
+	enhancePRWorker := func(batchCtx context.Context, pr *gh.PullRequest) (enhancedPRData, error) {
+		// Create timeout context for this specific PR (10 seconds)
+		prCtx, prCancel := context.WithTimeout(batchCtx, 10*time.Second)
+		defer prCancel()
+
+		// Get GitHub client
+		client, err := github.NewClient(token)
+		if err != nil {
+			return enhancedPRData{Number: pr.GetNumber()}, err
+		}
+
+		// Fetch enhanced data for this PR (we'll need to extract this method)
+		return fetchEnhancedPRDataStatic(prCtx, client, pr)
+	}
+
+	// Create batch manager with 5 concurrent workers for optimal performance
+	batchManager := batch.NewManager(5, enhancePRWorker)
+
 	return model{
 		table:               t,
 		token:               token,
 		refreshIntervalMins: 5, // default, will be updated from config
 		enhancedData:        make(map[int]enhancedPRData),
+		batchManager:        batchManager,
 		ctx:                 ctx,
 		cancel:              cancel,
 	}
@@ -128,8 +157,7 @@ func (m *model) fetchPRs() tea.Msg {
 
 // Background enhancement command that fetches individual PR details
 func (m *model) enhancePRs() tea.Cmd {
-	cmds := m.enhancePRsIndividually()
-	return tea.Batch(cmds...)
+	return m.enhancePRsWithBatch()
 }
 
 // enhancePRsIndividually creates commands for each PR to be enhanced individually
@@ -199,6 +227,115 @@ func (m *model) enhanceSinglePR(pr *gh.PullRequest, delay time.Duration) tea.Cmd
 
 // fetchEnhancedPRData gets detailed PR information from individual API call
 func (m *model) fetchEnhancedPRData(ctx context.Context, client *gh.Client, pr *gh.PullRequest) (enhancedPRData, error) {
+	// Validate PR structure to avoid nil pointer panics
+	if pr == nil {
+		return enhancedPRData{}, fmt.Errorf("PR is nil")
+	}
+	if pr.GetBase() == nil || pr.GetBase().GetRepo() == nil {
+		return enhancedPRData{}, fmt.Errorf("PR base or repository is nil for PR #%d", pr.GetNumber())
+	}
+	if pr.GetBase().GetRepo().GetOwner() == nil {
+		return enhancedPRData{}, fmt.Errorf("PR repository owner is nil for PR #%d", pr.GetNumber())
+	}
+
+	owner := pr.GetBase().GetRepo().GetOwner().GetLogin()
+	repo := pr.GetBase().GetRepo().GetName()
+	number := pr.GetNumber()
+
+	// Additional validation for required fields
+	if owner == "" {
+		return enhancedPRData{}, fmt.Errorf("PR owner is empty for PR #%d", number)
+	}
+	if repo == "" {
+		return enhancedPRData{}, fmt.Errorf("PR repository name is empty for PR #%d", number)
+	}
+
+	// Get detailed PR data
+	detailedPR, _, err := client.PullRequests.Get(ctx, owner, repo, number)
+	if err != nil {
+		return enhancedPRData{}, err
+	}
+
+	// Get review status
+	reviews, _, err := client.PullRequests.ListReviews(ctx, owner, repo, number, nil)
+	reviewStatus := "unknown"
+	if err == nil {
+		reviewStatus = determineReviewStatus(reviews)
+	}
+
+	// Get checks status
+	checksStatus := "unknown"
+	if pr.GetHead() != nil {
+		if sha := pr.GetHead().GetSHA(); sha != "" {
+			checks, _, err := client.Checks.ListCheckRunsForRef(ctx, owner, repo, sha, nil)
+			if err == nil && checks != nil {
+				checksStatus = determineChecksStatus(checks.CheckRuns)
+			}
+		}
+	}
+
+	// Determine mergeable status
+	mergeableStatus := "unknown"
+	if detailedPR.Mergeable != nil {
+		if *detailedPR.Mergeable {
+			mergeableStatus = "clean"
+		} else {
+			mergeableStatus = "conflicts"
+		}
+	}
+
+	return enhancedPRData{
+		Number:         number,
+		Comments:       detailedPR.GetComments(),
+		ReviewComments: detailedPR.GetReviewComments(),
+		ReviewStatus:   reviewStatus,
+		ChecksStatus:   checksStatus,
+		Mergeable:      mergeableStatus,
+		Additions:      detailedPR.GetAdditions(),
+		Deletions:      detailedPR.GetDeletions(),
+		ChangedFiles:   detailedPR.GetChangedFiles(),
+		EnhancedAt:     time.Now(),
+	}, nil
+}
+
+// enhancePRsWithBatch uses the batch manager for concurrent PR enhancement
+func (m *model) enhancePRsWithBatch() tea.Cmd {
+	return func() tea.Msg {
+		// Limit to top 20 PRs for better performance
+		prsToEnhance := m.prs
+		if len(prsToEnhance) > 20 {
+			prsToEnhance = prsToEnhance[:20]
+		}
+
+		if len(prsToEnhance) == 0 {
+			return prEnhancementCompleteMsg{}
+		}
+
+		// Process all PRs concurrently using batch manager
+		results := m.batchManager.ProcessBatch(prsToEnhance)
+
+		// Convert results to a batch update message
+		var enhancedDataMap = make(map[int]enhancedPRData)
+		successCount := 0
+
+		for _, result := range results {
+			if result.Error == nil {
+				enhancedDataMap[result.Data.Number] = result.Data
+				successCount++
+			}
+			// Skip errors silently to avoid crashing the UI
+		}
+
+		return prBatchEnhancementMsg{
+			enhancedData:  enhancedDataMap,
+			processedCount: len(prsToEnhance),
+			successCount:   successCount,
+		}
+	}
+}
+
+// fetchEnhancedPRDataStatic is a static version of fetchEnhancedPRData for batch processing
+func fetchEnhancedPRDataStatic(ctx context.Context, client *gh.Client, pr *gh.PullRequest) (enhancedPRData, error) {
 	// Validate PR structure to avoid nil pointer panics
 	if pr == nil {
 		return enhancedPRData{}, fmt.Errorf("PR is nil")
@@ -436,6 +573,28 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhanced top %d with detailed data ✅", len(m.prs), currentCount)
 		}
 
+	case prBatchEnhancementMsg:
+		// Handle batch enhancement results
+		m.enhancementMutex.Lock()
+		// Update all enhanced data at once
+		for prNumber, prData := range msg.enhancedData {
+			m.enhancedData[prNumber] = prData
+		}
+		m.enhancedCount = msg.successCount
+		m.enhancing = false // Mark enhancement as complete
+		m.enhancementMutex.Unlock()
+
+		// Update table rows with all enhanced data
+		rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
+		m.table.SetRows(rows)
+		
+		// Update status message
+		if msg.successCount == msg.processedCount {
+			m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhanced top %d with detailed data ✅", len(m.prs), msg.successCount)
+		} else {
+			m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhanced %d/%d with detailed data ⚠️", len(m.prs), msg.successCount, msg.processedCount)
+		}
+
 	case prEnhancementCompleteMsg:
 		// This is now just a fallback/cleanup message
 		if m.enhancing {
@@ -449,6 +608,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Cancel all ongoing operations before quitting
 			if m.cancel != nil {
 				m.cancel()
+			}
+			// Stop batch manager gracefully
+			if m.batchManager != nil {
+				m.batchManager.Stop()
 			}
 			return m, tea.Quit
 

@@ -6,7 +6,7 @@
 # With GitHub CLI auth (most secure)
 docker run --rm -v ~/.config/gh:/root/.config/gh:ro ghcr.io/bjess9/pr-pilot:latest
 
-# With token (less secure)  
+# With token (less secure)
 docker run --rm -e GITHUB_TOKEN=ghp_xxx ghcr.io/bjess9/pr-pilot:latest
 ```
 

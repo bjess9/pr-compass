@@ -57,6 +57,9 @@ type prBatchEnhancementMsg struct {
 	processedCount int
 	successCount   int
 }
+type prBatchStartedMsg struct {
+	resultChan chan prEnhancementUpdateMsg
+}
 
 type model struct {
 	table               table.Model
@@ -79,6 +82,7 @@ type model struct {
 
 	// Batch processing for concurrent PR enhancement
 	batchManager *batch.Manager[*gh.PullRequest, enhancedPRData]
+	activeBatchChan chan prEnhancementUpdateMsg // Channel for streaming batch results
 
 	// Context for cancellation support
 	ctx    context.Context
@@ -298,7 +302,22 @@ func (m *model) fetchEnhancedPRData(ctx context.Context, client *gh.Client, pr *
 	}, nil
 }
 
-// enhancePRsWithBatch uses the batch manager for concurrent PR enhancement
+// listenForBatchResults creates a command that listens for streaming batch results
+func (m *model) listenForBatchResults(resultChan chan prEnhancementUpdateMsg) tea.Cmd {
+	return func() tea.Msg {
+		// Listen for the next result from the channel
+		result, ok := <-resultChan
+		if !ok {
+			// Channel closed, all results processed
+			return prEnhancementCompleteMsg{}
+		}
+		
+		// Return the individual result message
+		return result
+	}
+}
+
+// enhancePRsWithBatch uses the batch manager for concurrent PR enhancement with real-time updates
 func (m *model) enhancePRsWithBatch() tea.Cmd {
 	return func() tea.Msg {
 		// Limit to top 20 PRs for better performance
@@ -311,26 +330,32 @@ func (m *model) enhancePRsWithBatch() tea.Cmd {
 			return prEnhancementCompleteMsg{}
 		}
 
-		// Process all PRs concurrently using batch manager
-		results := m.batchManager.ProcessBatch(prsToEnhance)
+		// Create a channel to collect individual results
+		resultChan := make(chan prEnhancementUpdateMsg, len(prsToEnhance))
+		
+		// Process PRs concurrently with real-time callbacks
+		go func() {
+			m.batchManager.ProcessBatchWithCallback(prsToEnhance, func(index int, result batch.Result[enhancedPRData]) {
+				// Send individual update message for each completed PR
+				if result.Error != nil {
+					// Send error message
+					resultChan <- prEnhancementUpdateMsg{
+						prData: enhancedPRData{Number: prsToEnhance[index].GetNumber()},
+						error:  result.Error,
+					}
+				} else {
+					// Send success message
+					resultChan <- prEnhancementUpdateMsg{
+						prData: result.Data,
+						error:  nil,
+					}
+				}
+			})
+			close(resultChan)
+		}()
 
-		// Convert results to a batch update message
-		var enhancedDataMap = make(map[int]enhancedPRData)
-		successCount := 0
-
-		for _, result := range results {
-			if result.Error == nil {
-				enhancedDataMap[result.Data.Number] = result.Data
-				successCount++
-			}
-			// Skip errors silently to avoid crashing the UI
-		}
-
-		return prBatchEnhancementMsg{
-			enhancedData:  enhancedDataMap,
-			processedCount: len(prsToEnhance),
-			successCount:   successCount,
-		}
+		// Start listening for results
+		return prBatchStartedMsg{resultChan: resultChan}
 	}
 }
 
@@ -488,11 +513,12 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.refreshIntervalMins = msg.Cfg.RefreshIntervalMinutes
 		}
 
-		// Clear previous enhanced data
+		// Clear previous enhanced data and cancel ongoing batch processing
 		m.enhancementMutex.Lock()
 		m.enhancedData = make(map[int]enhancedPRData)
 		m.enhancing = false
 		m.enhancedCount = 0
+		m.activeBatchChan = nil // Cancel any ongoing batch processing
 		m.enhancementMutex.Unlock()
 
 		rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
@@ -546,35 +572,47 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.enhancePRs()
 
 	case prEnhancementUpdateMsg:
-		if msg.error != nil {
-			// Skip this PR on error, don't crash the whole thing
-			return m, nil
-		}
+		// Handle individual PR enhancement updates (works for both old and new batch approaches)
+		var continueListening tea.Cmd
+		
+		if msg.error == nil {
+			// Update enhanced data
+			m.enhancementMutex.Lock()
+			m.enhancedData[msg.prData.Number] = msg.prData
+			m.enhancedCount++
+			totalPRsToEnhance := len(m.prs)
+			if totalPRsToEnhance > 20 {
+				totalPRsToEnhance = 20 // We only enhance top 20
+			}
+			currentCount := m.enhancedCount
+			m.enhancementMutex.Unlock()
 
-		// Update enhanced data
-		m.enhancementMutex.Lock()
-		m.enhancedData[msg.prData.Number] = msg.prData
-		m.enhancedCount++
-		totalPRsToEnhance := len(m.prs)
-		if totalPRsToEnhance > 20 {
-			totalPRsToEnhance = 20 // We only enhance top 20
-		}
-		currentCount := m.enhancedCount
-		m.enhancementMutex.Unlock()
+			// Update table rows immediately with this new enhanced data
+			rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
+			m.table.SetRows(rows)
+			m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhancing %d/%d ⏳", len(m.prs), currentCount, totalPRsToEnhance)
 
-		// Update table rows immediately with this new enhanced data
-		rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
-		m.table.SetRows(rows)
-		m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhancing %d/%d ⏳", len(m.prs), currentCount, totalPRsToEnhance)
-
-		// Check if we're done enhancing
-		if currentCount >= totalPRsToEnhance {
-			m.enhancing = false
-			m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhanced top %d with detailed data ✅", len(m.prs), currentCount)
+			// Check if we're done enhancing
+			if currentCount >= totalPRsToEnhance {
+				m.enhancing = false
+				m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhanced top %d with detailed data ✅", len(m.prs), currentCount)
+			}
 		}
+		
+		// Continue listening for more results if we have an active batch channel
+		if m.activeBatchChan != nil {
+			continueListening = m.listenForBatchResults(m.activeBatchChan)
+		}
+		
+		return m, continueListening
+
+	case prBatchStartedMsg:
+		// Store the channel and start listening for streaming results
+		m.activeBatchChan = msg.resultChan
+		return m, m.listenForBatchResults(msg.resultChan)
 
 	case prBatchEnhancementMsg:
-		// Handle batch enhancement results
+		// Handle batch enhancement results (legacy - kept for compatibility)
 		m.enhancementMutex.Lock()
 		// Update all enhanced data at once
 		for prNumber, prData := range msg.enhancedData {
@@ -596,7 +634,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case prEnhancementCompleteMsg:
-		// This is now just a fallback/cleanup message
+		// Enhancement complete - cleanup batch channel
+		m.activeBatchChan = nil
 		if m.enhancing {
 			m.enhancing = false
 			m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhancement complete", len(m.prs))
@@ -605,15 +644,17 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
-			// Cancel all ongoing operations before quitting
-			if m.cancel != nil {
-				m.cancel()
-			}
-			// Stop batch manager gracefully
-			if m.batchManager != nil {
-				m.batchManager.Stop()
-			}
-			return m, tea.Quit
+					// Cancel all ongoing operations before quitting
+		if m.cancel != nil {
+			m.cancel()
+		}
+		// Stop batch manager gracefully
+		if m.batchManager != nil {
+			m.batchManager.Stop()
+		}
+		// Clear active batch channel
+		m.activeBatchChan = nil
+		return m, tea.Quit
 
 		case "h", "?":
 			m.showHelp = !m.showHelp

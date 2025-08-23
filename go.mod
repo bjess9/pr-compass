@@ -1,6 +1,6 @@
 module github.com/bjess9/pr-pilot
 
-go 1.23.2
+go 1.23.10
 
 require (
 	github.com/charmbracelet/bubbletea v1.1.2

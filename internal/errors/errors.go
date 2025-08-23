@@ -10,8 +10,8 @@ type ErrorType string
 
 const (
 	// Authentication error types
-	ErrorTypeAuthTokenInvalid     ErrorType = "auth_token_invalid"
-	ErrorTypeAuthTokenMissing     ErrorType = "auth_token_missing"
+	ErrorTypeAuthTokenInvalid     ErrorType = "auth_token_invalid"    // #nosec G101 -- This is an error type identifier, not credentials
+	ErrorTypeAuthTokenMissing     ErrorType = "auth_token_missing"    // #nosec G101 -- This is an error type identifier, not credentials
 	ErrorTypeAuthStorageFailed    ErrorType = "auth_storage_failed"
 	ErrorTypeAuthPermissionDenied ErrorType = "auth_permission_denied"
 

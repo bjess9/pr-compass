@@ -178,7 +178,7 @@ topics:
   - "api"
 `
 
-	err = os.WriteFile(configPath, []byte(testConfig), 0644)
+	err = os.WriteFile(configPath, []byte(testConfig), 0600)
 	if err != nil {
 		fmt.Printf("❌ Failed to write test config: %v\n", err)
 		return false

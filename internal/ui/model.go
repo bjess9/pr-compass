@@ -92,6 +92,10 @@ type model struct {
 
 	// Cache for improved performance
 	prCache *cache.PRCache
+	
+	// API optimization tracking
+	optimizedFetcher *github.OptimizedFetcher
+	rateLimitInfo    *github.RateLimitInfo
 }
 
 func InitialModel(token string) model {
@@ -167,9 +171,9 @@ func (m *model) fetchPRs() tea.Msg {
 	}
 
 	var prs []*gh.PullRequest
-	// Use cached fetching if cache is available
+	// Use optimized fetching with GraphQL + Caching + Rate Limiting
 	if m.prCache != nil {
-		prs, err = github.FetchPRsFromConfigWithCache(ctx, cfg, m.token, m.prCache)
+		prs, err = github.FetchPRsFromConfigOptimized(ctx, cfg, m.token, m.prCache)
 	} else {
 		prs, err = github.FetchPRsFromConfig(ctx, cfg, m.token)
 	}
@@ -407,7 +411,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
 		m.table.SetRows(rows)
 
-		// Create informative status message with org/topic info
+		// Create informative status message with org/topic info and rate limit
 		statusInfo := fmt.Sprintf("Loaded %d PRs", len(msg.Prs))
 		if msg.Cfg != nil {
 			switch msg.Cfg.Mode {
@@ -425,6 +429,14 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
+		
+		// Add rate limit info to status if available
+		if m.rateLimitInfo != nil {
+			resetTime := m.rateLimitInfo.ResetAt.Format("15:04")
+			statusInfo += fmt.Sprintf(" | API: %d/%d (resets %s)", 
+				m.rateLimitInfo.Remaining, m.rateLimitInfo.Limit, resetTime)
+		}
+		
 		m.statusMsg = statusInfo
 
 		// Start background enhancement

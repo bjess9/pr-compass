@@ -132,6 +132,25 @@ func FetchPRsFromConfigWithCache(ctx context.Context, cfg *config.Config, token 
 	return baseFetcher.FetchPRs(ctx, client, filter)
 }
 
+// FetchPRsFromConfigOptimized fetches PRs using all optimizations (GraphQL + Cache + Rate Limiting)
+func FetchPRsFromConfigOptimized(ctx context.Context, cfg *config.Config, token string, prCache *cache.PRCache) ([]*github.PullRequest, error) {
+	client, err := NewClient(token)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create filter based on config
+	filter := createFilterFromConfig(cfg)
+
+	// Create appropriate base fetcher
+	baseFetcher := NewFetcher(cfg)
+
+	// Create fully optimized fetcher with GraphQL + Caching + Rate Limiting
+	optimizedFetcher := NewOptimizedFetcher(baseFetcher, prCache, token)
+
+	return optimizedFetcher.FetchPRs(ctx, client, filter)
+}
+
 // createFilterFromConfig creates a PRFilter from configuration settings
 func createFilterFromConfig(cfg *config.Config) *PRFilter {
 	filter := &PRFilter{

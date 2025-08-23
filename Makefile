@@ -49,7 +49,7 @@ clean:
 	@echo "🧹 Cleaning up..."
 	rm -f pr-compass pr-compass.exe
 	rm -f coverage.out coverage.html
-	rm -rf /tmp/prpilot_test* test/fixtures/temp*
+	rm -rf /tmp/prcompass_test* test/fixtures/temp*
 
 # Run the application in development mode
 dev: build
@@ -59,11 +59,11 @@ dev: build
 # Configure for development (creates example config)
 dev-config:
 	@echo "⚙️ Setting up development configuration..."
-	@if [ ! -f ~/.prpilot_config.yaml ]; then \
-		cp example_config.yaml ~/.prpilot_config.yaml; \
-		echo "Created ~/.prpilot_config.yaml from example"; \
+	@if [ ! -f ~/.prcompass_config.yaml ]; then \
+		cp example_config.yaml ~/.prcompass_config.yaml; \
+		echo "Created ~/.prcompass_config.yaml from example"; \
 	else \
-		echo "Configuration already exists at ~/.prpilot_config.yaml"; \
+		echo "Configuration already exists at ~/.prcompass_config.yaml"; \
 	fi
 
 # Format code
@@ -92,7 +92,7 @@ setup: dev-deps dev-config
 	@echo "🎯 Development environment ready!"
 	@echo ""
 	@echo "Next steps:"
-	@echo "  1. Edit ~/.prpilot_config.yaml with your settings"
+	@echo "  1. Edit ~/.prcompass_config.yaml with your settings"
 	@echo "  2. Run 'make test' to verify everything works"
 	@echo "  3. Run 'make dev' to start the application"
 

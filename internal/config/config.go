@@ -94,5 +94,5 @@ func getConfigFilePath() string {
 		fmt.Printf("Unable to determine user home directory: %v\n", err)
 		os.Exit(1)
 	}
-	return fmt.Sprintf("%s/.prpilot_config.yaml", homeDir)
+	return fmt.Sprintf("%s/.prcompass_config.yaml", homeDir)
 }

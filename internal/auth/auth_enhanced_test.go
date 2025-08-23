@@ -122,12 +122,12 @@ func TestAuthenticate(t *testing.T) {
 					}
 				} else {
 					// Verify it's the right type of error
-					if prErr, ok := errors.IsPRPilotError(err); ok {
+					if prErr, ok := errors.IsPRCompassError(err); ok {
 						if !prErr.IsType(errors.ErrorTypeAuthTokenMissing) {
 							t.Errorf("Expected AuthTokenMissing error, got %s", prErr.Type)
 						}
 					} else {
-						t.Errorf("Expected PRPilotError, got %T: %v", err, err)
+						t.Errorf("Expected PRCompassError, got %T: %v", err, err)
 					}
 				}
 			} else {
@@ -168,12 +168,12 @@ func TestAuthenticateWithRealEnvironment(t *testing.T) {
 			t.Logf("No authentication available (expected in test environment): %v", err)
 
 			// Verify error type
-			if prErr, ok := errors.IsPRPilotError(err); ok {
+			if prErr, ok := errors.IsPRCompassError(err); ok {
 				if !prErr.IsType(errors.ErrorTypeAuthTokenMissing) {
 					t.Errorf("Expected AuthTokenMissing error, got %s", prErr.Type)
 				}
 			} else {
-				t.Errorf("Expected PRPilotError, got %T: %v", err, err)
+				t.Errorf("Expected PRCompassError, got %T: %v", err, err)
 			}
 		} else {
 			// If we got a token, it should be valid
@@ -276,7 +276,7 @@ func TestAuthenticateErrorHandling(t *testing.T) {
 
 		if err != nil {
 			// Verify correct error type
-			if prErr, ok := errors.IsPRPilotError(err); ok {
+			if prErr, ok := errors.IsPRCompassError(err); ok {
 				if !prErr.IsType(errors.ErrorTypeAuthTokenMissing) {
 					t.Errorf("Expected AuthTokenMissing error, got %s", prErr.Type)
 				}
@@ -287,7 +287,7 @@ func TestAuthenticateErrorHandling(t *testing.T) {
 					t.Error("Error message should mention GitHub")
 				}
 			} else {
-				t.Errorf("Expected PRPilotError, got %T: %v", err, err)
+				t.Errorf("Expected PRCompassError, got %T: %v", err, err)
 			}
 		}
 	})
@@ -414,7 +414,7 @@ func TestAuthenticationIntegration(t *testing.T) {
 			if err != nil {
 				t.Logf("Authentication failed: %v", err)
 				// Verify error provides helpful guidance
-				if prErr, ok := errors.IsPRPilotError(err); ok {
+				if prErr, ok := errors.IsPRCompassError(err); ok {
 					userMsg := prErr.UserFriendlyError()
 					t.Logf("User-friendly error message: %s", userMsg)
 

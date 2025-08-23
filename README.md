@@ -44,7 +44,7 @@ export GITHUB_TOKEN="ghp_xxx"    # Or set env var
 ```
 
 **2. Config:**
-Create `~/.prpilot_config.yaml`:
+Create `~/.prcompass_config.yaml`:
 
 ```yaml
 # Track repos by topic (recommended)

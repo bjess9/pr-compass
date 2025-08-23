@@ -15,7 +15,7 @@ docker run --rm -e GITHUB_TOKEN=ghp_xxx ghcr.io/bjess9/pr-compass:latest
 ```bash
 # Mount your config file
 docker run --rm \
-  -v ~/.prpilot_config.yaml:/root/.prpilot_config.yaml:ro \
+  -v ~/.prcompass_config.yaml:/root/.prcompass_config.yaml:ro \
   -v ~/.config/gh:/root/.config/gh:ro \
   ghcr.io/bjess9/pr-compass:latest
 ```

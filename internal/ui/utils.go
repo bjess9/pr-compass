@@ -559,7 +559,7 @@ func errorView(err error) string {
 	var message string
 
 	// Check if this is a domain-specific error
-	if prErr, isPRError := errors.IsPRPilotError(err); isPRError {
+	if prErr, isPRError := errors.IsPRCompassError(err); isPRError {
 		// Use user-friendly error message with suggestions
 		message = lipgloss.NewStyle().
 			Foreground(lipgloss.Color(ErrorColor)).

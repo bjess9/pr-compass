@@ -6,16 +6,16 @@ import (
 	"testing"
 )
 
-// TestPRPilotError_Error tests the Error() method
-func TestPRPilotError_Error(t *testing.T) {
+// TestPRCompassError_Error tests the Error() method
+func TestPRCompassError_Error(t *testing.T) {
 	tests := []struct {
 		name     string
-		err      *PRPilotError
+		err      *PRCompassError
 		expected string
 	}{
 		{
 			name: "error without cause",
-			err: &PRPilotError{
+			err: &PRCompassError{
 				Type:    ErrorTypeAuthTokenInvalid,
 				Message: "Token is invalid",
 			},
@@ -23,7 +23,7 @@ func TestPRPilotError_Error(t *testing.T) {
 		},
 		{
 			name: "error with cause",
-			err: &PRPilotError{
+			err: &PRCompassError{
 				Type:    ErrorTypeGitHubNetworkError,
 				Message: "Network failure",
 				Cause:   errors.New("connection timeout"),
@@ -42,16 +42,16 @@ func TestPRPilotError_Error(t *testing.T) {
 	}
 }
 
-// TestPRPilotError_UserFriendlyError tests the UserFriendlyError() method
-func TestPRPilotError_UserFriendlyError(t *testing.T) {
+// TestPRCompassError_UserFriendlyError tests the UserFriendlyError() method
+func TestPRCompassError_UserFriendlyError(t *testing.T) {
 	tests := []struct {
 		name     string
-		err      *PRPilotError
+		err      *PRCompassError
 		expected string
 	}{
 		{
 			name: "uses UserMessage when provided",
-			err: &PRPilotError{
+			err: &PRCompassError{
 				Message:     "Technical error message",
 				UserMessage: "User-friendly message",
 			},
@@ -59,7 +59,7 @@ func TestPRPilotError_UserFriendlyError(t *testing.T) {
 		},
 		{
 			name: "falls back to Message when UserMessage is empty",
-			err: &PRPilotError{
+			err: &PRCompassError{
 				Message:     "Technical error message",
 				UserMessage: "",
 			},
@@ -67,7 +67,7 @@ func TestPRPilotError_UserFriendlyError(t *testing.T) {
 		},
 		{
 			name: "includes suggestion when provided",
-			err: &PRPilotError{
+			err: &PRCompassError{
 				Message:     "Error occurred",
 				UserMessage: "Something went wrong",
 				Suggestion:  "Try doing this",
@@ -76,7 +76,7 @@ func TestPRPilotError_UserFriendlyError(t *testing.T) {
 		},
 		{
 			name: "no suggestion provided",
-			err: &PRPilotError{
+			err: &PRCompassError{
 				Message:     "Error occurred",
 				UserMessage: "Something went wrong",
 				Suggestion:  "",
@@ -95,18 +95,18 @@ func TestPRPilotError_UserFriendlyError(t *testing.T) {
 	}
 }
 
-// TestPRPilotError_Unwrap tests the Unwrap() method
-func TestPRPilotError_Unwrap(t *testing.T) {
+// TestPRCompassError_Unwrap tests the Unwrap() method
+func TestPRCompassError_Unwrap(t *testing.T) {
 	originalErr := errors.New("original error")
 
 	tests := []struct {
 		name     string
-		err      *PRPilotError
+		err      *PRCompassError
 		expected error
 	}{
 		{
 			name: "returns cause when present",
-			err: &PRPilotError{
+			err: &PRCompassError{
 				Type:  ErrorTypeTimeout,
 				Cause: originalErr,
 			},
@@ -114,7 +114,7 @@ func TestPRPilotError_Unwrap(t *testing.T) {
 		},
 		{
 			name: "returns nil when no cause",
-			err: &PRPilotError{
+			err: &PRCompassError{
 				Type:  ErrorTypeTimeout,
 				Cause: nil,
 			},
@@ -132,9 +132,9 @@ func TestPRPilotError_Unwrap(t *testing.T) {
 	}
 }
 
-// TestPRPilotError_IsType tests the IsType() method
-func TestPRPilotError_IsType(t *testing.T) {
-	err := &PRPilotError{
+// TestPRCompassError_IsType tests the IsType() method
+func TestPRCompassError_IsType(t *testing.T) {
+	err := &PRCompassError{
 		Type: ErrorTypeAuthTokenInvalid,
 	}
 
@@ -422,9 +422,9 @@ func TestNewGitHubErrorFromHTTPStatus(t *testing.T) {
 	}
 }
 
-// TestIsPRPilotError tests the error type checking utility function
-func TestIsPRPilotError(t *testing.T) {
-	prPilotErr := &PRPilotError{
+// TestIsPRCompassError tests the error type checking utility function
+func TestIsPRCompassError(t *testing.T) {
+	prCompassErr := &PRCompassError{
 		Type:    ErrorTypeAuthTokenInvalid,
 		Message: "Test error",
 	}
@@ -433,13 +433,13 @@ func TestIsPRPilotError(t *testing.T) {
 	tests := []struct {
 		name        string
 		err         error
-		expectedErr *PRPilotError
+		expectedErr *PRCompassError
 		expectedOk  bool
 	}{
 		{
-			name:        "PRPilotError returns correct error and true",
-			err:         prPilotErr,
-			expectedErr: prPilotErr,
+			name:        "PRCompassError returns correct error and true",
+			err:         prCompassErr,
+			expectedErr: prCompassErr,
 			expectedOk:  true,
 		},
 		{
@@ -458,12 +458,12 @@ func TestIsPRPilotError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err, ok := IsPRPilotError(tt.err)
+			err, ok := IsPRCompassError(tt.err)
 			if err != tt.expectedErr {
-				t.Errorf("IsPRPilotError() err = %v, expected %v", err, tt.expectedErr)
+				t.Errorf("IsPRCompassError() err = %v, expected %v", err, tt.expectedErr)
 			}
 			if ok != tt.expectedOk {
-				t.Errorf("IsPRPilotError() ok = %v, expected %v", ok, tt.expectedOk)
+				t.Errorf("IsPRCompassError() ok = %v, expected %v", ok, tt.expectedOk)
 			}
 		})
 	}
@@ -515,9 +515,9 @@ func TestErrorIntegration(t *testing.T) {
 	}
 
 	// Test error type checking with errors.As
-	var targetErr *PRPilotError
+	var targetErr *PRCompassError
 	if !errors.As(prErr, &targetErr) {
-		t.Error("errors.As should work with PRPilotError")
+		t.Error("errors.As should work with PRCompassError")
 	}
 	if targetErr.Type != ErrorTypeAuthTokenInvalid {
 		t.Error("Type should be preserved through errors.As")

@@ -1,6 +1,6 @@
 # Configuration
 
-**Location**: `~/.prpilot_config.yaml`  
+**Location**: `~/.prcompass_config.yaml`  
 **Example**: See `example_config.yaml` for full syntax
 
 ## Mode Selection Guide

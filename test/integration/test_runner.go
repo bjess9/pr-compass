@@ -1,4 +1,4 @@
-// Test runner for PR Pilot - provides comprehensive testing without external dependencies
+// Test runner for PR Compass - provides comprehensive testing without external dependencies
 package main
 
 import (
@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	fmt.Println("🚀 PR Pilot Test Suite")
+	fmt.Println("🧭 PR Compass Test Suite")
 	fmt.Println("========================")
 
 	// Run all tests
@@ -162,7 +162,7 @@ func runMockDataTests() bool {
 
 func testConfigurationLoading() bool {
 	// Create temporary config for testing
-	tempDir, err := os.MkdirTemp("", "prpilot_test")
+	tempDir, err := os.MkdirTemp("", "prcompass_test")
 	if err != nil {
 		fmt.Printf("❌ Failed to create temp directory: %v\n", err)
 		return false

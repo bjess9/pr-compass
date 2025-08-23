@@ -36,8 +36,8 @@ const (
 	ErrorTypeOrganizationNotFound ErrorType = "organization_not_found"
 )
 
-// PRPilotError represents a domain-specific error in the PR Compass application
-type PRPilotError struct {
+// PRCompassError represents a domain-specific error in the PR Compass application
+type PRCompassError struct {
 	Type        ErrorType
 	Message     string
 	UserMessage string // User-friendly message
@@ -46,7 +46,7 @@ type PRPilotError struct {
 }
 
 // Error implements the error interface
-func (e *PRPilotError) Error() string {
+func (e *PRCompassError) Error() string {
 	if e.Cause != nil {
 		return fmt.Sprintf("%s: %s (caused by: %v)", e.Type, e.Message, e.Cause)
 	}
@@ -54,7 +54,7 @@ func (e *PRPilotError) Error() string {
 }
 
 // UserFriendlyError returns a user-friendly error message with suggestions
-func (e *PRPilotError) UserFriendlyError() string {
+func (e *PRCompassError) UserFriendlyError() string {
 	msg := e.UserMessage
 	if msg == "" {
 		msg = e.Message
@@ -67,18 +67,18 @@ func (e *PRPilotError) UserFriendlyError() string {
 }
 
 // Unwrap returns the underlying cause error for error wrapping compatibility
-func (e *PRPilotError) Unwrap() error {
+func (e *PRCompassError) Unwrap() error {
 	return e.Cause
 }
 
 // IsType checks if the error is of a specific type
-func (e *PRPilotError) IsType(errorType ErrorType) bool {
+func (e *PRCompassError) IsType(errorType ErrorType) bool {
 	return e.Type == errorType
 }
 
 // Authentication error constructors
-func NewAuthTokenInvalidError(cause error) *PRPilotError {
-	return &PRPilotError{
+func NewAuthTokenInvalidError(cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeAuthTokenInvalid,
 		Message:     "GitHub token format is invalid",
 		UserMessage: "Your GitHub token appears to be invalid or malformed",
@@ -87,8 +87,8 @@ func NewAuthTokenInvalidError(cause error) *PRPilotError {
 	}
 }
 
-func NewAuthTokenMissingError() *PRPilotError {
-	return &PRPilotError{
+func NewAuthTokenMissingError() *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeAuthTokenMissing,
 		Message:     "No GitHub token found",
 		UserMessage: "No GitHub authentication token found",
@@ -97,8 +97,8 @@ func NewAuthTokenMissingError() *PRPilotError {
 	}
 }
 
-func NewAuthStorageError(cause error) *PRPilotError {
-	return &PRPilotError{
+func NewAuthStorageError(cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeAuthStorageFailed,
 		Message:     "Failed to store authentication token",
 		UserMessage: "Unable to save your GitHub token for future use",
@@ -107,8 +107,8 @@ func NewAuthStorageError(cause error) *PRPilotError {
 	}
 }
 
-func NewAuthPermissionDeniedError(cause error) *PRPilotError {
-	return &PRPilotError{
+func NewAuthPermissionDeniedError(cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeAuthPermissionDenied,
 		Message:     "GitHub API permission denied",
 		UserMessage: "Access denied by GitHub API - insufficient permissions",
@@ -118,8 +118,8 @@ func NewAuthPermissionDeniedError(cause error) *PRPilotError {
 }
 
 // Configuration error constructors
-func NewConfigNotFoundError(configPath string, cause error) *PRPilotError {
-	return &PRPilotError{
+func NewConfigNotFoundError(configPath string, cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeConfigNotFound,
 		Message:     fmt.Sprintf("Configuration file not found: %s", configPath),
 		UserMessage: "Configuration file not found",
@@ -128,8 +128,8 @@ func NewConfigNotFoundError(configPath string, cause error) *PRPilotError {
 	}
 }
 
-func NewConfigInvalidError(cause error) *PRPilotError {
-	return &PRPilotError{
+func NewConfigInvalidError(cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeConfigInvalid,
 		Message:     "Configuration file is invalid",
 		UserMessage: "Your configuration file has invalid syntax or structure",
@@ -138,8 +138,8 @@ func NewConfigInvalidError(cause error) *PRPilotError {
 	}
 }
 
-func NewConfigModeInvalidError(mode string) *PRPilotError {
-	return &PRPilotError{
+func NewConfigModeInvalidError(mode string) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeConfigModeInvalid,
 		Message:     fmt.Sprintf("Invalid configuration mode: %s", mode),
 		UserMessage: fmt.Sprintf("Configuration mode '%s' is not supported", mode),
@@ -149,13 +149,13 @@ func NewConfigModeInvalidError(mode string) *PRPilotError {
 }
 
 // GitHub API error constructors
-func NewGitHubRateLimitError(resetTime string, cause error) *PRPilotError {
+func NewGitHubRateLimitError(resetTime string, cause error) *PRCompassError {
 	suggestion := "Wait for the rate limit to reset"
 	if resetTime != "" {
 		suggestion = fmt.Sprintf("Wait until %s for rate limit reset, or use a different token", resetTime)
 	}
 
-	return &PRPilotError{
+	return &PRCompassError{
 		Type:        ErrorTypeGitHubRateLimit,
 		Message:     "GitHub API rate limit exceeded",
 		UserMessage: "You've hit GitHub's API rate limit",
@@ -164,8 +164,8 @@ func NewGitHubRateLimitError(resetTime string, cause error) *PRPilotError {
 	}
 }
 
-func NewGitHubNetworkError(cause error) *PRPilotError {
-	return &PRPilotError{
+func NewGitHubNetworkError(cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeGitHubNetworkError,
 		Message:     "Network error connecting to GitHub API",
 		UserMessage: "Unable to connect to GitHub",
@@ -174,8 +174,8 @@ func NewGitHubNetworkError(cause error) *PRPilotError {
 	}
 }
 
-func NewGitHubNotFoundError(resource string, cause error) *PRPilotError {
-	return &PRPilotError{
+func NewGitHubNotFoundError(resource string, cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeGitHubNotFound,
 		Message:     fmt.Sprintf("GitHub resource not found: %s", resource),
 		UserMessage: fmt.Sprintf("Could not find %s on GitHub", resource),
@@ -184,8 +184,8 @@ func NewGitHubNotFoundError(resource string, cause error) *PRPilotError {
 	}
 }
 
-func NewGitHubForbiddenError(resource string, cause error) *PRPilotError {
-	return &PRPilotError{
+func NewGitHubForbiddenError(resource string, cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeGitHubForbidden,
 		Message:     fmt.Sprintf("Access forbidden to GitHub resource: %s", resource),
 		UserMessage: fmt.Sprintf("Access denied to %s", resource),
@@ -194,8 +194,8 @@ func NewGitHubForbiddenError(resource string, cause error) *PRPilotError {
 	}
 }
 
-func NewGitHubUnknownError(statusCode int, cause error) *PRPilotError {
-	return &PRPilotError{
+func NewGitHubUnknownError(statusCode int, cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeGitHubUnknown,
 		Message:     fmt.Sprintf("Unknown GitHub API error (HTTP %d)", statusCode),
 		UserMessage: "An unexpected error occurred with the GitHub API",
@@ -205,8 +205,8 @@ func NewGitHubUnknownError(statusCode int, cause error) *PRPilotError {
 }
 
 // Context error constructors
-func NewTimeoutError(operation string, cause error) *PRPilotError {
-	return &PRPilotError{
+func NewTimeoutError(operation string, cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeTimeout,
 		Message:     fmt.Sprintf("Operation timed out: %s", operation),
 		UserMessage: fmt.Sprintf("The %s operation took too long and was cancelled", operation),
@@ -215,8 +215,8 @@ func NewTimeoutError(operation string, cause error) *PRPilotError {
 	}
 }
 
-func NewCancelledError(operation string, cause error) *PRPilotError {
-	return &PRPilotError{
+func NewCancelledError(operation string, cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeCancelled,
 		Message:     fmt.Sprintf("Operation cancelled: %s", operation),
 		UserMessage: "The operation was cancelled",
@@ -226,8 +226,8 @@ func NewCancelledError(operation string, cause error) *PRPilotError {
 }
 
 // Repository error constructors
-func NewRepositoryInvalidError(repo string, cause error) *PRPilotError {
-	return &PRPilotError{
+func NewRepositoryInvalidError(repo string, cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeRepositoryInvalid,
 		Message:     fmt.Sprintf("Invalid repository format: %s", repo),
 		UserMessage: fmt.Sprintf("Repository '%s' has invalid format", repo),
@@ -236,8 +236,8 @@ func NewRepositoryInvalidError(repo string, cause error) *PRPilotError {
 	}
 }
 
-func NewOrganizationNotFoundError(org string, cause error) *PRPilotError {
-	return &PRPilotError{
+func NewOrganizationNotFoundError(org string, cause error) *PRCompassError {
+	return &PRCompassError{
 		Type:        ErrorTypeOrganizationNotFound,
 		Message:     fmt.Sprintf("Organization not found: %s", org),
 		UserMessage: fmt.Sprintf("Organization '%s' could not be found or accessed", org),
@@ -247,7 +247,7 @@ func NewOrganizationNotFoundError(org string, cause error) *PRPilotError {
 }
 
 // Helper function to convert HTTP status codes to appropriate GitHub errors
-func NewGitHubErrorFromHTTPStatus(statusCode int, resource string, cause error) *PRPilotError {
+func NewGitHubErrorFromHTTPStatus(statusCode int, resource string, cause error) *PRCompassError {
 	switch statusCode {
 	case http.StatusNotFound:
 		return NewGitHubNotFoundError(resource, cause)
@@ -262,9 +262,9 @@ func NewGitHubErrorFromHTTPStatus(statusCode int, resource string, cause error) 
 	}
 }
 
-// IsPRPilotError checks if an error is a PRPilotError
-func IsPRPilotError(err error) (*PRPilotError, bool) {
-	if prErr, ok := err.(*PRPilotError); ok {
+// IsPRCompassError checks if an error is a PRCompassError
+func IsPRCompassError(err error) (*PRCompassError, bool) {
+	if prErr, ok := err.(*PRCompassError); ok {
 		return prErr, true
 	}
 	return nil, false

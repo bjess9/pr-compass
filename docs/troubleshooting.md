@@ -43,13 +43,13 @@ Error: auth_permission_denied
 ### Config not found
 
 ```
-No configuration found. Create ~/.prpilot_config.yaml
+No configuration found. Create ~/.prcompass_config.yaml
 ```
 
 **Solution:**
 
 ```bash
-cp example_config.yaml ~/.prpilot_config.yaml
+cp example_config.yaml ~/.prcompass_config.yaml
 # Edit with your settings
 ```
 
@@ -214,8 +214,8 @@ curl -H "Authorization: token $GITHUB_TOKEN" \
 ### Reset configuration
 
 ```bash
-rm ~/.prpilot_config.yaml
-cp example_config.yaml ~/.prpilot_config.yaml
+rm ~/.prcompass_config.yaml
+cp example_config.yaml ~/.prcompass_config.yaml
 ```
 
 ### Clear authentication

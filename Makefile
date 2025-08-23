@@ -30,6 +30,14 @@ test-coverage:
 	go tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
 
+# Generate coverage summary for PR comments
+coverage-summary:
+	@echo "📈 Generating coverage summary..."
+	@go tool cover -func=coverage.out | tail -1 | awk '{print "**Total Coverage:** " $$3}' > coverage-summary.txt
+	@echo "" >> coverage-summary.txt
+	@echo "### 📊 Coverage by Package:" >> coverage-summary.txt
+	@go tool cover -func=coverage.out | grep -v "total:" | awk '{printf "- **%s**: %s\n", $$1, $$3}' >> coverage-summary.txt
+
 # Run tests in CI mode (quiet output)
 test-ci:
 	@echo "🤖 Running tests in CI mode..."

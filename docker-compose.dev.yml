@@ -1,0 +1,52 @@
+version: '3.8'
+
+# Development override for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  pr-pilot:
+    # Override build for development - use local source with volume mounting
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder  # Stop at build stage for development
+    # Mount source code for hot reloading during development
+    volumes:
+      - ./:/app
+      - ./config:/root/.config
+      - ~/.gitconfig:/root/.gitconfig:ro
+      - ~/.config/gh:/root/.config/gh:ro
+      # Cache go modules
+      - go-mod-cache:/go/pkg/mod
+    # Override command to stay running for development
+    command: ["tail", "-f", "/dev/null"]
+    # Add development environment variables
+    environment:
+      - GO_ENV=development
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - LOG_LEVEL=debug
+    # Add port mapping for potential future web interface
+    ports:
+      - "8080:8080"
+    # Enable development tools
+    stdin_open: true
+    tty: true
+
+  # Development tools container
+  dev-tools:
+    image: golang:1.21-alpine
+    container_name: pr-pilot-dev-tools
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - go-mod-cache:/go/pkg/mod
+    networks:
+      - pr-pilot-network
+    command: ["tail", "-f", "/dev/null"]
+    environment:
+      - GO_ENV=development
+    stdin_open: true
+    tty: true
+
+volumes:
+  go-mod-cache:

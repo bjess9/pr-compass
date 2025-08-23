@@ -63,6 +63,21 @@ type prBatchStartedMsg struct {
 	resultChan chan prEnhancementUpdateMsg
 }
 
+type backgroundRefreshStartMsg struct{}
+type backgroundRefreshCompleteMsg struct {
+	prs []*gh.PullRequest
+	cfg *config.Config
+}
+
+type lazyEnhancementMsg struct {
+	prNumber int
+}
+
+type singlePREnhancementCompleteMsg struct {
+	prData enhancedPRData
+	error  error
+}
+
 type model struct {
 	table               table.Model
 	prs                 []*gh.PullRequest
@@ -96,6 +111,13 @@ type model struct {
 	// API optimization tracking
 	optimizedFetcher *github.OptimizedFetcher
 	rateLimitInfo    *github.RateLimitInfo
+	
+	// Background refresh state
+	backgroundRefreshing bool
+	
+	// Lazy loading state
+	lastSelectedPRIndex int
+	enhancementQueue    map[int]bool // Track PRs being enhanced
 }
 
 func InitialModel(token string) model {
@@ -145,6 +167,8 @@ func InitialModel(token string) model {
 		ctx:                 ctx,
 		cancel:              cancel,
 		prCache:             prCache,
+		lastSelectedPRIndex: -1,
+		enhancementQueue:    make(map[int]bool),
 	}
 }
 
@@ -184,6 +208,36 @@ func (m *model) fetchPRs() tea.Msg {
 	return PrsWithConfigMsg{Prs: prs, Cfg: cfg}
 }
 
+// backgroundFetchPRs performs a background refresh without disrupting the UI
+func (m *model) backgroundFetchPRs() tea.Cmd {
+	return func() tea.Msg {
+		// Create a timeout context for fetching PRs
+		ctx, cancel := context.WithTimeout(m.ctx, 30*time.Second)
+		defer cancel()
+
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			// Silently fail background refresh on config errors
+			return backgroundRefreshCompleteMsg{prs: m.prs, cfg: nil}
+		}
+
+		var prs []*gh.PullRequest
+		// Use optimized fetching for background refresh
+		if m.prCache != nil {
+			prs, err = github.FetchPRsFromConfigOptimized(ctx, cfg, m.token, m.prCache)
+		} else {
+			prs, err = github.FetchPRsFromConfig(ctx, cfg, m.token)
+		}
+		
+		if err != nil {
+			// On error, return current data (graceful degradation)
+			return backgroundRefreshCompleteMsg{prs: m.prs, cfg: cfg}
+		}
+		
+		return backgroundRefreshCompleteMsg{prs: prs, cfg: cfg}
+	}
+}
+
 // Background enhancement command that fetches individual PR details
 func (m *model) enhancePRs() tea.Cmd {
 	return m.enhancePRsWithBatch()
@@ -204,46 +258,113 @@ func (m *model) listenForBatchResults(resultChan chan prEnhancementUpdateMsg) te
 	}
 }
 
-// enhancePRsWithBatch uses the batch manager for concurrent PR enhancement with real-time updates
-func (m *model) enhancePRsWithBatch() tea.Cmd {
+// enhanceSinglePR enhances a single PR on-demand for lazy loading
+func (m *model) enhanceSinglePR(prNumber int) tea.Cmd {
 	return func() tea.Msg {
-		// Limit to top 20 PRs for better performance
-		prsToEnhance := m.prs
-		if len(prsToEnhance) > 20 {
-			prsToEnhance = prsToEnhance[:20]
+		// Find the PR by number
+		var targetPR *gh.PullRequest
+		for _, pr := range m.prs {
+			if pr.GetNumber() == prNumber {
+				targetPR = pr
+				break
+			}
 		}
 
-		if len(prsToEnhance) == 0 {
-			return prEnhancementCompleteMsg{}
+		if targetPR == nil {
+			return singlePREnhancementCompleteMsg{
+				prData: enhancedPRData{Number: prNumber},
+				error:  fmt.Errorf("PR #%d not found", prNumber),
+			}
 		}
 
-		// Create a channel to collect individual results
-		resultChan := make(chan prEnhancementUpdateMsg, len(prsToEnhance))
-		
-		// Process PRs concurrently with real-time callbacks
-		go func() {
-			m.batchManager.ProcessBatchWithCallback(prsToEnhance, func(index int, result batch.Result[enhancedPRData]) {
-				// Send individual update message for each completed PR
-				if result.Error != nil {
-					// Send error message
-					resultChan <- prEnhancementUpdateMsg{
-						prData: enhancedPRData{Number: prsToEnhance[index].GetNumber()},
-						error:  result.Error,
-					}
-				} else {
-					// Send success message
-					resultChan <- prEnhancementUpdateMsg{
-						prData: result.Data,
-						error:  nil,
-					}
-				}
-			})
-			close(resultChan)
-		}()
+		// Create timeout context for this specific PR
+		ctx, cancel := context.WithTimeout(m.ctx, 10*time.Second)
+		defer cancel()
 
-		// Start listening for results
-		return prBatchStartedMsg{resultChan: resultChan}
+		// Get GitHub client
+		client, err := github.NewClient(m.token)
+		if err != nil {
+			return singlePREnhancementCompleteMsg{
+				prData: enhancedPRData{Number: prNumber},
+				error:  err,
+			}
+		}
+
+		// Fetch enhanced data for this PR
+		enhancedData, err := fetchEnhancedPRDataStatic(ctx, client, targetPR)
+		return singlePREnhancementCompleteMsg{
+			prData: enhancedData,
+			error:  err,
+		}
 	}
+}
+
+// checkAndEnhanceSelected checks if the currently selected PR needs enhancement
+func (m *model) checkAndEnhanceSelected() tea.Cmd {
+	if !m.loaded || len(m.filteredPRs) == 0 {
+		return nil
+	}
+
+	currentIndex := m.table.Cursor()
+	if currentIndex < 0 || currentIndex >= len(m.filteredPRs) {
+		return nil
+	}
+
+	// If selection hasn't changed, no need to do anything
+	if currentIndex == m.lastSelectedPRIndex {
+		return nil
+	}
+
+	m.lastSelectedPRIndex = currentIndex
+	
+	// Get the selected PR and nearby PRs for buffer enhancement
+	selectedPR := m.filteredPRs[currentIndex]
+	prNumber := selectedPR.GetNumber()
+
+	// Check if this PR is already enhanced or being enhanced
+	m.enhancementMutex.RLock()
+	_, alreadyEnhanced := m.enhancedData[prNumber]
+	_, beingEnhanced := m.enhancementQueue[prNumber]
+	m.enhancementMutex.RUnlock()
+
+	if alreadyEnhanced || beingEnhanced {
+		return nil
+	}
+
+	// Mark as being enhanced and start enhancement
+	m.enhancementMutex.Lock()
+	m.enhancementQueue[prNumber] = true
+	m.enhancementMutex.Unlock()
+
+	return tea.Batch(
+		func() tea.Msg { return lazyEnhancementMsg{prNumber: prNumber} },
+		m.enhanceSinglePR(prNumber),
+	)
+}
+
+// enhancePRsWithBatch - kept for compatibility but now does minimal enhancement
+func (m *model) enhancePRsWithBatch() tea.Cmd {
+	// For lazy loading, we don't enhance all PRs upfront
+	// Instead, we enhance just the first visible PR to get started
+	if len(m.prs) > 0 {
+		firstPR := m.prs[0]
+		prNumber := firstPR.GetNumber()
+		
+		// Check if already enhanced
+		m.enhancementMutex.RLock()
+		_, alreadyEnhanced := m.enhancedData[prNumber]
+		m.enhancementMutex.RUnlock()
+		
+		if !alreadyEnhanced {
+			m.enhancementMutex.Lock()
+			m.enhancementQueue[prNumber] = true
+			m.enhancementMutex.Unlock()
+			
+			return m.enhanceSinglePR(prNumber)
+		}
+	}
+	
+	return func() tea.Msg { return prEnhancementCompleteMsg{} }
 }
 
 // fetchEnhancedPRDataStatic is a static version of fetchEnhancedPRData for batch processing
@@ -406,9 +527,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.enhancing = false
 		m.enhancedCount = 0
 		m.activeBatchChan = nil // Cancel any ongoing batch processing
+		m.enhancementQueue = make(map[int]bool) // Clear enhancement queue
 		m.enhancementMutex.Unlock()
 
-		rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
+		rows := createProgressiveTableRows(m.filteredPRs, m.enhancedData, m.enhancementQueue)
 		m.table.SetRows(rows)
 
 		// Create informative status message with org/topic info and rate limit
@@ -437,6 +559,11 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.rateLimitInfo.Remaining, m.rateLimitInfo.Limit, resetTime)
 		}
 		
+		// Add background refresh indicator
+		if m.backgroundRefreshing {
+			statusInfo += " 🔄"
+		}
+		
 		m.statusMsg = statusInfo
 
 		// Start background enhancement
@@ -449,7 +576,103 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmd, refreshCmd(m.refreshIntervalMins), enhanceCmd)
 
 	case refreshMsg:
+		// Start background refresh if we already have data
+		if m.loaded && len(m.prs) > 0 {
+			m.backgroundRefreshing = true
+			return m, tea.Batch(
+				func() tea.Msg { return backgroundRefreshStartMsg{} },
+				refreshCmd(m.refreshIntervalMins),
+			)
+		}
+		// First load - use regular refresh
 		return m, tea.Batch(m.fetchPRs, refreshCmd(m.refreshIntervalMins))
+
+	case backgroundRefreshStartMsg:
+		return m, m.backgroundFetchPRs()
+
+	case backgroundRefreshCompleteMsg:
+		// Update data seamlessly without clearing enhanced data
+		oldPRCount := len(m.prs)
+		m.prs = sortPRsByNewest(msg.prs)
+		m.filteredPRs = m.prs
+		m.backgroundRefreshing = false
+		
+		// Update config if provided
+		if msg.cfg != nil {
+			m.refreshIntervalMins = msg.cfg.RefreshIntervalMinutes
+		}
+
+		// Update table rows with progressive loading indicators
+		rows := createProgressiveTableRows(m.filteredPRs, m.enhancedData, m.enhancementQueue)
+		m.table.SetRows(rows)
+
+		// Update status message with change indication
+		newPRCount := len(m.prs)
+		var changeIndicator string
+		if newPRCount > oldPRCount {
+			changeIndicator = fmt.Sprintf(" (+%d new)", newPRCount-oldPRCount)
+		} else if newPRCount < oldPRCount {
+			changeIndicator = fmt.Sprintf(" (-%d closed)", oldPRCount-newPRCount)
+		} else {
+			changeIndicator = " (updated)"
+		}
+
+		statusInfo := fmt.Sprintf("Loaded %d PRs%s", newPRCount, changeIndicator)
+		if msg.cfg != nil {
+			switch msg.cfg.Mode {
+			case "topics":
+				if msg.cfg.TopicOrg != "" && len(msg.cfg.Topics) > 0 {
+					statusInfo += fmt.Sprintf(" from %s (topics: %v)", msg.cfg.TopicOrg, msg.cfg.Topics)
+				}
+			case "organization":
+				if msg.cfg.Organization != "" {
+					statusInfo += fmt.Sprintf(" from %s organization", msg.cfg.Organization)
+				}
+			case "teams":
+				if msg.cfg.Organization != "" && len(msg.cfg.Teams) > 0 {
+					statusInfo += fmt.Sprintf(" from %s teams: %v", msg.cfg.Organization, msg.cfg.Teams)
+				}
+			}
+		}
+		
+		// Add rate limit info if available
+		if m.rateLimitInfo != nil {
+			resetTime := m.rateLimitInfo.ResetAt.Format("15:04")
+			statusInfo += fmt.Sprintf(" | API: %d/%d (resets %s)", 
+				m.rateLimitInfo.Remaining, m.rateLimitInfo.Limit, resetTime)
+		}
+		
+		m.statusMsg = statusInfo
+
+		// Start enhancement for any new PRs
+		if newPRCount > 0 {
+			enhanceCmd := func() tea.Msg {
+				time.Sleep(100 * time.Millisecond)
+				return prEnhancementStartMsg{}
+			}
+			return m, enhanceCmd
+		}
+
+		return m, nil
+
+	case lazyEnhancementMsg:
+		// Visual indicator that a PR is being enhanced
+		return m, nil
+
+	case singlePREnhancementCompleteMsg:
+		// Update enhanced data for single PR
+		m.enhancementMutex.Lock()
+		if msg.error == nil {
+			m.enhancedData[msg.prData.Number] = msg.prData
+		}
+		delete(m.enhancementQueue, msg.prData.Number) // Remove from enhancement queue
+		m.enhancementMutex.Unlock()
+
+		// Update table rows with new enhanced data
+		rows := createProgressiveTableRows(m.filteredPRs, m.enhancedData, m.enhancementQueue)
+		m.table.SetRows(rows)
+
+		return m, nil
 
 	case errMsg:
 		m.err = msg.err
@@ -463,7 +686,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.enhancedCount = 0 // Reset count when starting enhancement
 		m.enhancementMutex.Unlock()
 
-		m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhancing with detailed data...", len(m.prs))
+		m.statusMsg = fmt.Sprintf("Loaded %d PRs - lazy loading enabled", len(m.prs))
 		return m, m.enhancePRs()
 
 	case prEnhancementUpdateMsg:
@@ -483,7 +706,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.enhancementMutex.Unlock()
 
 			// Update table rows immediately with this new enhanced data
-			rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
+			rows := createProgressiveTableRows(m.filteredPRs, m.enhancedData, m.enhancementQueue)
 			m.table.SetRows(rows)
 			m.statusMsg = fmt.Sprintf("Loaded %d PRs - enhancing %d/%d ⏳", len(m.prs), currentCount, totalPRsToEnhance)
 
@@ -518,7 +741,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.enhancementMutex.Unlock()
 
 		// Update table rows with all enhanced data
-		rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
+		rows := createProgressiveTableRows(m.filteredPRs, m.enhancedData, m.enhancementQueue)
 		m.table.SetRows(rows)
 		
 		// Update status message
@@ -564,7 +787,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.filterMode = ""
 			m.filterValue = ""
 			m.filteredPRs = m.prs
-			rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
+			rows := createProgressiveTableRows(m.filteredPRs, m.enhancedData, m.enhancementQueue)
 			m.table.SetRows(rows)
 			m.statusMsg = fmt.Sprintf("Showing all %d PRs", len(m.prs))
 
@@ -597,6 +820,14 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
+		}
+	}
+
+	// Check if cursor position changed for lazy loading
+	if m.loaded && len(m.filteredPRs) > 0 {
+		enhanceCmd := m.checkAndEnhanceSelected()
+		if enhanceCmd != nil {
+			cmd = tea.Batch(cmd, enhanceCmd)
 		}
 	}
 
@@ -699,7 +930,7 @@ func (m *model) applyAuthorFilter(author string) (*model, tea.Cmd) {
 	m.filteredPRs = filtered
 	m.filterMode = "author"
 	m.filterValue = author
-	rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
+	rows := createProgressiveTableRows(m.filteredPRs, m.enhancedData, m.enhancementQueue)
 	m.table.SetRows(rows)
 	m.statusMsg = fmt.Sprintf("Showing %d PRs by %s", len(filtered), author)
 
@@ -718,7 +949,7 @@ func (m *model) filterByStatus() (*model, tea.Cmd) {
 	m.filteredPRs = filtered
 	m.filterMode = "status"
 	m.filterValue = "ready"
-	rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
+	rows := createProgressiveTableRows(m.filteredPRs, m.enhancedData, m.enhancementQueue)
 	m.table.SetRows(rows)
 	m.statusMsg = fmt.Sprintf("Showing %d ready PRs", len(filtered))
 
@@ -736,7 +967,7 @@ func (m *model) filterByDraft() (*model, tea.Cmd) {
 	m.filteredPRs = filtered
 	m.filterMode = "status"
 	m.filterValue = "draft"
-	rows := createTableRowsWithEnhancement(m.filteredPRs, m.enhancedData)
+	rows := createProgressiveTableRows(m.filteredPRs, m.enhancedData, m.enhancementQueue)
 	m.table.SetRows(rows)
 	m.statusMsg = fmt.Sprintf("Showing %d draft PRs", len(filtered))
 

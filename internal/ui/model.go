@@ -108,8 +108,7 @@ type model struct {
 	// Cache for improved performance
 	prCache *cache.PRCache
 	
-	// API optimization tracking
-	optimizedFetcher *github.OptimizedFetcher
+	// API optimization tracking  
 	rateLimitInfo    *github.RateLimitInfo
 	
 	// Background refresh state

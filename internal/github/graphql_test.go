@@ -69,7 +69,7 @@ func TestRateLimiterBackoff(t *testing.T) {
 		Remaining: 4000,
 		ResetAt:   time.Now().Add(time.Hour),
 	}
-	rateLimiter.Wait(ctx, normalRateLimit)
+	_ = rateLimiter.Wait(ctx, normalRateLimit)
 
 	// Wait a bit so the backoff logic kicks in properly
 	time.Sleep(10 * time.Millisecond)

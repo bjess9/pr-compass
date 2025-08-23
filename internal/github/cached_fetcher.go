@@ -147,8 +147,8 @@ func (cf *CachedFetcher) InvalidateCache(filter *PRFilter) error {
 	enhancedPath := cf.cache.GetCachePath(cacheKey, "enhanced")
 	
 	// Remove files (ignore errors as files might not exist)
-	cf.cache.RemoveCacheFile(prListPath)
-	cf.cache.RemoveCacheFile(enhancedPath)
+	_ = cf.cache.RemoveCacheFile(prListPath)
+	_ = cf.cache.RemoveCacheFile(enhancedPath)
 	
 	log.Printf("Invalidated cache for key: %s", cacheKey[:8])
 	return nil

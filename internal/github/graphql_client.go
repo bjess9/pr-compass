@@ -103,10 +103,10 @@ func (gc *GraphQLClient) Execute(ctx context.Context, req GraphQLRequest) (*Grap
 
 	// Update rate limit info from headers
 	if limit := resp.Header.Get("X-RateLimit-Limit"); limit != "" {
-		fmt.Sscanf(limit, "%d", &gc.rateLimits.Limit)
+		_, _ = fmt.Sscanf(limit, "%d", &gc.rateLimits.Limit)
 	}
 	if remaining := resp.Header.Get("X-RateLimit-Remaining"); remaining != "" {
-		fmt.Sscanf(remaining, "%d", &gc.rateLimits.Remaining)  
+		_, _ = fmt.Sscanf(remaining, "%d", &gc.rateLimits.Remaining)  
 	}
 	if reset := resp.Header.Get("X-RateLimit-Reset"); reset != "" {
 		var resetTimestamp int64

@@ -2,21 +2,27 @@
 
 # 🧭 PR Compass
 
-**Navigate Your GitHub Pull Requests with Confidence**
+<h3>Terminal-based pull request monitoring for developers and teams</h3>
 
-_A terminal-based pull request monitoring tool for developers and teams_
+<p>
+  <a href="https://github.com/bjess9/pr-compass/actions"><img src="https://github.com/bjess9/pr-compass/workflows/CI/badge.svg" alt="CI Status"></a>
+  <a href="https://github.com/bjess9/pr-compass/actions"><img src="https://github.com/bjess9/pr-compass/workflows/Docker%20Build%20and%20Push/badge.svg" alt="Docker Builds"></a>
+  <a href="https://goreportcard.com/report/github.com/bjess9/pr-compass"><img src="https://goreportcard.com/badge/github.com/bjess9/pr-compass" alt="Go Report Card"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/bjess9/pr-compass" alt="License"></a>
+  <br>
+  <a href="go.mod"><img src="https://img.shields.io/github/go-mod/go-version/bjess9/pr-compass" alt="Go Version"></a>
+  <a href="https://github.com/bjess9/pr-compass/pkgs/container/pr-compass"><img src="https://img.shields.io/badge/docker-ghcr.io-blue" alt="Docker Image"></a>
+  <a href="https://coveralls.io/github/bjess9/pr-compass?branch=main"><img src="https://coveralls.io/repos/github/bjess9/pr-compass/badge.svg?branch=main" alt="Coverage"></a>
+</p>
 
-[![CI Status](https://github.com/bjess9/pr-compass/workflows/CI/badge.svg)](https://github.com/bjess9/pr-compass/actions)
-[![Docker Builds](https://github.com/bjess9/pr-compass/workflows/Docker%20Build%20and%20Push/badge.svg)](https://github.com/bjess9/pr-compass/actions)
-[![Go Report Card](https://goreportcard.com/badge/github.com/bjess9/pr-compass)](https://goreportcard.com/report/github.com/bjess9/pr-compass)
-[![License](https://img.shields.io/github/license/bjess9/pr-compass)](LICENSE)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/bjess9/pr-compass)](go.mod)
-[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/bjess9/pr-compass/pkgs/container/pr-compass)
-[![Coverage](https://coveralls.io/repos/github/bjess9/pr-compass/badge.svg?branch=main)](https://coveralls.io/github/bjess9/pr-compass?branch=main)
-
-[Features](#-features) • [Quick Start](#-quick-start) • [Installation](#-installation) • [Configuration](#-configuration) • [Docker](#-docker) • [Contributing](#-contributing)
-
----
+<p>
+  <a href="#-features">Features</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-installation">Installation</a> •
+  <a href="#-configuration">Configuration</a> •
+  <a href="#-docker">Docker</a> •
+  <a href="#-contributing">Contributing</a>
+</p>
 
 </div>
 
@@ -24,16 +30,27 @@ _A terminal-based pull request monitoring tool for developers and teams_
 
 PR Compass is a **terminal-based interface** for monitoring GitHub pull requests across multiple repositories. Built for developers who need to stay on top of code reviews and track PR activity.
 
-### 🚀 Why PR Compass?
+<details>
+<summary><strong>🚀 Why choose PR Compass?</strong></summary>
 
-- **🔍 Multi-Repository View** - See PRs from multiple repos in one place
-- **⚡ Efficient Navigation** - Keyboard shortcuts and clean interface
-- **🎛️ Flexible Configuration** - Track by repositories, topics, teams, or organizations
-- **🧹 Clean Interface** - Simple TUI that focuses on what matters
-- **🐳 Docker Support** - Run with Docker if preferred
-- **🔒 Secure** - Uses existing GitHub authentication, no token storage
+<br>
 
----
+| Feature                       | Benefit                                                |
+| ----------------------------- | ------------------------------------------------------ |
+| 🔍 **Multi-Repository View**  | See PRs from multiple repos in one place               |
+| ⚡ **Efficient Navigation**   | Keyboard shortcuts and clean interface                 |
+| 🎛️ **Flexible Configuration** | Track by repositories, topics, teams, or organizations |
+| 🧹 **Clean Interface**        | Simple TUI that focuses on what matters                |
+| 🐳 **Docker Support**         | Run with Docker if preferred                           |
+| 🔒 **Secure**                 | Uses existing GitHub authentication, no token storage  |
+
+</details>
+
+<div align="center">
+
+**─────────────────────────────────────────**
+
+</div>
 
 ## ✨ Features
 
@@ -154,18 +171,22 @@ PR Compass supports **5 flexible configuration modes**: `topics` (recommended), 
 
 ### ⌨️ **Keyboard Shortcuts**
 
-| Key         | Action           | Description              |
-| ----------- | ---------------- | ------------------------ |
-| `↑` `k`     | Navigate up      | Move selection up        |
-| `↓` `j`     | Navigate down    | Move selection down      |
-| `Enter` `o` | Open PR          | Open in default browser  |
-| `r`         | Refresh          | Fetch latest PR data     |
-| `f`         | Filter by status | Draft/Open/All           |
-| `s`         | Sort options     | Updated/Created/Comments |
-| `d`         | Toggle drafts    | Show/hide draft PRs      |
-| `c`         | Clear filters    | Reset all filters        |
-| `h` `?`     | Help             | Show help screen         |
-| `q` `Esc`   | Quit             | Exit application         |
+<div align="center">
+
+|     Key     |      Action      | Description              |
+| :---------: | :--------------: | :----------------------- |
+|   `↑` `k`   |   Navigate up    | Move selection up        |
+|   `↓` `j`   |  Navigate down   | Move selection down      |
+| `Enter` `o` |     Open PR      | Open in default browser  |
+|     `r`     |     Refresh      | Fetch latest PR data     |
+|     `f`     | Filter by status | Draft/Open/All           |
+|     `s`     |   Sort options   | Updated/Created/Comments |
+|     `d`     |  Toggle drafts   | Show/hide draft PRs      |
+|     `c`     |  Clear filters   | Reset all filters        |
+|   `h` `?`   |       Help       | Show help screen         |
+|  `q` `Esc`  |       Quit       | Exit application         |
+
+</div>
 
 ### 📊 **PR Information Display**
 
@@ -221,7 +242,7 @@ We welcome contributions! See our detailed guide for setup, testing, and PR guid
 
 ## 🌟 Support
 
-- 🐛 **Issues**: [GitHub Issues](https://github.com/bjess9/pr-compass/issues)  
+- 🐛 **Issues**: [GitHub Issues](https://github.com/bjess9/pr-compass/issues)
 - 📖 **Documentation**: [docs/](docs/) folder
 
 ---
@@ -230,12 +251,24 @@ We welcome contributions! See our detailed guide for setup, testing, and PR guid
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
----
-
 <div align="center">
+
+**─────────────────────────────────────────**
+
+<br>
 
 **Built for developers who work with pull requests**
 
-[⭐ Star this repository](https://github.com/bjess9/pr-compass) if PR Compass helps you stay on top of your pull requests!
+<br>
+
+<a href="https://github.com/bjess9/pr-compass">
+  <img src="https://img.shields.io/badge/⭐_Star_this_repo-black?style=for-the-badge&logoColor=yellow" alt="Star this repository">
+</a>
+
+<br><br>
+
+```ascii
+Thanks for checking out PR Compass! 🧭
+```
 
 </div>

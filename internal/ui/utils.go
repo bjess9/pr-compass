@@ -13,7 +13,6 @@ import (
 	gh "github.com/google/go-github/v55/github"
 
 	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/lipgloss"
 )
 
 func IsWSL() bool {
@@ -231,59 +230,59 @@ func createTableRowsWithEnhancement(prs []*gh.PullRequest, enhancedData map[int]
 
 // getPRStatusIndicator returns merge readiness status
 func getPRStatusIndicator(pr *gh.PullRequest) string {
-	// Focus on MERGE READINESS only
+	// Focus on MERGE READINESS with enhanced visual indicators
 
 	if pr.GetDraft() {
-		return "Draft"
+		return "📝 Draft"
 	}
 
 	// Check merge conflicts and blocking issues
 	mergeableState := pr.GetMergeableState()
 	switch mergeableState {
 	case "dirty":
-		return "Conflicts"
+		return "⚠️ Conflicts"
 	case "blocked":
-		return "Blocked"
+		return "🚫 Blocked"
 	case "behind":
-		return "Behind"
+		return "📥 Behind"
 	case "clean":
-		return "Ready"
+		return "✅ Ready"
 	case "unstable":
-		return "Checks"
+		return "🔄 Checks"
 	default:
 		// For non-draft PRs without explicit state, assume ready
-		return "Ready"
+		return "✅ Ready"
 	}
 }
 
-// getPRReviewIndicator returns HUMAN REVIEW STATUS (not technical merge state)
+// getPRReviewIndicator returns HUMAN REVIEW STATUS with enhanced visual indicators
 func getPRReviewIndicator(pr *gh.PullRequest) string {
 	// Focus ONLY on human review process - completely separate from merge status
 
 	// For drafts, they're work in progress so reviews don't make sense yet
 	if pr.GetDraft() {
-		return "WIP"
+		return "🚧 WIP"
 	}
 
 	// Count requested reviewers to show review progress
 	totalReviewers := len(pr.RequestedReviewers) + len(pr.RequestedTeams)
 	if totalReviewers > 0 {
-		return fmt.Sprintf("0/%d", totalReviewers) // Shows "0/3" etc
+		return fmt.Sprintf("⏳ 0/%d", totalReviewers) // Shows "⏳ 0/3" etc
 	}
 
 	// Check if PR is old and might need attention (regardless of merge state)
 	daysSinceUpdated := time.Since(pr.GetUpdatedAt().Time).Hours() / 24
 	if daysSinceUpdated > 5 { // Older than 5 days
-		return "Stale"
+		return "🕰️ Stale"
 	}
 
 	// Check if it's recent and might not need formal review
 	if daysSinceUpdated < 1 {
-		return "Recent"
+		return "🆕 Recent"
 	}
 
 	// Default for PRs with no explicit reviewers
-	return "None"
+	return "❓ None"
 }
 
 // getPRCommentCount returns the total number of comments (issue + review comments)
@@ -331,11 +330,11 @@ func getPRStatusIndicatorEnhanced(pr *gh.PullRequest, enhancedData map[int]enhan
 		switch enhanced.Mergeable {
 		case "clean":
 			if enhanced.ChecksStatus == "failure" {
-				return "[!] Checks"
+				return "❌ Failed Checks"
 			}
-			return "[✓] Ready"
+			return "✅ Ready"
 		case "conflicts":
-			return "[X] Conflicts"
+			return "⚠️ Conflicts"
 		default:
 			// Fall through to basic logic
 		}
@@ -353,15 +352,15 @@ func getPRReviewIndicatorEnhanced(pr *gh.PullRequest, enhancedData map[int]enhan
 	if enhanced, exists := enhancedData[prNumber]; exists {
 		switch enhanced.ReviewStatus {
 		case "approved":
-			return "Approved"
+			return "✅ Approved"
 		case "changes_requested":
-			return "Changes"
+			return "🔄 Changes"
 		case "pending":
-			return "Pending"
+			return "⏳ Pending"
 		case "no_review":
-			return "No Review"
+			return "📝 No Review"
 		default:
-			return "Unknown"
+			return "❓ Unknown"
 		}
 	}
 
@@ -377,15 +376,15 @@ func getCIStatusEnhanced(pr *gh.PullRequest, enhancedData map[int]enhancedPRData
 	if enhanced, exists := enhancedData[prNumber]; exists {
 		switch enhanced.ChecksStatus {
 		case "success":
-			return "CI:✓"
+			return "✅ CI"
 		case "failure":
-			return "CI:✗"
+			return "❌ CI"
 		case "pending":
-			return "CI:⏳"
+			return "🔄 CI"
 		case "skipped":
-			return "CI:-"
+			return "⚪ CI"
 		default:
-			return "CI:?"
+			return "❓ CI"
 		}
 	}
 
@@ -546,34 +545,50 @@ func getPRLabelsDisplay(pr *gh.PullRequest) string {
 }
 
 func loadingView() string {
-	title := titleStyle.Render("PR Compass - Pull Request Monitor")
-	message := statusStyle.Render("⏳ Loading pull requests...")
-	help := helpStyle.Render("Press 'q' to quit")
+	title := titleStyle.Render("🧭 PR Compass - Pull Request Monitor")
+	
+	// Enhanced loading animation with multiple symbols
+	spinner := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	currentSpinner := spinner[int(time.Now().Unix())%len(spinner)]
+	
+	// Create a more informative loading message
+	loadingMsg := fmt.Sprintf("%s Fetching pull requests from GitHub...", currentSpinner)
+	message := loadingStyle.Render(loadingMsg)
+	
+	// Enhanced help text with more context
+	helpText := "Press 'q' to quit • Authenticating and fetching data..."
+	help := helpStyle.Render(helpText)
 
-	return title + "\n" + baseStyle.Render(message+"\n\n"+help)
+	return "\n" + title + "\n\n" + message + "\n\n" + help + "\n"
 }
 
 func errorView(err error) string {
-	title := titleStyle.Render("PR Compass - Pull Request Monitor")
+	title := titleStyle.Render("🧭 PR Compass - Pull Request Monitor")
 
 	var message string
+	var suggestions string
 
 	// Check if this is a domain-specific error
 	if prErr, isPRError := errors.IsPRCompassError(err); isPRError {
-		// Use user-friendly error message with suggestions
-		message = lipgloss.NewStyle().
-			Foreground(lipgloss.Color(ErrorColor)).
-			Render(fmt.Sprintf("❌ Error: %s", prErr.UserFriendlyError()))
+		// Enhanced error display with better formatting
+		errorMsg := fmt.Sprintf("🚫 %s", prErr.UserFriendlyError())
+		message = errorStyle.Render(errorMsg)
+		
+		// Add helpful suggestions based on error type
+		suggestions = mutedStyle.Render("💡 Try: Check your config file or run 'gh auth login' to authenticate")
 	} else {
-		// Fall back to generic error display
-		message = lipgloss.NewStyle().
-			Foreground(lipgloss.Color(ErrorColor)).
-			Render(fmt.Sprintf("❌ Error: %v", err))
+		// Enhanced generic error display
+		errorMsg := fmt.Sprintf("🚫 Unexpected error: %v", err)
+		message = errorStyle.Render(errorMsg)
+		
+		suggestions = mutedStyle.Render("💡 This might be a network issue or GitHub API problem")
 	}
 
-	help := helpStyle.Render("Press 'q' to quit")
+	// Enhanced help with more actions
+	helpText := "Press 'q' to quit • 'r' to retry • Check your internet connection"
+	help := helpStyle.Render(helpText)
 
-	return title + "\n" + baseStyle.Render(message+"\n\n"+help)
+	return "\n" + title + "\n\n" + message + "\n\n" + suggestions + "\n\n" + help + "\n"
 }
 
 // sortPRsByNewest sorts PRs by most recently updated first (not created)

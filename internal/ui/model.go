@@ -843,8 +843,8 @@ func (m *model) View() string {
 
 	m.table.SetStyles(tableStyles())
 
-	// Title
-	title := titleStyle.Render("PR Compass - Pull Request Monitor")
+	// Title with enhanced styling and icon
+	title := titleStyle.Render("🧭 PR Compass - Pull Request Monitor")
 
 	// Table
 	tableView := m.table.View()
@@ -855,35 +855,41 @@ func (m *model) View() string {
 		statusLine = "\n" + statusStyle.Render(m.statusMsg)
 	}
 
-	// Help text
-	helpText := "↑/↓: Navigate  •  Enter: Open PR  •  r: Refresh  •  h: Help  •  q: Quit"
+	// Enhanced help text with better symbols
+	helpText := "🔼🔽 Navigate  •  ⏎ Open PR  •  🔄 Refresh  •  ❓ Help  •  🚪 Quit"
 	if m.filterMode != "" {
-		helpText = fmt.Sprintf("Filter: %s=%s  •  c: Clear  •  %s", m.filterMode, m.filterValue, helpText)
+		helpText = fmt.Sprintf("🔍 Filter: %s=%s  •  🧹 Clear  •  %s", m.filterMode, m.filterValue, helpText)
 	}
 
 	// Extended help
 	if m.showHelp {
 		extendedHelp := "\n" + helpStyle.Render(`
-┌─ Commands & Column Guide ────────────────────────────────┐
-│ Navigation:  ↑/↓ or j/k    Navigate through PR list     │
-│ Actions:     Enter         Open PR in browser           │
-│              r             Manual refresh               │
+╭─ 🧭 PR Compass Commands & Visual Guide ─────────────────╮
 │                                                         │
-│ Filters:     f             Filter by author             │
-│              s             Filter by status             │
-│              d             Show drafts only             │
-│              c             Clear all filters            │
+│ 🎯 Navigation:                                          │
+│   ↑/↓ or j/k     Navigate through PR list              │
+│   Enter          🔗 Open PR in browser                  │
+│   r              🔄 Manual refresh                      │
 │                                                         │
-│ Activity Column Shows:                                   │
-│   8c              8 comments                            │
-│   5F +120/-45     5 files changed (+120, -45 lines)    │
-│   8c • 5F +120/-45  8 comments AND 5 files changed    │
-│   ?               Loading enhanced data...              │
-│   -               No activity                           │
+│ 🔍 Filters:                                             │
+│   f              👤 Filter by author                    │
+│   s              ⚡ Filter by status                     │
+│   d              📝 Show drafts only                    │
+│   c              🧹 Clear all filters                   │
 │                                                         │
-│ Help/Exit:   h/?           Toggle this help             │
-│              q/Ctrl+C      Quit application             │
-└─────────────────────────────────────────────────────────┘`)
+│ 📊 Column Symbols:                                      │
+│   ✅ Ready        PR ready to merge                     │
+│   ⚠️ Conflicts    Merge conflicts                       │
+│   🔄 Checks       CI/CD running                         │
+│   💬 8c           8 comments                            │
+│   📁 5F +120/-45  5 files, +120/-45 lines              │
+│   ⏳ Loading...   Fetching enhanced data                │
+│                                                         │
+│ ❓ Help:                                                 │
+│   h/?            Toggle this help                       │
+│   q/Ctrl+C       🚪 Exit application                    │
+│                                                         │
+╰─────────────────────────────────────────────────────────╯`)
 		return title + "\n" + baseStyle.Render(tableView+statusLine+extendedHelp)
 	}
 

@@ -449,7 +449,7 @@ func TestGetPRStatusIndicatorEnhanced(t *testing.T) {
 		{
 			name:         "no enhanced data falls back to original logic",
 			enhancedData: make(map[int]enhancedPRData),
-			expected:     "Ready", // Default for non-draft PR
+			expected:     "✅ Ready", // Default for non-draft PR with new Unicode
 		},
 		{
 			name: "enhanced data shows clean mergeable",
@@ -459,7 +459,7 @@ func TestGetPRStatusIndicatorEnhanced(t *testing.T) {
 					ChecksStatus: "success",
 				},
 			},
-			expected: "[✓] Ready",
+			expected: "✅ Ready",
 		},
 		{
 			name: "enhanced data shows conflicts",
@@ -469,7 +469,7 @@ func TestGetPRStatusIndicatorEnhanced(t *testing.T) {
 					ChecksStatus: "success",
 				},
 			},
-			expected: "[X] Conflicts",
+			expected: "⚠️ Conflicts",
 		},
 		{
 			name: "enhanced data shows failed checks",
@@ -479,7 +479,7 @@ func TestGetPRStatusIndicatorEnhanced(t *testing.T) {
 					ChecksStatus: "failure",
 				},
 			},
-			expected: "[!] Checks",
+			expected: "❌ Failed Checks",
 		},
 	}
 
@@ -509,7 +509,7 @@ func TestGetPRReviewIndicatorEnhanced(t *testing.T) {
 		{
 			name:         "no enhanced data falls back to original logic",
 			enhancedData: make(map[int]enhancedPRData),
-			expected:     "Recent", // Recent PR (< 1 day old) with no reviewers
+			expected:     "🆕 Recent", // Recent PR (< 1 day old) with no reviewers
 		},
 		{
 			name: "enhanced data shows approved",
@@ -518,7 +518,7 @@ func TestGetPRReviewIndicatorEnhanced(t *testing.T) {
 					ReviewStatus: "approved",
 				},
 			},
-			expected: "Approved",
+			expected: "✅ Approved",
 		},
 		{
 			name: "enhanced data shows changes requested",
@@ -527,7 +527,7 @@ func TestGetPRReviewIndicatorEnhanced(t *testing.T) {
 					ReviewStatus: "changes_requested",
 				},
 			},
-			expected: "Changes",
+			expected: "🔄 Changes",
 		},
 		{
 			name: "enhanced data shows pending",
@@ -536,7 +536,7 @@ func TestGetPRReviewIndicatorEnhanced(t *testing.T) {
 					ReviewStatus: "pending",
 				},
 			},
-			expected: "Pending",
+			expected: "⏳ Pending",
 		},
 		{
 			name: "enhanced data shows no review",
@@ -545,7 +545,7 @@ func TestGetPRReviewIndicatorEnhanced(t *testing.T) {
 					ReviewStatus: "no_review",
 				},
 			},
-			expected: "No Review",
+			expected: "📝 No Review",
 		},
 	}
 

@@ -18,7 +18,7 @@ func TestUserSeesLoadingIndicatorOnStartup(t *testing.T) {
 	initialView := app.View()
 
 	// Then they should see a loading indicator
-	if !strings.Contains(initialView, "⏳ Loading") {
+	if !strings.Contains(initialView, "Fetching pull requests") {
 		t.Error("User should see loading indicator when application starts")
 	}
 
@@ -43,7 +43,7 @@ func TestUserSeesNavigationHelpAfterPRsLoad(t *testing.T) {
 	view := updatedApp.View()
 
 	// Then they should no longer see loading
-	if strings.Contains(view, "⏳ Loading") {
+	if strings.Contains(view, "Fetching pull requests") {
 		t.Error("User should not see loading indicator after PRs are loaded")
 	}
 
@@ -53,7 +53,7 @@ func TestUserSeesNavigationHelpAfterPRsLoad(t *testing.T) {
 	}
 
 	// And they should know how to interact with PRs
-	if !strings.Contains(view, "Enter") {
+	if !strings.Contains(view, "⏎ Open PR") {
 		t.Error("User should know how to open PRs")
 	}
 }
@@ -97,7 +97,7 @@ func TestUserSeesHelpfulErrorMessages(t *testing.T) {
 	errorView := updatedApp.View()
 
 	// Then they should see a clear error message
-	if !strings.Contains(errorView, "Error") {
+	if !strings.Contains(errorView, "🚫") {
 		t.Error("User should see error indication")
 	}
 

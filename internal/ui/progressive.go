@@ -51,17 +51,17 @@ func createProgressiveTableRows(prs []*gh.PullRequest, enhancedData map[int]enha
 			comments = getPRCommentCountEnhanced(pr, enhancedData)
 			files = getPRFileChangesEnhanced(pr, enhancedData)
 		} else if isEnhancing {
-			// Show loading indicators
-			statusCombined = getPRStatusIndicator(pr) + " ⏳"
-			reviews = "Loading..."
+			// Show enhanced loading indicators
+			statusCombined = getPRStatusIndicator(pr) + " 🔄"
+			reviews = "🔍 Loading..."
 			comments = "⏳"
-			files = "⏳"
+			files = "📊 Loading..."
 		} else {
 			// Show basic data with indicators that more is available
-			statusCombined = getPRStatusIndicator(pr) + " ••"
+			statusCombined = getPRStatusIndicator(pr) + " 💫"
 			reviews = getPRReviewIndicator(pr)
-			comments = getPRCommentCount(pr) + "•"
-			files = "••"
+			comments = getPRCommentCount(pr) + " 💬"
+			files = "📁 More..."
 		}
 
 		// Time info is always available

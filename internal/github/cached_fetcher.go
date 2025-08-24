@@ -3,7 +3,6 @@ package github
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -55,12 +54,10 @@ func (cf *CachedFetcher) FetchPRs(ctx context.Context, client *ghApi.Client, fil
 
 	// Try to get from cache first
 	if cachedPRs, found := cf.cache.GetPRList(cacheKey); found {
-		log.Printf("Cache hit for key: %s (%d PRs)", cacheKey[:8], len(cachedPRs))
 		return cachedPRs, nil
 	}
 
 	// Cache miss - fetch from GitHub
-	log.Printf("Cache miss for key: %s - fetching from GitHub...", cacheKey[:8])
 	prs, err := cf.fetcher.FetchPRs(ctx, client, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch PRs: %w", err)
@@ -68,10 +65,8 @@ func (cf *CachedFetcher) FetchPRs(ctx context.Context, client *ghApi.Client, fil
 
 	// Cache the results
 	if err := cf.cache.SetPRList(cacheKey, prs, cf.cacheTTL); err != nil {
-		log.Printf("Warning: Failed to cache PR list: %v", err)
 		// Continue without caching - don't fail the request
 	} else {
-		log.Printf("Cached %d PRs with key: %s", len(prs), cacheKey[:8])
 	}
 
 	return prs, nil
@@ -112,10 +107,8 @@ func (cf *CachedFetcher) BackgroundRefresh(ctx context.Context, client *ghApi.Cl
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("Background refresh cancelled for fetcher: %s", cf.fetcherID[:20])
 			return
 		case <-ticker.C:
-			log.Printf("Background refresh triggered for fetcher: %s", cf.fetcherID[:20])
 			
 			// Fetch fresh data in background
 			filterKey := generateFilterKey(filter)
@@ -123,15 +116,12 @@ func (cf *CachedFetcher) BackgroundRefresh(ctx context.Context, client *ghApi.Cl
 			
 			prs, err := cf.fetcher.FetchPRs(ctx, client, filter)
 			if err != nil {
-				log.Printf("Background refresh failed: %v", err)
 				continue
 			}
 
 			// Update cache
 			if err := cf.cache.SetPRList(cacheKey, prs, cf.cacheTTL); err != nil {
-				log.Printf("Background cache update failed: %v", err)
 			} else {
-				log.Printf("Background refresh completed: cached %d PRs", len(prs))
 			}
 		}
 	}
@@ -150,6 +140,5 @@ func (cf *CachedFetcher) InvalidateCache(filter *PRFilter) error {
 	_ = cf.cache.RemoveCacheFile(prListPath)
 	_ = cf.cache.RemoveCacheFile(enhancedPath)
 	
-	log.Printf("Invalidated cache for key: %s", cacheKey[:8])
 	return nil
 }

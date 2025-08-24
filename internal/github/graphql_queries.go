@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -27,17 +26,13 @@ func NewGraphQLPRFetcher(token string, baseFetcher PRFetcher) *GraphQLPRFetcher 
 
 // FetchPRs implements PRFetcher interface using GraphQL
 func (g *GraphQLPRFetcher) FetchPRs(ctx context.Context, client *github.Client, filter *PRFilter) ([]*github.PullRequest, error) {
-	log.Printf("Fetching PRs using GraphQL API (80%% fewer API calls)")
 	
 	// Try GraphQL first, fallback to REST API if needed
 	prs, err := g.fetchPRsWithGraphQL(ctx, filter)
 	if err != nil {
-		log.Printf("GraphQL failed, falling back to REST API: %v", err)
 		return g.baseFetcher.FetchPRs(ctx, client, filter)
 	}
 	
-	log.Printf("GraphQL fetch successful: %d PRs, rate limit remaining: %d", 
-		len(prs), g.client.GetRateLimit().Remaining)
 	
 	return prs, nil
 }

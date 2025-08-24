@@ -3,7 +3,6 @@ package github
 import (
 	"context"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 	"sync"
@@ -288,8 +287,6 @@ func fetchOpenPRsWithFilter(ctx context.Context, client *github.Client, repos []
 	var skippedRepos []string
 	for result := range results {
 		if result.err != nil {
-			// Log the error instead of silently skipping for better debugging
-			log.Printf("Warning: Skipping repository due to error: %v", result.err)
 			skippedRepos = append(skippedRepos, extractRepoFromError(result.err))
 			continue
 		}
@@ -298,12 +295,10 @@ func fetchOpenPRsWithFilter(ctx context.Context, client *github.Client, repos []
 
 	// Log summary if any repos were skipped
 	if len(skippedRepos) > 0 {
-		log.Printf("Warning: Failed to fetch PRs from %d repositories: %v", len(skippedRepos), skippedRepos)
 	}
 
 	// Check if we successfully fetched from at least some repositories
 	if len(allPRs) == 0 && len(skippedRepos) > 0 {
-		log.Printf("Warning: No PRs retrieved - all %d repositories failed to fetch", len(skippedRepos))
 		// Don't return an error here as empty results might be valid, but log it
 	}
 
@@ -357,8 +352,6 @@ func fetchPRsFromTeamsWithFilter(ctx context.Context, client *github.Client, org
 		for {
 			repos, resp, err := client.Teams.ListTeamReposBySlug(ctx, org, teamSlug, opts)
 			if err != nil {
-				// Use proper logging instead of direct fmt.Printf
-				log.Printf("Warning: Could not access team %s in org %s: %v", teamSlug, org, err)
 				// Break out of pagination loop, but continue with next team
 				break
 			}
@@ -483,9 +476,7 @@ func fetchPRsFromSearchWithFilter(ctx context.Context, client *github.Client, qu
 		var failedPRs int
 		for result := range prResults {
 			if result.err != nil {
-				// Log PR fetch errors instead of silently skipping
 				failedPRs++
-				log.Printf("Warning: Failed to fetch PR details: %v", result.err)
 				continue
 			}
 			if result.pr != nil && !shouldExcludePR(result.pr, filter) {
@@ -493,10 +484,6 @@ func fetchPRsFromSearchWithFilter(ctx context.Context, client *github.Client, qu
 			}
 		}
 
-		// Log summary of failed PR fetches
-		if failedPRs > 0 {
-			log.Printf("Warning: Failed to fetch details for %d PRs from search results", failedPRs)
-		}
 
 		if resp.NextPage == 0 || len(allPRs) >= 200 {
 			break

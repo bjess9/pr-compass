@@ -417,6 +417,7 @@ func (m Model) renderLoading() string {
 	return loadingView()
 }
 
+
 func (m Model) renderMain(state *types.AppState) string {
 	m.table.SetStyles(tableStyles())
 	

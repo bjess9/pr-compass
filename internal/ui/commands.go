@@ -12,7 +12,7 @@ func openURLCmd(url string) tea.Cmd {
 	return func() tea.Msg {
 		err := openInBrowser(url)
 		if err != nil {
-			return errMsg{err}
+			return errorMsg{err}
 		}
 		return nil
 	}

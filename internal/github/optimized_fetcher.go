@@ -3,7 +3,6 @@ package github
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/bjess9/pr-compass/internal/cache"
@@ -45,8 +44,6 @@ func (r *RateLimiter) Wait(ctx context.Context, rateLimit *RateLimitInfo) error 
 		
 		if rateLimit.Remaining < 10 {
 			// Very close to limit, wait for reset
-			log.Printf("Rate limit critical (remaining: %d), waiting %v for reset", 
-				rateLimit.Remaining, resetDelay)
 			
 			select {
 			case <-time.After(resetDelay):
@@ -62,8 +59,6 @@ func (r *RateLimiter) Wait(ctx context.Context, rateLimit *RateLimitInfo) error 
 				r.backoffDelay = 1 * time.Second
 			}
 			
-			log.Printf("Rate limit warning (remaining: %d), backing off %v", 
-				rateLimit.Remaining, r.backoffDelay)
 		}
 	} else {
 		// Plenty of rate limit, use minimal delay
@@ -122,12 +117,10 @@ func (o *OptimizedFetcher) FetchPRs(ctx context.Context, client *github.Client, 
 
 	// Use cached fetcher if available (GraphQL + Cache)
 	if o.cachedFetcher != nil {
-		log.Printf("Using optimized fetcher: GraphQL + Caching + Rate Limiting")
 		return o.cachedFetcher.FetchPRs(ctx, client, filter)
 	}
 
 	// Fall back to GraphQL only
-	log.Printf("Using GraphQL fetcher with rate limiting")
 	return o.graphqlFetcher.FetchPRs(ctx, client, filter)
 }
 

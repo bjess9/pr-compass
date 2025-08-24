@@ -23,7 +23,7 @@ func main() {
 	}
 
 	if !config.ConfigExists() {
-		fmt.Println("No configuration found. Create ~/.prpilot_config.yaml")
+		fmt.Println("No configuration found. Create ~/.prcompass_config.yaml")
 		fmt.Println("See example_config.yaml for reference.")
 		return
 	}
@@ -34,9 +34,9 @@ func main() {
 	}
 
 	fmt.Println("Authentication successful. Starting PR Compass...")
-	model := ui.InitialModel(token)
+	model := ui.InitialModelNew(token)
 
-	p := tea.NewProgram(&model, tea.WithAltScreen())
+	p := tea.NewProgram(model, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error starting program: %v\n", err)
 		os.Exit(1)

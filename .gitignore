@@ -38,3 +38,6 @@ user_config.yaml
 
 # TODO list (workspace-specific)
 TODO.md
+
+# Version control metadata
+.jj/

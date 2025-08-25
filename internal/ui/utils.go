@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bjess9/pr-compass/internal/errors"
+	"github.com/bjess9/pr-compass/internal/ui/types"
 	gh "github.com/google/go-github/v55/github"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -165,7 +166,7 @@ func createTableRows(prs []*gh.PullRequest) []table.Row {
 }
 
 // createTableRowsWithEnhancement creates table rows using enhanced data when available
-func createTableRowsWithEnhancement(prs []*gh.PullRequest, enhancedData map[int]enhancedPRData) []table.Row {
+func createTableRowsWithEnhancement(prs []*gh.PullRequest, enhancedData map[int]types.EnhancedData) []table.Row {
 	// Get column widths for dynamic truncation
 	columns := createTableColumns()
 	prColumnWidth := columns[0].Width
@@ -304,7 +305,7 @@ func getPRCommentCount(pr *gh.PullRequest) string {
 }
 
 // getPRCommentCountEnhanced returns comment count from enhanced data or falls back to basic logic
-func getPRCommentCountEnhanced(pr *gh.PullRequest, enhancedData map[int]enhancedPRData) string {
+func getPRCommentCountEnhanced(pr *gh.PullRequest, enhancedData map[int]types.EnhancedData) string {
 	prNumber := pr.GetNumber()
 
 	// Try to get enhanced data first
@@ -321,7 +322,7 @@ func getPRCommentCountEnhanced(pr *gh.PullRequest, enhancedData map[int]enhanced
 }
 
 // getPRStatusIndicatorEnhanced returns enhanced merge readiness status
-func getPRStatusIndicatorEnhanced(pr *gh.PullRequest, enhancedData map[int]enhancedPRData) string {
+func getPRStatusIndicatorEnhanced(pr *gh.PullRequest, enhancedData map[int]types.EnhancedData) string {
 	prNumber := pr.GetNumber()
 
 	// Try to get enhanced data first
@@ -345,7 +346,7 @@ func getPRStatusIndicatorEnhanced(pr *gh.PullRequest, enhancedData map[int]enhan
 }
 
 // getPRReviewIndicatorEnhanced returns enhanced review status
-func getPRReviewIndicatorEnhanced(pr *gh.PullRequest, enhancedData map[int]enhancedPRData) string {
+func getPRReviewIndicatorEnhanced(pr *gh.PullRequest, enhancedData map[int]types.EnhancedData) string {
 	prNumber := pr.GetNumber()
 
 	// Try to get enhanced data first
@@ -369,7 +370,7 @@ func getPRReviewIndicatorEnhanced(pr *gh.PullRequest, enhancedData map[int]enhan
 }
 
 // getCIStatusEnhanced returns CI status from enhanced data
-func getCIStatusEnhanced(pr *gh.PullRequest, enhancedData map[int]enhancedPRData) string {
+func getCIStatusEnhanced(pr *gh.PullRequest, enhancedData map[int]types.EnhancedData) string {
 	prNumber := pr.GetNumber()
 
 	// Try to get enhanced data first
@@ -438,7 +439,7 @@ func formatPRTitle(pr *gh.PullRequest, maxWidth int) string {
 }
 
 // getPRActivityEnhanced returns combined activity info (comments + file changes) when enhanced data is available
-func getPRActivityEnhanced(pr *gh.PullRequest, enhancedData map[int]enhancedPRData) string {
+func getPRActivityEnhanced(pr *gh.PullRequest, enhancedData map[int]types.EnhancedData) string {
 	prNumber := pr.GetNumber()
 
 	// Try to get enhanced data first
@@ -466,7 +467,7 @@ func getPRActivityEnhanced(pr *gh.PullRequest, enhancedData map[int]enhancedPRDa
 }
 
 // getPRFileChangesEnhanced returns file change info when enhanced data is available
-func getPRFileChangesEnhanced(pr *gh.PullRequest, enhancedData map[int]enhancedPRData) string {
+func getPRFileChangesEnhanced(pr *gh.PullRequest, enhancedData map[int]types.EnhancedData) string {
 	prNumber := pr.GetNumber()
 
 	// Try to get enhanced data first
@@ -559,8 +560,8 @@ func loadingViewWithSpinner(spinnerIndex int) string {
 	loadingMsg := fmt.Sprintf("%s Fetching pull requests from GitHub...", currentSpinner)
 	message := loadingStyle.Render(loadingMsg)
 	
-	// Enhanced help text with more context
-	helpText := "Press 'q' to quit • Authenticating and fetching data..."
+	// Compact help text 
+	helpText := "🧭 Press q to quit • Fetching data..."
 	help := helpStyle.Render(helpText)
 
 	return "\n" + title + "\n\n" + message + "\n\n" + help + "\n"
@@ -588,8 +589,8 @@ func errorView(err error) string {
 		suggestions = mutedStyle.Render("💡 This might be a network issue or GitHub API problem")
 	}
 
-	// Enhanced help with more actions
-	helpText := "Press 'q' to quit • 'r' to retry • Check your internet connection"
+	// Compact help text with compass emoji
+	helpText := "🧭 Press q to quit • r to retry • Check connection"
 	help := helpStyle.Render(helpText)
 
 	return "\n" + title + "\n\n" + message + "\n\n" + suggestions + "\n\n" + help + "\n"

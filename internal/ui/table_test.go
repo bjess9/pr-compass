@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bjess9/pr-compass/internal/ui/types"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/google/go-github/v55/github"
 )
@@ -320,7 +321,7 @@ func TestCreateTableRowsWithEnhancement(t *testing.T) {
 	}
 
 	// Test without enhanced data
-	enhancedData := make(map[int]enhancedPRData)
+	enhancedData := make(map[int]types.EnhancedData)
 	rows := createTableRowsWithEnhancement(prs, enhancedData)
 
 	if len(rows) != 1 {
@@ -332,7 +333,7 @@ func TestCreateTableRowsWithEnhancement(t *testing.T) {
 	}
 
 	// Test with enhanced data
-	enhancedData[123] = enhancedPRData{
+	enhancedData[123] = types.EnhancedData{
 		Number:         123,
 		Comments:       5,
 		ReviewComments: 3,
@@ -384,17 +385,17 @@ func TestGetPRCommentCountEnhanced(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		enhancedData map[int]enhancedPRData
+		enhancedData map[int]types.EnhancedData
 		expected     string
 	}{
 		{
 			name:         "no enhanced data falls back to original logic",
-			enhancedData: make(map[int]enhancedPRData),
+			enhancedData: make(map[int]types.EnhancedData),
 			expected:     "?", // Should fall back to original logic returning "?"
 		},
 		{
 			name: "enhanced data with comments shows count",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					Comments:       5,
 					ReviewComments: 3,
@@ -404,7 +405,7 @@ func TestGetPRCommentCountEnhanced(t *testing.T) {
 		},
 		{
 			name: "enhanced data with zero comments shows dash",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					Comments:       0,
 					ReviewComments: 0,
@@ -414,7 +415,7 @@ func TestGetPRCommentCountEnhanced(t *testing.T) {
 		},
 		{
 			name: "enhanced data for different PR number falls back",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				999: { // Different PR number
 					Comments:       10,
 					ReviewComments: 5,
@@ -443,17 +444,17 @@ func TestGetPRStatusIndicatorEnhanced(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		enhancedData map[int]enhancedPRData
+		enhancedData map[int]types.EnhancedData
 		expected     string
 	}{
 		{
 			name:         "no enhanced data falls back to original logic",
-			enhancedData: make(map[int]enhancedPRData),
+			enhancedData: make(map[int]types.EnhancedData),
 			expected:     "✅ Ready", // Default for non-draft PR with new Unicode
 		},
 		{
 			name: "enhanced data shows clean mergeable",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					Mergeable:    "clean",
 					ChecksStatus: "success",
@@ -463,7 +464,7 @@ func TestGetPRStatusIndicatorEnhanced(t *testing.T) {
 		},
 		{
 			name: "enhanced data shows conflicts",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					Mergeable:    "conflicts",
 					ChecksStatus: "success",
@@ -473,7 +474,7 @@ func TestGetPRStatusIndicatorEnhanced(t *testing.T) {
 		},
 		{
 			name: "enhanced data shows failed checks",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					Mergeable:    "clean",
 					ChecksStatus: "failure",
@@ -503,17 +504,17 @@ func TestGetPRReviewIndicatorEnhanced(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		enhancedData map[int]enhancedPRData
+		enhancedData map[int]types.EnhancedData
 		expected     string
 	}{
 		{
 			name:         "no enhanced data falls back to original logic",
-			enhancedData: make(map[int]enhancedPRData),
+			enhancedData: make(map[int]types.EnhancedData),
 			expected:     "🆕 Recent", // Recent PR (< 1 day old) with no reviewers
 		},
 		{
 			name: "enhanced data shows approved",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					ReviewStatus: "approved",
 				},
@@ -522,7 +523,7 @@ func TestGetPRReviewIndicatorEnhanced(t *testing.T) {
 		},
 		{
 			name: "enhanced data shows changes requested",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					ReviewStatus: "changes_requested",
 				},
@@ -531,7 +532,7 @@ func TestGetPRReviewIndicatorEnhanced(t *testing.T) {
 		},
 		{
 			name: "enhanced data shows pending",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					ReviewStatus: "pending",
 				},
@@ -540,7 +541,7 @@ func TestGetPRReviewIndicatorEnhanced(t *testing.T) {
 		},
 		{
 			name: "enhanced data shows no review",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					ReviewStatus: "no_review",
 				},
@@ -569,17 +570,17 @@ func TestGetPRActivityEnhanced(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		enhancedData map[int]enhancedPRData
+		enhancedData map[int]types.EnhancedData
 		expected     string
 	}{
 		{
 			name:         "no enhanced data falls back to original logic",
-			enhancedData: make(map[int]enhancedPRData),
+			enhancedData: make(map[int]types.EnhancedData),
 			expected:     "?", // Should fall back to original getPRCommentCount
 		},
 		{
 			name: "enhanced data with comments only shows comment count",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					Comments:       5,
 					ReviewComments: 3,
@@ -590,7 +591,7 @@ func TestGetPRActivityEnhanced(t *testing.T) {
 		},
 		{
 			name: "enhanced data with file changes only shows file stats",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					Comments:       0,
 					ReviewComments: 0,
@@ -603,7 +604,7 @@ func TestGetPRActivityEnhanced(t *testing.T) {
 		},
 		{
 			name: "enhanced data with both comments and files shows both",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					Comments:       3,
 					ReviewComments: 2,
@@ -616,7 +617,7 @@ func TestGetPRActivityEnhanced(t *testing.T) {
 		},
 		{
 			name: "enhanced data with no activity shows dash",
-			enhancedData: map[int]enhancedPRData{
+			enhancedData: map[int]types.EnhancedData{
 				123: {
 					Comments:       0,
 					ReviewComments: 0,
@@ -725,7 +726,7 @@ func TestTableCreationNilSafety(t *testing.T) {
 				{
 					name: "createTableRowsWithEnhancement",
 					fn: func(prs []*github.PullRequest) []table.Row {
-						return createTableRowsWithEnhancement(prs, make(map[int]enhancedPRData))
+						return createTableRowsWithEnhancement(prs, make(map[int]types.EnhancedData))
 					},
 				},
 			}

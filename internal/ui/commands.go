@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"runtime"
 
+	"github.com/bjess9/pr-compass/internal/ui/types"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -12,7 +13,7 @@ func openURLCmd(url string) tea.Cmd {
 	return func() tea.Msg {
 		err := openInBrowser(url)
 		if err != nil {
-			return errorMsg{err}
+			return types.ErrorMsg{Error: err}
 		}
 		return nil
 	}

@@ -24,27 +24,42 @@ func InitialModelAuto(token string) tea.Model {
 	// Try to load multi-tab configuration
 	multiConfig, err := LoadMultiTabConfig()
 	if err != nil {
-		log.Printf("Failed to load multi-tab config, falling back to single-tab: %v", err)
-		singleModel := InitialModel(token)
-		return &singleModel
+		log.Printf("Failed to load multi-tab config, creating default config: %v", err)
+		// Create a default single tab configuration and use multi-tab model
+		defaultConfig := &MultiTabConfig{
+			RefreshIntervalMinutes: 5,
+			Tabs: []TabConfig{
+				{
+					Name: "Main",
+					Mode: "repos", // Will auto-detect actual mode
+					RefreshIntervalMinutes: 5,
+					MaxPRs: 50,
+				},
+			},
+		}
+		return InitialMultiTabModel(token, defaultConfig)
 	}
 
-	// If we have multiple tabs, use multi-tab model
-	if len(multiConfig.Tabs) > 1 {
+	// Always use multi-tab model for consistency, even with single tab
+	if len(multiConfig.Tabs) >= 1 {
 		return InitialMultiTabModel(token, multiConfig)
 	}
 
-	// If we have only one tab, use single-tab model for better performance
-	if len(multiConfig.Tabs) == 1 {
-		// For single tab, we can use the existing optimized single-tab model
-		singleModel := InitialModel(token)
-		return &singleModel
-	}
-
 	// No tabs configured - shouldn't happen due to fallback logic, but handle gracefully
-	log.Printf("No tabs found in config, creating default single-tab model")
-	singleModel := InitialModel(token)
-	return &singleModel
+	// Create a default single tab configuration and use multi-tab model
+	log.Printf("No tabs found in config, creating default tab configuration")
+	defaultConfig := &MultiTabConfig{
+		RefreshIntervalMinutes: 5,
+		Tabs: []TabConfig{
+			{
+				Name: "Main",
+				Mode: "repos", // Will auto-detect actual mode
+				RefreshIntervalMinutes: 5,
+				MaxPRs: 50,
+			},
+		},
+	}
+	return InitialMultiTabModel(token, defaultConfig)
 }
 
 // InitialMultiTabModel creates a new multi-tab model with the given configuration

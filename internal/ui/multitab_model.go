@@ -9,6 +9,7 @@ import (
 	"github.com/bjess9/pr-compass/internal/github"
 	gh "github.com/google/go-github/v55/github"
 
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -230,56 +231,212 @@ func (m *MultiTabModel) updateActiveTab(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if activeTab == nil {
 		return m, nil
 	}
-	
-	// Create a temporary single-tab model to handle the message
-	singleModel := &model{
-		table:               activeTab.Table,
-		prs:                 activeTab.PRs,
-		filteredPRs:         activeTab.FilteredPRs,
-		loaded:              activeTab.Loaded,
-		err:                 activeTab.Error,
-		token:               m.TabManager.Token,
-		refreshIntervalMins: activeTab.Config.RefreshIntervalMinutes,
-		showHelp:            activeTab.ShowHelp,
-		filterMode:          activeTab.FilterMode,
-		filterValue:         activeTab.FilterValue,
-		statusMsg:           activeTab.StatusMsg,
-		enhancedData:        activeTab.EnhancedData,
-		enhancing:           activeTab.Enhancing,
-		enhancedCount:       activeTab.EnhancedCount,
-		batchManager:        activeTab.BatchManager,
-		activeBatchChan:     activeTab.ActiveBatchChan,
-		ctx:                 activeTab.Ctx,
-		cancel:              activeTab.Cancel,
-		prCache:             activeTab.PRCache,
-		backgroundRefreshing: activeTab.BackgroundRefreshing,
-		lastSelectedPRIndex: activeTab.LastSelectedPRIndex,
-		enhancementQueue:    activeTab.EnhancementQueue,
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q", "ctrl+c":
+			// Quit the application
+			return m, tea.Quit
+
+		case "h", "?":
+			// Toggle help
+			activeTab.ShowHelp = !activeTab.ShowHelp
+			return m, nil
+
+		case "r":
+			// Refresh current tab
+			if activeTab != nil {
+				return m, m.fetchPRsForTab(activeTab)
+			}
+			return m, nil
+
+		case "f":
+			// Start author filter
+			activeTab.FilterMode = "author"
+			activeTab.FilterValue = ""
+			activeTab.StatusMsg = "Enter author name to filter by:"
+			return m, nil
+
+		case "s":
+			// Start status filter
+			activeTab.FilterMode = "status"
+			activeTab.FilterValue = ""
+			activeTab.StatusMsg = "Enter status (draft/ready/conflicts):"
+			return m, nil
+
+		case "d":
+			// Toggle draft filter
+			if activeTab.FilterMode == "draft" {
+				activeTab.FilterMode = ""
+				activeTab.FilterValue = ""
+				activeTab.FilteredPRs = activeTab.PRs
+				activeTab.StatusMsg = "Draft filter cleared"
+			} else {
+				activeTab.FilterMode = "draft"
+				activeTab.FilterValue = "true"
+				activeTab.FilteredPRs = m.filterPRsByDraft(activeTab.PRs)
+				activeTab.StatusMsg = "Showing draft PRs only"
+			}
+			m.updateTableRows(activeTab)
+			return m, nil
+
+		case "c":
+			// Clear all filters
+			activeTab.FilterMode = ""
+			activeTab.FilterValue = ""
+			activeTab.FilteredPRs = activeTab.PRs
+			activeTab.StatusMsg = "All filters cleared"
+			m.updateTableRows(activeTab)
+			return m, nil
+
+		case "enter":
+			// Open selected PR in browser
+			if len(activeTab.FilteredPRs) > 0 {
+				selectedIndex := activeTab.Table.Cursor()
+				if selectedIndex < len(activeTab.FilteredPRs) {
+					pr := activeTab.FilteredPRs[selectedIndex]
+					url := pr.GetHTMLURL()
+					if url != "" {
+						return m, openURLCmd(url)
+					}
+				}
+			}
+			return m, nil
+
+		case "up", "k":
+			// Move table cursor up
+			activeTab.Table, _ = activeTab.Table.Update(msg)
+			return m, nil
+
+		case "down", "j":
+			// Move table cursor down
+			activeTab.Table, _ = activeTab.Table.Update(msg)
+			return m, nil
+
+		case "escape":
+			// Cancel current filter input
+			if activeTab.FilterMode != "" {
+				activeTab.FilterMode = ""
+				activeTab.FilterValue = ""
+				activeTab.StatusMsg = "Filter cancelled"
+			}
+			return m, nil
+
+		default:
+			// Handle filter input
+			if activeTab.FilterMode != "" {
+				return m.handleFilterInput(activeTab, msg.String())
+			}
+
+			// Pass other keys to table for navigation
+			activeTab.Table, _ = activeTab.Table.Update(msg)
+			return m, nil
+		}
+	}
+
+	return m, nil
+}
+
+// handleFilterInput processes filter input from the user
+func (m *MultiTabModel) handleFilterInput(tab *TabState, input string) (tea.Model, tea.Cmd) {
+	switch input {
+	case "backspace":
+		if len(tab.FilterValue) > 0 {
+			tab.FilterValue = tab.FilterValue[:len(tab.FilterValue)-1]
+		}
+	case "enter":
+		// Apply the filter
+		tab.FilteredPRs = m.applyFilter(tab.PRs, tab.FilterMode, tab.FilterValue)
+		m.updateTableRows(tab)
+		tab.StatusMsg = fmt.Sprintf("Filter applied: %s=%s (%d results)", tab.FilterMode, tab.FilterValue, len(tab.FilteredPRs))
+		tab.FilterMode = "" // Exit filter input mode
+		return m, nil
+	case "escape":
+		// Cancel filter
+		tab.FilterMode = ""
+		tab.FilterValue = ""
+		tab.StatusMsg = "Filter cancelled"
+		return m, nil
+	default:
+		// Add character to filter
+		if len(input) == 1 && input >= " " {
+			tab.FilterValue += input
+		}
 	}
 	
-	// Update the single model
-	updatedModel, cmd := singleModel.Update(msg)
-	updatedSingleModel := updatedModel.(*model)
+	// Update status message with current filter input
+	tab.StatusMsg = fmt.Sprintf("Filter %s: %s_", tab.FilterMode, tab.FilterValue)
+	return m, nil
+}
+
+// applyFilter applies a filter to the PRs list
+func (m *MultiTabModel) applyFilter(prs []*gh.PullRequest, mode, value string) []*gh.PullRequest {
+	if mode == "" || value == "" {
+		return prs
+	}
 	
-	// Copy the state back to the active tab
-	activeTab.Table = updatedSingleModel.table
-	activeTab.PRs = updatedSingleModel.prs
-	activeTab.FilteredPRs = updatedSingleModel.filteredPRs
-	activeTab.Loaded = updatedSingleModel.loaded
-	activeTab.Error = updatedSingleModel.err
-	activeTab.ShowHelp = updatedSingleModel.showHelp
-	activeTab.FilterMode = updatedSingleModel.filterMode
-	activeTab.FilterValue = updatedSingleModel.filterValue
-	activeTab.StatusMsg = updatedSingleModel.statusMsg
-	activeTab.EnhancedData = updatedSingleModel.enhancedData
-	activeTab.Enhancing = updatedSingleModel.enhancing
-	activeTab.EnhancedCount = updatedSingleModel.enhancedCount
-	activeTab.ActiveBatchChan = updatedSingleModel.activeBatchChan
-	activeTab.BackgroundRefreshing = updatedSingleModel.backgroundRefreshing
-	activeTab.LastSelectedPRIndex = updatedSingleModel.lastSelectedPRIndex
-	activeTab.EnhancementQueue = updatedSingleModel.enhancementQueue
+	var filtered []*gh.PullRequest
+	valueLower := strings.ToLower(value)
 	
-	return m, cmd
+	for _, pr := range prs {
+		include := false
+		
+		switch mode {
+		case "author":
+			author := ""
+			if pr.GetUser() != nil {
+				author = strings.ToLower(pr.GetUser().GetLogin())
+			}
+			include = strings.Contains(author, valueLower)
+			
+		case "status":
+			status := "ready"
+			if pr.GetDraft() {
+				status = "draft"
+			} else if pr.GetMergeableState() == "dirty" {
+				status = "conflicts"
+			}
+			include = strings.Contains(status, valueLower)
+			
+		case "draft":
+			include = pr.GetDraft() == (value == "true")
+		}
+		
+		if include {
+			filtered = append(filtered, pr)
+		}
+	}
+	
+	return filtered
+}
+
+// filterPRsByDraft returns only draft PRs
+func (m *MultiTabModel) filterPRsByDraft(prs []*gh.PullRequest) []*gh.PullRequest {
+	var drafts []*gh.PullRequest
+	for _, pr := range prs {
+		if pr.GetDraft() {
+			drafts = append(drafts, pr)
+		}
+	}
+	return drafts
+}
+
+// updateTableRows updates the table with current filtered PRs
+func (m *MultiTabModel) updateTableRows(tab *TabState) {
+	if len(tab.FilteredPRs) == 0 {
+		tab.Table.SetRows([]table.Row{})
+		return
+	}
+	
+	// Use enhanced table rows if we have enhanced data
+	if len(tab.EnhancedData) > 0 {
+		rows := createTableRowsWithEnhancement(tab.FilteredPRs, tab.EnhancedData)
+		tab.Table.SetRows(rows)
+	} else {
+		rows := createTableRows(tab.FilteredPRs)
+		tab.Table.SetRows(rows)
+	}
 }
 
 // View renders the multi-tab interface
@@ -303,18 +460,27 @@ func (m *MultiTabModel) View() string {
 	return tabBar + "\n" + tabContent
 }
 
-// renderTabBar renders the tab bar at the top with rate limiting info
+// renderTabBar renders the enhanced tab bar at the top with rate limiting info
 func (m *MultiTabModel) renderTabBar() string {
 	if len(m.TabManager.Tabs) <= 1 {
 		return "" // Don't show tab bar for single tab
 	}
 	
-	// Rate limit status
+	// Rate limit status with better formatting
 	rateLimitInfo := ""
 	if m.TabManager.refreshScheduler != nil {
 		summary := m.TabManager.refreshScheduler.GetRateLimitSummary()
-		rateLimitInfo = fmt.Sprintf(" | Rate Limit: %d remaining | Active: %d", 
-			summary.RequestsRemaining, summary.ActiveRequests)
+		rateLimitColor := TextMuted
+		if summary.RequestsRemaining < 100 {
+			rateLimitColor = ErrorColor // Red when low
+		} else if summary.RequestsRemaining < 500 {
+			rateLimitColor = WarningColor // Yellow when getting low
+		}
+		
+		rateLimitInfo = fmt.Sprintf(" │ %s %d/5000 │ Active: %d", 
+			lipgloss.NewStyle().Foreground(lipgloss.Color(rateLimitColor)).Render("API:"),
+			summary.RequestsRemaining, 
+			summary.ActiveRequests)
 	}
 	
 	var tabButtons []string
@@ -325,51 +491,77 @@ func (m *MultiTabModel) renderTabBar() string {
 			tabName = tabName[:12] + "..."
 		}
 		
-		// Create tab button with indicators
-		var indicator string
-		if tab.Loaded {
+		// Enhanced status indicators with better visuals
+		var indicator, statusColor string
+		if tab.Error != nil {
+			indicator = " 🚨"
+			statusColor = ErrorColor
+		} else if !tab.Loaded {
+			// Show loading progress with animated dots
+			dots := []string{"⏳", "⏳ .", "⏳ ..", "⏳ ..."}
+			dotIndex := (m.SpinnerIndex / 5) % len(dots)
+			indicator = " " + dots[dotIndex]
+			statusColor = WarningColor
+		} else {
 			prCount := len(tab.PRs)
 			if prCount > 0 {
-				indicator = fmt.Sprintf(" (%d)", prCount)
+				indicator = fmt.Sprintf(" 📋%d", prCount)
+				statusColor = SuccessColor
+			} else {
+				indicator = " ✅"
+				statusColor = TextSecondary
 			}
-		} else if tab.Error != nil {
-			indicator = " ❌"
-		} else {
-			indicator = " ⏳"
 		}
 		
 		tabText := fmt.Sprintf("%d:%s%s", i+1, tabName, indicator)
 		
-		// Style the tab based on whether it's active
+		// Enhanced tab styling with borders and rounded corners
 		if i == m.TabManager.ActiveTabIdx {
-			// Active tab styling
+			// Active tab - prominent with border
 			tabButton := lipgloss.NewStyle().
 				Foreground(lipgloss.Color(TextBright)).
 				Background(lipgloss.Color(SelectedBgColor)).
 				Bold(true).
-				Padding(0, 2).
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(lipgloss.Color(statusColor)).
+				Padding(0, 1).
 				Render(tabText)
 			tabButtons = append(tabButtons, tabButton)
 		} else {
-			// Inactive tab styling
+			// Inactive tab - subtle with rounded corners
 			tabButton := lipgloss.NewStyle().
 				Foreground(lipgloss.Color(TextSecondary)).
 				Background(lipgloss.Color(SurfaceColor)).
-				Padding(0, 2).
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(lipgloss.Color(BorderColor)).
+				Padding(0, 1).
 				Render(tabText)
 			tabButtons = append(tabButtons, tabButton)
 		}
 	}
 	
-	// Join tabs and add border
-	tabBarContent := strings.Join(tabButtons, "")
+	// Add spacing between tabs and join horizontally  
+	var spacedButtons []string
+	for i, button := range tabButtons {
+		if i > 0 {
+			spacedButtons = append(spacedButtons, " ") // Add space between tabs
+		}
+		spacedButtons = append(spacedButtons, button)
+	}
+	tabBarContent := lipgloss.JoinHorizontal(lipgloss.Top, spacedButtons...)
 	
-	// Add help text for tab navigation with rate limit info
+	// Compact help text with compass theme
 	helpText := lipgloss.NewStyle().
 		Foreground(lipgloss.Color(TextMuted)).
-		Render("Tab: Next • Shift+Tab: Prev • Ctrl+1-9: Switch • Ctrl+T: New • Ctrl+W: Close" + rateLimitInfo)
+		Italic(true).
+		Render("🧭 Tab/⇧Tab Navigate • ^1-9 Switch • h Help" + rateLimitInfo)
 	
-	return tabBarContent + "\n" + helpText
+	// Compact separator line
+	separator := lipgloss.NewStyle().
+		Foreground(lipgloss.Color(BorderColor)).
+		Render(strings.Repeat("─", 60)) // Shorter line
+	
+	return tabBarContent + "\n" + helpText + "\n" + separator
 }
 
 // renderActiveTabContent renders the content of the active tab
@@ -384,79 +576,38 @@ func (m *MultiTabModel) renderActiveTabContent(activeTab *TabState) string {
 		return loadingViewWithSpinner(m.SpinnerIndex)
 	}
 	
-	// Create a temporary single model for rendering
-	singleModel := &model{
-		table:               activeTab.Table,
-		prs:                 activeTab.PRs,
-		filteredPRs:         activeTab.FilteredPRs,
-		loaded:              activeTab.Loaded,
-		err:                 activeTab.Error,
-		token:               m.TabManager.Token,
-		refreshIntervalMins: activeTab.Config.RefreshIntervalMinutes,
-		showHelp:            activeTab.ShowHelp,
-		filterMode:          activeTab.FilterMode,
-		filterValue:         activeTab.FilterValue,
-		statusMsg:           activeTab.StatusMsg,
-		enhancedData:        activeTab.EnhancedData,
-		enhancing:           activeTab.Enhancing,
-		enhancedCount:       activeTab.EnhancedCount,
-		backgroundRefreshing: activeTab.BackgroundRefreshing,
-	}
+	// Render the table directly without creating the old model
 	
 	// Use the existing view logic but without the title (since we have tabs)
-	singleModel.table.SetStyles(tableStyles())
+	activeTab.Table.SetStyles(tableStyles())
 	
 	// Table
-	tableView := singleModel.table.View()
+	tableView := activeTab.Table.View()
 	
 	// Status message
 	statusLine := ""
-	if singleModel.statusMsg != "" {
-		statusLine = "\n" + statusStyle.Render(singleModel.statusMsg)
+	if activeTab.StatusMsg != "" {
+		statusLine = "\n" + statusStyle.Render(activeTab.StatusMsg)
 	}
 	
-	// Help text (modified for multi-tab)
-	helpText := "🔼🔽 Navigate  •  ⏎ Open PR  •  🔄 Refresh  •  ❓ Help  •  🚪 Quit"
-	if singleModel.filterMode != "" {
-		helpText = fmt.Sprintf("🔍 Filter: %s=%s  •  🧹 Clear  •  %s", singleModel.filterMode, singleModel.filterValue, helpText)
+	// Help text (compact with compass emoji)
+	helpText := "🧭 Navigate: ↑↓  •  ⏎ Open  •  r Refresh  •  h Help  •  q Quit"
+	if activeTab.FilterMode != "" {
+		helpText = fmt.Sprintf("🔍 %s: %s  •  c Clear  •  %s", activeTab.FilterMode, activeTab.FilterValue, helpText)
 	}
 	
-	// Extended help (if active)
-	if singleModel.showHelp {
+	// Extended help (compact with compass theme)
+	if activeTab.ShowHelp {
 		extendedHelp := "\n" + helpStyle.Render(`
-╭─ 🧭 PR Compass Multi-Tab Commands & Visual Guide ──────╮
-│                                                         │
-│ 🎯 Navigation:                                          │
-│   ↑/↓ or j/k     Navigate through PR list              │
-│   Enter          🔗 Open PR in browser                  │
-│   r              🔄 Manual refresh                      │
-│                                                         │
-│ 📑 Tab Management:                                      │
-│   Tab            ➡️ Next tab                             │
-│   Shift+Tab      ⬅️ Previous tab                        │
-│   Ctrl+1-9       🔢 Switch to specific tab             │
-│   Ctrl+T         ➕ New tab (coming soon)              │
-│   Ctrl+W         ❌ Close current tab                   │
-│                                                         │
-│ 🔍 Filters:                                             │
-│   f              👤 Filter by author                    │
-│   s              ⚡ Filter by status                     │
-│   d              📝 Show drafts only                    │
-│   c              🧹 Clear all filters                   │
-│                                                         │
-│ 📊 Column Symbols:                                      │
-│   ✅ Ready        PR ready to merge                     │
-│   ⚠️ Conflicts    Merge conflicts                       │
-│   🔄 Checks       CI/CD running                         │
-│   💬 8c           8 comments                            │
-│   📁 5F +120/-45  5 files, +120/-45 lines              │
-│   ⏳ Loading...   Fetching enhanced data                │
-│                                                         │
-│ ❓ Help:                                                 │
-│   h/?            Toggle this help                       │
-│   q/Ctrl+C       🚪 Exit application                    │
-│                                                         │
-╰─────────────────────────────────────────────────────────╯`)
+╭─ 🧭 PR Compass - Navigation Guide ─╮
+│ 🎯 Navigate: ↑↓/jk  ⏎ Open PR      │
+│ 📑 Tabs: Tab/⇧Tab  ^1-9 Switch     │
+│ 🔍 Filter: f Author s Status d Draft │
+│ 🧹 Clear: c  🔄 Refresh: r  ❓ Help: h │
+│                                     │
+│ 🏷️  Status: ✅Ready ⚠️Conflict 🔄CI  │
+│ 💬 Comments 📁 Files ⏳ Loading     │
+╰─────────────────────────────────────╯`)
 		return baseStyle.Render(tableView+statusLine+extendedHelp)
 	}
 	
@@ -476,29 +627,32 @@ func (m *MultiTabModel) renderNoTabs() string {
 // The table height is FIXED and adapts to terminal size, NOT to number of PRs
 func (m *MultiTabModel) calculateTableHeight(tab *TabState) int {
 	if m.Height <= 0 {
-		return 10 // Conservative default height if window size not yet known
+		return 8 // More compact default for small terminals
 	}
 	
 	usedLines := 0
 	
-	// Tab bar (if multiple tabs) - 1 line for tabs, 1 line for border
+	// Account for terminal window chrome (title bar, tabs, etc.) - be more aggressive
+	usedLines += 6 // Terminal app chrome, status bars, etc.
+	
+	// Tab bar (compact) - tabs are now more compact boxes
 	if len(m.TabManager.Tabs) > 1 {
-		usedLines += 2
+		usedLines += 3 // Box border + content + separator
 	}
 	
-	// Status line (always reserve space for status)
+	// Status line (compact)
 	usedLines += 1
 	
-	// Help text (always 1 line for basic help)
+	// Help text (compact, single line)
 	usedLines += 1
 	
-	// Extended help (if active)
+	// Extended help (if active) - make more compact
 	if tab.ShowHelp {
-		usedLines += 25 // Extended help is about 25 lines
+		usedLines += 20 // Reduced from 25 lines
 	}
 	
-	// Reserve space for margins, table header, and borders
-	usedLines += 4 // Top margin, table header, bottom margin, plus buffer
+	// Reserve minimal space for table header and borders (more compact)
+	usedLines += 2 // Just table header + minimal buffer
 	
 	// Calculate remaining height for table content area
 	tableHeight := m.Height - usedLines

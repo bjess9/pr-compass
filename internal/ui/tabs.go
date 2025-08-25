@@ -8,7 +8,8 @@ import (
 	"github.com/bjess9/pr-compass/internal/batch"
 	"github.com/bjess9/pr-compass/internal/cache"
 	"github.com/bjess9/pr-compass/internal/config"
-	"github.com/bjess9/pr-compass/internal/github"
+	"github.com/bjess9/pr-compass/internal/ui/services"
+	"github.com/bjess9/pr-compass/internal/ui/types"
 	gh "github.com/google/go-github/v55/github"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -84,14 +85,14 @@ type TabState struct {
 	Error       error
 	
 	// Enhanced data tracking
-	EnhancedData     map[int]enhancedPRData // PR number -> enhanced data
+	EnhancedData     map[int]types.EnhancedData // PR number -> enhanced data
 	EnhancementMutex sync.RWMutex
 	Enhancing        bool
 	EnhancedCount    int
 	
 	// Background processing
-	BatchManager    *batch.Manager[*gh.PullRequest, enhancedPRData]
-	ActiveBatchChan chan prEnhancementUpdateMsg
+	BatchManager    *batch.Manager[*gh.PullRequest, types.EnhancedData]
+	ActiveBatchChan chan types.PrEnhancementUpdateMsg
 	
 	// Context for cancellation
 	Ctx    context.Context
@@ -153,18 +154,20 @@ func NewTabState(tabConfig *TabConfig, token string) *TabState {
 	// Create context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	
-	// Create worker function for batch PR enhancement
-	enhancePRWorker := func(batchCtx context.Context, pr *gh.PullRequest) (enhancedPRData, error) {
+	// Create worker function for batch PR enhancement using the enhancement service
+	enhancePRWorker := func(batchCtx context.Context, pr *gh.PullRequest) (types.EnhancedData, error) {
 		prCtx, prCancel := context.WithTimeout(batchCtx, 10*time.Second)
 		defer prCancel()
 		
-		// Get GitHub client
-		client, err := github.NewClient(token)
+		// Use the enhancement service instead of direct API calls
+		enhancementService := services.NewEnhancementService(token)
+		enhanced, err := enhancementService.EnhancePR(prCtx, pr)
 		if err != nil {
-			return enhancedPRData{Number: pr.GetNumber()}, err
+			return types.EnhancedData{Number: pr.GetNumber()}, err
 		}
 		
-		return fetchEnhancedPRDataStatic(prCtx, client, pr)
+		// Convert from service type to our type (they should be identical)
+		return types.EnhancedData(*enhanced), nil
 	}
 	
 	// Create batch manager
@@ -183,7 +186,7 @@ func NewTabState(tabConfig *TabConfig, token string) *TabState {
 	return &TabState{
 		Config:               tabConfig,
 		Table:                t,
-		EnhancedData:         make(map[int]enhancedPRData),
+		EnhancedData:         make(map[int]types.EnhancedData),
 		BatchManager:         batchManager,
 		Ctx:                  ctx,
 		Cancel:               cancel,

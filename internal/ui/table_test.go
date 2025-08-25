@@ -369,8 +369,8 @@ func TestCreateTableRowsWithEnhancement(t *testing.T) {
 
 	// Review column should show enhanced review status
 	reviewCol := rowsEnhanced[0][4] // Review is 5th column (index 4)
-	if reviewCol != "Approved" {
-		t.Errorf("Expected review column to be 'Approved', got '%s'", reviewCol)
+	if reviewCol != "✅ Approved" {
+		t.Errorf("Expected review column to be '✅ Approved', got '%s'", reviewCol)
 	}
 }
 

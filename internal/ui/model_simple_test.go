@@ -14,7 +14,7 @@ func TestInitialModelBasic(t *testing.T) {
 
 	// Test basic initialization
 	view := m.View()
-	if !strings.Contains(view, "Loading") {
+	if !strings.Contains(view, "Fetching") {
 		t.Error("Initial view should show loading message")
 	}
 }
@@ -63,7 +63,7 @@ func TestModelErrorHandling(t *testing.T) {
 	updatedModel, _ := m.Update(errorMsg)
 	view := updatedModel.View()
 
-	if !strings.Contains(view, "Error") {
+	if !strings.Contains(view, "🚫") {
 		t.Error("View should show error when error message is received")
 	}
 }

@@ -34,7 +34,7 @@ func main() {
 	}
 
 	fmt.Println("Authentication successful. Starting PR Compass...")
-	model := ui.InitialModelNew(token)
+	model := ui.InitialModelMultiTab(token)
 
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {

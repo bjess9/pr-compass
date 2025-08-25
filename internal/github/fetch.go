@@ -104,7 +104,26 @@ func FetchPRsFromConfig(ctx context.Context, cfg *config.Config, token string) (
 	// Create appropriate fetcher based on configuration
 	fetcher := NewFetcher(cfg)
 
-	return fetcher.FetchPRs(ctx, client, filter)
+	prs, err := fetcher.FetchPRs(ctx, client, filter)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Apply global PR limit
+	maxPRs := cfg.MaxPRs
+	if maxPRs == 0 {
+		maxPRs = 50 // Default limit
+	}
+	
+	if len(prs) > maxPRs {
+		// Sort by updated time (most recent first) and take the top N
+		sort.Slice(prs, func(i, j int) bool {
+			return prs[i].GetUpdatedAt().Time.After(prs[j].GetUpdatedAt().Time)
+		})
+		prs = prs[:maxPRs]
+	}
+	
+	return prs, nil
 }
 
 // FetchPRsFromConfigWithCache fetches PRs using caching for improved performance
@@ -121,14 +140,34 @@ func FetchPRsFromConfigWithCache(ctx context.Context, cfg *config.Config, token 
 	baseFetcher := NewFetcher(cfg)
 
 	// If cache is provided, wrap fetcher with caching (5 minute TTL)
+	var fetcher PRFetcher
 	if prCache != nil {
 		cacheTTL := 5 * time.Minute
-		cachedFetcher := NewCachedFetcher(baseFetcher, prCache, cacheTTL)
-		return cachedFetcher.FetchPRs(ctx, client, filter)
+		fetcher = NewCachedFetcher(baseFetcher, prCache, cacheTTL)
+	} else {
+		fetcher = baseFetcher
 	}
 
-	// Fallback to direct fetching without cache
-	return baseFetcher.FetchPRs(ctx, client, filter)
+	prs, err := fetcher.FetchPRs(ctx, client, filter)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Apply global PR limit
+	maxPRs := cfg.MaxPRs
+	if maxPRs == 0 {
+		maxPRs = 50 // Default limit
+	}
+	
+	if len(prs) > maxPRs {
+		// Sort by updated time (most recent first) and take the top N
+		sort.Slice(prs, func(i, j int) bool {
+			return prs[i].GetUpdatedAt().Time.After(prs[j].GetUpdatedAt().Time)
+		})
+		prs = prs[:maxPRs]
+	}
+	
+	return prs, nil
 }
 
 // FetchPRsFromConfigOptimized fetches PRs using all optimizations (GraphQL + Cache + Rate Limiting)
@@ -147,7 +186,26 @@ func FetchPRsFromConfigOptimized(ctx context.Context, cfg *config.Config, token 
 	// Create fully optimized fetcher with GraphQL + Caching + Rate Limiting
 	optimizedFetcher := NewOptimizedFetcher(baseFetcher, prCache, token)
 
-	return optimizedFetcher.FetchPRs(ctx, client, filter)
+	prs, err := optimizedFetcher.FetchPRs(ctx, client, filter)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Apply global PR limit
+	maxPRs := cfg.MaxPRs
+	if maxPRs == 0 {
+		maxPRs = 50 // Default limit
+	}
+	
+	if len(prs) > maxPRs {
+		// Sort by updated time (most recent first) and take the top N
+		sort.Slice(prs, func(i, j int) bool {
+			return prs[i].GetUpdatedAt().Time.After(prs[j].GetUpdatedAt().Time)
+		})
+		prs = prs[:maxPRs]
+	}
+	
+	return prs, nil
 }
 
 // createFilterFromConfig creates a PRFilter from configuration settings

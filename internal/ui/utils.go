@@ -545,11 +545,15 @@ func getPRLabelsDisplay(pr *gh.PullRequest) string {
 }
 
 func loadingView() string {
+	return loadingViewWithSpinner(0) // Default spinner index for backward compatibility
+}
+
+func loadingViewWithSpinner(spinnerIndex int) string {
 	title := titleStyle.Render("🧭 PR Compass - Pull Request Monitor")
 	
 	// Enhanced loading animation with multiple symbols
 	spinner := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
-	currentSpinner := spinner[int(time.Now().Unix())%len(spinner)]
+	currentSpinner := spinner[spinnerIndex%len(spinner)]
 	
 	// Create a more informative loading message
 	loadingMsg := fmt.Sprintf("%s Fetching pull requests from GitHub...", currentSpinner)

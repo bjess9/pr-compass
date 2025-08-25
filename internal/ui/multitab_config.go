@@ -3,6 +3,8 @@ package ui
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/bjess9/pr-compass/internal/config"
 	"github.com/bjess9/pr-compass/internal/errors"
@@ -161,6 +163,21 @@ func getConfigFilePath() string {
 
 // CreateExampleMultiTabConfig creates an example multi-tab configuration file
 func CreateExampleMultiTabConfig(path string) error {
+	// Validate path to prevent file inclusion vulnerabilities
+	if path == "" {
+		return fmt.Errorf("path cannot be empty")
+	}
+	
+	// Basic path validation - ensure it ends with .yaml extension and doesn't contain suspicious patterns
+	if !strings.HasSuffix(path, ".yaml") && !strings.HasSuffix(path, ".yml") {
+		return fmt.Errorf("config file must have .yaml or .yml extension")
+	}
+	
+	// Prevent directory traversal attacks
+	cleanPath := filepath.Clean(path)
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("path cannot contain directory traversal sequences")
+	}
 	exampleConfig := `# PR Compass Multi-Tab Configuration
 # Save this as ~/.prcompass_config.yaml
 

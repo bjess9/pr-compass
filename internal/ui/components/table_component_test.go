@@ -22,10 +22,9 @@ func TestTableComponent_CreateTable(t *testing.T) {
 	
 	table := component.CreateTable()
 	
-	// Verify table is created
-	if &table == nil {
-		t.Fatal("CreateTable returned nil")
-	}
+	// Verify table is created (just check it doesn't panic)
+	// The table.Model is a struct, so it can't be nil
+	_ = table
 }
 
 func TestTableComponent_CreateRows_EmptyPRs(t *testing.T) {

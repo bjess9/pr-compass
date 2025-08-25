@@ -380,8 +380,6 @@ func TestSchedulerConcurrency(t *testing.T) {
 		}
 	}
 
-	// Scheduler should still be functional
-	if !scheduler.ShouldRefreshTab("concurrent-test") && !scheduler.ShouldRefreshTab("concurrent-test") {
-		// It's ok if it doesn't need refresh, just checking it doesn't panic
-	}
+	// Scheduler should still be functional - just verify it doesn't panic
+	_ = scheduler.ShouldRefreshTab("concurrent-test")
 }

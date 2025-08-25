@@ -41,18 +41,6 @@ func DefaultFilter() *PRFilter {
 	}
 }
 
-// extractRepoFromError attempts to extract repository name from error message
-func extractRepoFromError(err error) string {
-	errStr := err.Error()
-	// Look for "failed to fetch PRs from <repo>:" pattern
-	if idx := strings.Index(errStr, "failed to fetch PRs from "); idx != -1 {
-		start := idx + len("failed to fetch PRs from ")
-		if colonIdx := strings.Index(errStr[start:], ":"); colonIdx != -1 {
-			return errStr[start : start+colonIdx]
-		}
-	}
-	return "<unknown repository>"
-}
 
 // shouldExcludePR determines if a PR should be filtered out
 func shouldExcludePR(pr *github.PullRequest, filter *PRFilter) bool {
@@ -342,23 +330,16 @@ func fetchOpenPRsWithFilter(ctx context.Context, client *github.Client, repos []
 	}()
 
 	var allPRs []*github.PullRequest
-	var skippedRepos []string
 	for result := range results {
 		if result.err != nil {
-			skippedRepos = append(skippedRepos, extractRepoFromError(result.err))
+			// Skip failed repos - could log the error if needed
 			continue
 		}
 		allPRs = append(allPRs, result.prs...)
 	}
 
-	// Log summary if any repos were skipped
-	if len(skippedRepos) > 0 {
-	}
-
-	// Check if we successfully fetched from at least some repositories
-	if len(allPRs) == 0 && len(skippedRepos) > 0 {
-		// Don't return an error here as empty results might be valid, but log it
-	}
+	// Note: Could log summary if repos were skipped, but skipping for now
+	// Note: Could check if we successfully fetched from repositories, but allowing empty results
 
 	sort.Slice(allPRs, func(i, j int) bool {
 		return allPRs[i].GetUpdatedAt().Time.After(allPRs[j].GetUpdatedAt().Time)

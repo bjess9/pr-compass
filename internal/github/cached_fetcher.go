@@ -63,11 +63,8 @@ func (cf *CachedFetcher) FetchPRs(ctx context.Context, client *ghApi.Client, fil
 		return nil, fmt.Errorf("failed to fetch PRs: %w", err)
 	}
 
-	// Cache the results
-	if err := cf.cache.SetPRList(cacheKey, prs, cf.cacheTTL); err != nil {
-		// Continue without caching - don't fail the request
-	} else {
-	}
+	// Cache the results - ignore errors to not fail the request
+	_ = cf.cache.SetPRList(cacheKey, prs, cf.cacheTTL)
 
 	return prs, nil
 }
@@ -120,9 +117,7 @@ func (cf *CachedFetcher) BackgroundRefresh(ctx context.Context, client *ghApi.Cl
 			}
 
 			// Update cache
-			if err := cf.cache.SetPRList(cacheKey, prs, cf.cacheTTL); err != nil {
-			} else {
-			}
+			_ = cf.cache.SetPRList(cacheKey, prs, cf.cacheTTL)
 		}
 	}
 }

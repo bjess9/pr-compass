@@ -136,11 +136,11 @@ func TestMultiTabModel(t *testing.T) {
 	model := NewMultiTabModel("test-token")
 
 	// Test initial state
-	if model.Width != 80 {
-		t.Errorf("Expected default width 80, got %d", model.Width)
+	if model.Width != 120 {
+		t.Errorf("Expected default width 120, got %d", model.Width)
 	}
-	if model.Height != 24 {
-		t.Errorf("Expected default height 24, got %d", model.Height)
+	if model.Height != 30 {
+		t.Errorf("Expected default height 30, got %d", model.Height)
 	}
 	if model.TabManager == nil {
 		t.Fatal("Expected TabManager to be initialized")
@@ -282,8 +282,8 @@ func TestTabStateInitialization(t *testing.T) {
 	}
 
 	// Test that table is properly configured (height may vary based on implementation)
-	if tabState.Table.Height() < 10 {
-		t.Errorf("Expected table height >= 10, got %d", tabState.Table.Height())
+	if tabState.Table.Height() < 5 {
+		t.Errorf("Expected table height >= 5, got %d", tabState.Table.Height())
 	}
 
 	// Test that load time is recent

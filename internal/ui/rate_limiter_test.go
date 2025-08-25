@@ -65,7 +65,7 @@ func TestSharedCache(t *testing.T) {
 	}
 
 	// Test cache sharing between tabs
-	data, found = cache.GetCachedPR("test-key", "tab2")
+	_, found = cache.GetCachedPR("test-key", "tab2")
 	if !found {
 		t.Error("Expected cache hit from different tab")
 	}
@@ -74,7 +74,7 @@ func TestSharedCache(t *testing.T) {
 	cache.cleanup()
 	
 	// Data should still be there since TTL hasn't expired
-	data, found = cache.GetCachedPR("test-key", "tab1")
+	_, found = cache.GetCachedPR("test-key", "tab1")
 	if !found {
 		t.Error("Expected data to still be cached after cleanup (TTL not expired)")
 	}
@@ -147,16 +147,22 @@ func TestRateLimitPrioritization(t *testing.T) {
 	urgentReq := createRequest("urgent", PriorityUrgent)
 
 	// Submit normal priority first
-	go limiter.RequestWithRateLimit(normalReq)
+	go func() {
+		_ = limiter.RequestWithRateLimit(normalReq)
+	}()
 	
 	// Small delay to ensure normal request gets queued
 	time.Sleep(10 * time.Millisecond)
 	
 	// Submit high priority
-	go limiter.RequestWithRateLimit(highReq)
+	go func() {
+		_ = limiter.RequestWithRateLimit(highReq)
+	}()
 	
 	// Submit urgent priority
-	go limiter.RequestWithRateLimit(urgentReq)
+	go func() {
+		_ = limiter.RequestWithRateLimit(urgentReq)
+	}()
 
 	// Wait for all requests to complete
 	time.Sleep(500 * time.Millisecond)
@@ -238,7 +244,7 @@ func TestCacheExpiry(t *testing.T) {
 	time.Sleep(15 * time.Millisecond)
 
 	// Should be expired now
-	data, found = cache.GetCachedPR("test-key", "tab1")
+	_, found = cache.GetCachedPR("test-key", "tab1")
 	if found {
 		t.Error("Expected cache miss after expiry")
 	}

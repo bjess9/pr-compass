@@ -127,7 +127,6 @@ type TabManager struct {
 	SharedCache   *SharedCache
 	
 	// Request coordination
-	mu                sync.RWMutex
 	refreshScheduler  *RefreshScheduler
 }
 
@@ -178,11 +177,8 @@ func NewTabState(tabConfig *TabConfig, token string) *TabState {
 		prCache = nil
 	}
 	
-	// Set default refresh interval if not configured
-	refreshInterval := tabConfig.RefreshIntervalMinutes
-	if refreshInterval == 0 {
-		refreshInterval = 5 // default: 5 minutes
-	}
+	// Note: Refresh interval is handled at the TabConfig level
+	// and used by the MultiTabModel when setting up refresh timers
 	
 	return &TabState{
 		Config:               tabConfig,

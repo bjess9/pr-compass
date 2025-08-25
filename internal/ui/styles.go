@@ -111,13 +111,6 @@ var (
 			BorderForeground(lipgloss.Color(ErrorColor)).
 			Bold(true)
 
-	successStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color(SuccessColor)).
-			Bold(false)
-
-	warningStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color(WarningColor)).
-			Bold(false)
 
 	mutedStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color(TextMuted))

@@ -13,8 +13,8 @@ import (
 
 // prService implements the PRService interface
 type prService struct {
-	token   string
-	cache   *cache.PRCache
+	token string
+	cache *cache.PRCache
 }
 
 // NewPRService creates a new PR service

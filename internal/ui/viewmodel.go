@@ -36,7 +36,7 @@ type TabViewModel struct {
 // CreateTabViewModels creates view models for all tabs
 func (vm *ViewModel) CreateTabViewModels(tabManager *TabManager) []TabViewModel {
 	viewModels := make([]TabViewModel, len(tabManager.Tabs))
-	
+
 	for i, tab := range tabManager.Tabs {
 		viewModels[i] = TabViewModel{
 			Name:            tab.Config.Name,
@@ -48,7 +48,7 @@ func (vm *ViewModel) CreateTabViewModels(tabManager *TabManager) []TabViewModel 
 			StatusMessage:   tab.StatusMsg,
 		}
 	}
-	
+
 	return viewModels
 }
 
@@ -75,7 +75,7 @@ func (vm *ViewModel) formatFilterDescription(mode, value string) string {
 	if mode == "" {
 		return ""
 	}
-	
+
 	switch mode {
 	case "author":
 		return fmt.Sprintf("by author: %s", value)
@@ -100,7 +100,7 @@ type TableViewModel struct {
 func (vm *ViewModel) CreateTableViewModel(prs []*gh.PullRequest, enhancementQueue map[int]bool, selectedIndex, height, width int) TableViewModel {
 	// Use the table component to create rows
 	tableComponent := components.NewTableComponent()
-	
+
 	// Convert to PRData format for the table component
 	prDataList := make([]*types.PRData, len(prs))
 	for i, pr := range prs {
@@ -109,9 +109,9 @@ func (vm *ViewModel) CreateTableViewModel(prs []*gh.PullRequest, enhancementQueu
 			Enhanced:    nil, // TODO: Add enhanced data if available
 		}
 	}
-	
+
 	rows := tableComponent.CreateRows(prDataList, enhancementQueue)
-	
+
 	return TableViewModel{
 		Rows:          rows,
 		SelectedIndex: selectedIndex,
@@ -177,7 +177,7 @@ func (vm *ViewModel) CreateHelpViewModel() HelpViewModel {
 				},
 			},
 			{
-				Title: "Filtering", 
+				Title: "Filtering",
 				Items: []HelpItem{
 					{"a", "Filter by author"},
 					{"s", "Filter by status"},
@@ -211,7 +211,7 @@ func (vm *ViewModel) ValidateTabOperation(operation string, tabManager *TabManag
 			return ValidationResult{IsValid: true}
 		}
 		return ValidationResult{IsValid: false, Error: "Invalid tab index"}
-		
+
 	case "close":
 		if len(tabManager.Tabs) <= 1 {
 			return ValidationResult{IsValid: false, Error: "Cannot close the last tab"}
@@ -220,7 +220,7 @@ func (vm *ViewModel) ValidateTabOperation(operation string, tabManager *TabManag
 			return ValidationResult{IsValid: false, Error: "Invalid tab index"}
 		}
 		return ValidationResult{IsValid: true}
-		
+
 	default:
 		return ValidationResult{IsValid: false, Error: "Unknown operation"}
 	}

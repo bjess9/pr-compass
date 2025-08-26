@@ -12,7 +12,7 @@ import (
 
 // GraphQLPRFetcher fetches PRs using GraphQL to reduce API calls by ~80%
 type GraphQLPRFetcher struct {
-	client   *GraphQLClient
+	client      *GraphQLClient
 	baseFetcher PRFetcher // Fallback for when GraphQL fails
 }
 
@@ -26,14 +26,13 @@ func NewGraphQLPRFetcher(token string, baseFetcher PRFetcher) *GraphQLPRFetcher 
 
 // FetchPRs implements PRFetcher interface using GraphQL
 func (g *GraphQLPRFetcher) FetchPRs(ctx context.Context, client *github.Client, filter *PRFilter) ([]*github.PullRequest, error) {
-	
+
 	// Try GraphQL first, fallback to REST API if needed
 	prs, err := g.fetchPRsWithGraphQL(ctx, filter)
 	if err != nil {
 		return g.baseFetcher.FetchPRs(ctx, client, filter)
 	}
-	
-	
+
 	return prs, nil
 }
 
@@ -172,11 +171,11 @@ query($searchQuery: String!, $first: Int!) {
 
 	// Build search query
 	searchQuery := "is:pr is:open"
-	
+
 	// Add org/repo specific filters based on fetcher type
 	// Note: For this implementation, we'll use a generic search approach
 	// In a production system, you'd detect the fetcher type and customize the query
-	
+
 	variables := map[string]interface{}{
 		"searchQuery": searchQuery,
 		"first":       50, // Fetch up to 50 PRs at once
@@ -220,13 +219,13 @@ func (g *GraphQLPRFetcher) parseGraphQLResponse(data json.RawMessage) ([]*github
 // convertPRDataToGitHubPR converts GraphQL PRData to github.PullRequest
 func convertPRDataToGitHubPR(data PRData) *github.PullRequest {
 	pr := &github.PullRequest{
-		ID:     github.Int64(0), // GraphQL ID is string, we'll use number
-		Number: github.Int(data.Number),
-		Title:  github.String(data.Title),
-		Body:   github.String(data.Body),
-		State:  github.String(strings.ToLower(data.State)),
-		Draft:  github.Bool(data.IsDraft),
-		URL:    github.String(data.URL),
+		ID:      github.Int64(0), // GraphQL ID is string, we'll use number
+		Number:  github.Int(data.Number),
+		Title:   github.String(data.Title),
+		Body:    github.String(data.Body),
+		State:   github.String(strings.ToLower(data.State)),
+		Draft:   github.Bool(data.IsDraft),
+		URL:     github.String(data.URL),
 		HTMLURL: github.String(data.URL),
 	}
 
@@ -252,7 +251,7 @@ func convertPRDataToGitHubPR(data PRData) *github.PullRequest {
 		if data.Repository.Owner != nil {
 			owner.Login = github.String(data.Repository.Owner.Login)
 		}
-		
+
 		pr.Base = &github.PullRequestBranch{
 			Repo: &github.Repository{
 				Name:     github.String(data.Repository.Name),
@@ -308,4 +307,3 @@ func convertPRDataToGitHubPR(data PRData) *github.PullRequest {
 func (g *GraphQLPRFetcher) GetRateLimit() *RateLimitInfo {
 	return g.client.GetRateLimit()
 }
-

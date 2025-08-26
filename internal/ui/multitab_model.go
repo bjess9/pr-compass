@@ -19,15 +19,15 @@ import (
 // MultiTabModel is the main model that manages multiple tabs
 type MultiTabModel struct {
 	TabManager *TabManager
-	controller *UIController  // Add controller for business logic
-	viewModel  *ViewModel     // Add view model for presentation logic
-	
+	controller *UIController // Add controller for business logic
+	viewModel  *ViewModel    // Add view model for presentation logic
+
 	// UI State
 	ShowTabNumbers bool // Show numbers when in tab switching mode
 	LastKeyTime    time.Time
 	HelpMode       bool
-	SpinnerIndex   int  // For animating loading spinner
-	
+	SpinnerIndex   int // For animating loading spinner
+
 	// Global state
 	Width  int
 	Height int
@@ -65,14 +65,14 @@ func NewMultiTabModel(token string) *MultiTabModel {
 	manager := NewTabManager(token)
 	controller := NewUIController(token)
 	viewModel := NewViewModel(controller)
-	
+
 	return &MultiTabModel{
-		TabManager: manager,
-		controller: controller,
-		viewModel:  viewModel,
+		TabManager:     manager,
+		controller:     controller,
+		viewModel:      viewModel,
 		ShowTabNumbers: false,
-		Width: 120,  // More reasonable default width for modern terminals
-		Height: 30,  // More reasonable default height
+		Width:          120, // More reasonable default width for modern terminals
+		Height:         30,  // More reasonable default height
 	}
 }
 
@@ -83,20 +83,20 @@ func (m *MultiTabModel) Init() tea.Cmd {
 
 // Update handles messages for the multi-tab model
 func (m *MultiTabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.Width = msg.Width
 		m.Height = msg.Height
-		
+
 		// Update all tab table heights
 		for _, tab := range m.TabManager.Tabs {
 			tableHeight := m.calculateTableHeight(tab)
 			tab.Table.SetHeight(tableHeight)
 		}
-		
+
 		return m, nil
-		
+
 	case tea.KeyMsg:
 		// Handle global tab switching keys first
 		switch msg.String() {
@@ -110,7 +110,7 @@ func (m *MultiTabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				)
 			}
 			return m, nil
-			
+
 		case "shift+tab":
 			m.TabManager.PrevTab()
 			// Check if newly active tab needs data
@@ -121,18 +121,18 @@ func (m *MultiTabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				)
 			}
 			return m, nil
-			
+
 		case "ctrl+t":
 			// TODO: Add new tab (will implement later)
 			return m, nil
-			
+
 		case "ctrl+w":
 			// Close current tab
 			if m.TabManager.GetTabCount() > 1 {
 				m.TabManager.CloseTab(m.TabManager.ActiveTabIdx)
 			}
 			return m, nil
-			
+
 		case "ctrl+1", "ctrl+2", "ctrl+3", "ctrl+4", "ctrl+5", "ctrl+6", "ctrl+7", "ctrl+8", "ctrl+9":
 			// Switch to specific tab (Ctrl+1 = tab 0, etc.)
 			tabNum := int(msg.String()[4] - '1') // Convert '1'-'9' to 0-8
@@ -146,10 +146,10 @@ func (m *MultiTabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		}
-		
+
 		// Pass other keys to the active tab
 		return m.updateActiveTab(msg)
-		
+
 	case tabSwitchMsg:
 		m.TabManager.SwitchToTab(msg.tabIndex)
 		// Check if newly active tab needs data
@@ -160,36 +160,36 @@ func (m *MultiTabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 		}
 		return m, nil
-		
+
 	case tabAddMsg:
 		m.TabManager.AddTab(msg.config)
 		return m, nil
-		
+
 	case tabCloseMsg:
 		m.TabManager.CloseTab(msg.tabIndex)
 		return m, nil
-		
+
 	case initializeTabsMsg:
 		// Initialize tabs after they've been added
 		var cmds []tea.Cmd
-		
+
 		// Start refresh timers for ALL tabs (they'll only refresh when loaded)
 		for _, tab := range m.TabManager.Tabs {
 			cmds = append(cmds, m.refreshCmdForTab(tab))
 		}
-		
+
 		// Fetch data for the active tab immediately
 		if activeTab := m.TabManager.GetActiveTab(); activeTab != nil {
 			cmds = append(cmds, m.fetchPRsForTab(activeTab))
 			cmds = append(cmds, m.spinnerTickCmd()) // Start spinner animation
 		}
-		
+
 		return m, tea.Batch(cmds...)
-		
+
 	case spinnerTickMsg:
 		// Update spinner animation
 		m.SpinnerIndex = (m.SpinnerIndex + 1) % 10
-		
+
 		// Continue spinner animation if any tab is loading
 		anyLoading := false
 		for _, tab := range m.TabManager.Tabs {
@@ -198,19 +198,19 @@ func (m *MultiTabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
-		
+
 		if anyLoading {
 			return m, m.spinnerTickCmd()
 		}
 		return m, nil
-		
+
 	case tabRefreshMsg:
 		// Handle background refresh for a specific tab
 		for _, tab := range m.TabManager.Tabs {
 			if tab.Config.Name == msg.tabName {
 				// Schedule next refresh for this tab
 				nextRefreshCmd := m.refreshCmdForTab(tab)
-				
+
 				// Only fetch data if tab is loaded (don't refresh unloaded tabs)
 				if tab.Loaded {
 					// Set background refreshing state for visual feedback
@@ -224,15 +224,15 @@ func (m *MultiTabModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return m, nil
-		
+
 	case tabPrsMsg:
 		// Handle PR data for a specific tab
 		return m.handleTabPRsMessage(msg)
-		
+
 	case types.PrEnhancementUpdateMsg:
 		// Handle PR enhancement updates
 		return m.handleEnhancementUpdate(msg)
-		
+
 	default:
 		// Pass other messages to the active tab
 		return m.updateActiveTab(msg)
@@ -381,7 +381,7 @@ func (m *MultiTabModel) handleFilterInput(tab *TabState, input string) (tea.Mode
 			tab.FilterValue += input
 		}
 	}
-	
+
 	// Update status message with current filter input
 	tab.StatusMsg = fmt.Sprintf("Filter %s: %s_", tab.FilterMode, tab.FilterValue)
 	return m, nil
@@ -404,7 +404,7 @@ func (m *MultiTabModel) updateTableRows(tab *TabState) {
 		tab.Table.SetRows([]table.Row{})
 		return
 	}
-	
+
 	// Use enhanced table rows if we have enhanced data
 	if len(tab.EnhancedData) > 0 {
 		rows := createTableRowsWithEnhancement(tab.FilteredPRs, tab.EnhancedData)
@@ -420,26 +420,26 @@ func (m *MultiTabModel) View() string {
 	if len(m.TabManager.Tabs) == 0 {
 		return m.renderNoTabs()
 	}
-	
+
 	// Render tab bar
 	tabBar := m.renderTabBar()
-	
+
 	// Render active tab content
 	activeTab := m.TabManager.GetActiveTab()
 	if activeTab == nil {
 		return tabBar + "\n" + "No active tab"
 	}
-	
+
 	// Render the active tab's content using existing single-tab view logic
 	tabContent := m.renderActiveTabContent(activeTab)
-	
+
 	return tabBar + "\n" + tabContent
 }
 
 // renderTabBar renders the enhanced tab bar at the top with rate limiting info
 func (m *MultiTabModel) renderTabBar() string {
 	// Always show tab bar - it contains important status info even for single tabs
-	
+
 	// Rate limit status with better formatting
 	rateLimitInfo := ""
 	if m.TabManager.refreshScheduler != nil {
@@ -450,26 +450,26 @@ func (m *MultiTabModel) renderTabBar() string {
 		} else if summary.RequestsRemaining < 500 {
 			rateLimitColor = WarningColor // Yellow when getting low
 		}
-		
-		rateLimitInfo = fmt.Sprintf(" │ %s %d/5000 │ Active: %d", 
+
+		rateLimitInfo = fmt.Sprintf(" │ %s %d/5000 │ Active: %d",
 			lipgloss.NewStyle().Foreground(lipgloss.Color(rateLimitColor)).Render("API:"),
-			summary.RequestsRemaining, 
+			summary.RequestsRemaining,
 			summary.ActiveRequests)
 	}
-	
+
 	var tabButtons []string
-	
+
 	for i, tab := range m.TabManager.Tabs {
 		tabName := tab.Config.Name
 		if len(tabName) > 15 {
 			tabName = tabName[:12] + "..."
 		}
-		
+
 		// ALWAYS same format - just change icon based on state
 		prCount := len(tab.FilteredPRs)
 		var icon string
 		var statusColor string
-		
+
 		if tab.Error != nil {
 			icon = "🚨"
 			statusColor = ErrorColor
@@ -488,12 +488,12 @@ func (m *MultiTabModel) renderTabBar() string {
 				statusColor = TextSecondary
 			}
 		}
-		
+
 		// IDENTICAL format every time: " [icon][count]"
 		indicator := fmt.Sprintf(" %s%3d", icon, prCount)
-		
+
 		tabText := fmt.Sprintf("%d:%s%s", i+1, tabName, indicator)
-		
+
 		// Enhanced tab styling with borders and rounded corners
 		if i == m.TabManager.ActiveTabIdx {
 			// Active tab - prominent with border
@@ -518,10 +518,10 @@ func (m *MultiTabModel) renderTabBar() string {
 			tabButtons = append(tabButtons, tabButton)
 		}
 	}
-	
+
 	// Handle tab display - show info bar if single tab, tab buttons if multiple
 	var tabBarContent string
-	
+
 	if len(m.TabManager.Tabs) == 1 {
 		// Single tab - ALWAYS show same format regardless of loading state
 		activeTab := m.TabManager.GetActiveTab()
@@ -529,23 +529,23 @@ func (m *MultiTabModel) renderTabBar() string {
 			// Always use the same counts and format - no conditional logic
 			prCount := len(activeTab.FilteredPRs)
 			enhancedCount := len(activeTab.EnhancedData)
-			
+
 			// Simple status indicator based on actual state
 			var statusIndicator string
 			if activeTab.BackgroundRefreshing {
 				statusIndicator = "🔄"
 			} else if !activeTab.Loaded {
-				statusIndicator = "⏳"  
+				statusIndicator = "⏳"
 			} else if activeTab.Error != nil {
 				statusIndicator = "🚨"
 			} else {
 				statusIndicator = "✅"
 			}
-			
+
 			// IDENTICAL format every time - no special cases
-			tabInfo := fmt.Sprintf("🧭 %s %s │ PRs: %3d │ Enhanced: %3d", 
+			tabInfo := fmt.Sprintf("🧭 %s %s │ PRs: %3d │ Enhanced: %3d",
 				activeTab.Config.Name, statusIndicator, prCount, enhancedCount)
-			
+
 			tabBarContent = lipgloss.NewStyle().
 				Foreground(lipgloss.Color(TextBright)).
 				Background(lipgloss.Color(SelectedBgColor)).
@@ -566,18 +566,18 @@ func (m *MultiTabModel) renderTabBar() string {
 		}
 		tabBarContent = lipgloss.JoinHorizontal(lipgloss.Top, spacedButtons...)
 	}
-	
+
 	// Compact help text with compass theme
 	helpText := lipgloss.NewStyle().
 		Foreground(lipgloss.Color(TextMuted)).
 		Italic(true).
 		Render("🧭 Tab/⇧Tab Navigate • ^1-9 Switch • h Help" + rateLimitInfo)
-	
+
 	// Compact separator line
 	separator := lipgloss.NewStyle().
 		Foreground(lipgloss.Color(BorderColor)).
 		Render(strings.Repeat("─", 60)) // Shorter line
-	
+
 	return tabBarContent + "\n" + helpText + "\n" + separator
 }
 
@@ -587,24 +587,24 @@ func (m *MultiTabModel) renderActiveTabContent(activeTab *TabState) string {
 	if activeTab.Error != nil {
 		return errorView(activeTab.Error)
 	}
-	
+
 	// Always show the same table layout - loading state is shown in tab indicators
-	
+
 	// Render the table directly without creating the old model
-	
+
 	// Use the existing view logic but without the title (since we have tabs)
 	activeTab.Table.SetStyles(tableStyles())
-	
+
 	// Table
 	tableView := activeTab.Table.View()
-	
+
 	// Status message - ALWAYS same height to prevent UI jumping
 	statusMsg := activeTab.StatusMsg
 	if statusMsg == "" {
 		statusMsg = " " // Always show something to maintain consistent spacing
 	}
 	statusLine := "\n" + statusStyle.Render(statusMsg)
-	
+
 	// Extended help (compact with compass theme) - only show when help is toggled
 	if activeTab.ShowHelp {
 		extendedHelp := "\n" + helpStyle.Render(`
@@ -617,11 +617,11 @@ func (m *MultiTabModel) renderActiveTabContent(activeTab *TabState) string {
 │ 🏷️  Status: ✅Ready ⚠️Conflict 🔄CI  │
 │ 💬 Comments 📁 Files ⏳ Loading     │
 ╰─────────────────────────────────────╯`)
-		return baseStyle.Render(tableView+statusLine+extendedHelp)
+		return baseStyle.Render(tableView + statusLine + extendedHelp)
 	}
-	
+
 	// No help text here - it's shown in the tab bar
-	return baseStyle.Render(tableView+statusLine)
+	return baseStyle.Render(tableView + statusLine)
 }
 
 // renderNoTabs renders the no tabs state
@@ -629,7 +629,7 @@ func (m *MultiTabModel) renderNoTabs() string {
 	title := titleStyle.Render("🧭 PR Compass - Multi-Tab Mode")
 	message := errorStyle.Render("No tabs configured. Please add tabs to your configuration.")
 	help := helpStyle.Render("Press 'q' to quit")
-	
+
 	return "\n" + title + "\n\n" + message + "\n\n" + help + "\n"
 }
 
@@ -654,7 +654,7 @@ func (m *MultiTabModel) fetchPRsForTab(tab *TabState) tea.Cmd {
 				}
 			}
 		}
-		
+
 		// Mark refresh as started for rate limiting coordination
 		if m.TabManager.refreshScheduler != nil {
 			m.TabManager.refreshScheduler.MarkRefreshStarted(tab.Config.Name)
@@ -665,42 +665,42 @@ func (m *MultiTabModel) fetchPRsForTab(tab *TabState) tea.Cmd {
 
 		var prs []*gh.PullRequest
 		var err error
-		
+
 		// Create rate-limited request
 		if m.TabManager.RateLimiter != nil {
 			// Use rate limiter for coordinated API calls
 			req := &RateLimitedRequest{
-				TabName:  tab.Config.Name,
-				Priority: PriorityNormal,
-				Timeout:  30 * time.Second,
+				TabName:    tab.Config.Name,
+				Priority:   PriorityNormal,
+				Timeout:    30 * time.Second,
 				ResultChan: make(chan error, 1),
 				RequestFunc: func(ctx context.Context) error {
 					var fetchErr error
-					
+
 					// Use optimized fetching with GraphQL + Caching
 					if tab.PRCache != nil {
 						prs, fetchErr = github.FetchPRsFromConfigOptimized(ctx, cfg, m.TabManager.Token, tab.PRCache)
 					} else {
 						prs, fetchErr = github.FetchPRsFromConfig(ctx, cfg, m.TabManager.Token)
 					}
-					
+
 					return fetchErr
 				},
 			}
-			
+
 			err = m.TabManager.RateLimiter.RequestWithRateLimit(req)
 		} else {
 			// Fallback to direct fetching
 			ctx, cancel := context.WithTimeout(tab.Ctx, 30*time.Second)
 			defer cancel()
-			
+
 			if tab.PRCache != nil {
 				prs, err = github.FetchPRsFromConfigOptimized(ctx, cfg, m.TabManager.Token, tab.PRCache)
 			} else {
 				prs, err = github.FetchPRsFromConfig(ctx, cfg, m.TabManager.Token)
 			}
 		}
-		
+
 		return tabPrsMsg{
 			tabName: tab.Config.Name,
 			prs:     prs,
@@ -719,12 +719,12 @@ func (m *MultiTabModel) handleTabPRsMessage(msg tabPrsMsg) (tea.Model, tea.Cmd) 
 			break
 		}
 	}
-	
+
 	if targetTab == nil {
 		// Tab not found - might have been closed
 		return m, nil
 	}
-	
+
 	// Update the tab state based on the message
 	if msg.err != nil {
 		targetTab.Error = msg.err
@@ -736,7 +736,7 @@ func (m *MultiTabModel) handleTabPRsMessage(msg tabPrsMsg) (tea.Model, tea.Cmd) 
 		targetTab.Loaded = true
 		targetTab.Error = nil
 		targetTab.BackgroundRefreshing = false // Clear refresh indicator on success
-		
+
 		// Apply existing filters if any are active
 		if targetTab.FilterMode != "" && targetTab.FilterValue != "" {
 			targetTab.FilteredPRs = m.applyFilter(msg.prs, targetTab.FilterMode, targetTab.FilterValue)
@@ -745,9 +745,9 @@ func (m *MultiTabModel) handleTabPRsMessage(msg tabPrsMsg) (tea.Model, tea.Cmd) 
 		} else {
 			targetTab.FilteredPRs = msg.prs
 		}
-		
+
 		targetTab.StatusMsg = "" // Clear status after successful refresh
-		
+
 		// Update table data using filtered PRs and preserve enhanced data
 		if len(targetTab.FilteredPRs) > 0 {
 			rows := createTableRowsWithEnhancement(targetTab.FilteredPRs, targetTab.EnhancedData)
@@ -756,21 +756,21 @@ func (m *MultiTabModel) handleTabPRsMessage(msg tabPrsMsg) (tea.Model, tea.Cmd) 
 			// Clear table if no PRs after filtering
 			targetTab.Table.SetRows([]table.Row{})
 		}
-		
+
 		// ALWAYS enforce fixed table height regardless of number of rows
 		// This ensures the table viewport stays within terminal bounds
 		tableHeight := m.calculateTableHeight(targetTab)
 		targetTab.Table.SetHeight(tableHeight)
-		
+
 		// Ensure table stays focused and scrollable within fixed bounds
 		targetTab.Table.Focus()
 	}
-	
+
 	// If this is the active tab, start enhancement process
 	if targetTab == m.TabManager.GetActiveTab() {
 		return m, m.startEnhancementForTab(targetTab)
 	}
-	
+
 	return m, nil
 }
 
@@ -785,24 +785,24 @@ func (m *MultiTabModel) handleEnhancementUpdate(msg types.PrEnhancementUpdateMsg
 			break
 		}
 	}
-	
+
 	if targetTab == nil {
 		return m, nil
 	}
-	
+
 	// Check for special "next batch" signal
 	if msg.PrData.Number == -1 && msg.Error == nil {
 		// This is a signal to start the next batch of enhancements
 		return m, m.startEnhancementForTab(targetTab)
 	}
-	
+
 	// Update the enhanced data for this PR
 	if msg.Error == nil {
 		targetTab.EnhancedData[msg.PrData.Number] = msg.PrData
-		
+
 		// Remove from enhancement queue
 		delete(targetTab.EnhancementQueue, msg.PrData.Number)
-		
+
 		// Update enhanced count
 		targetTab.EnhancedCount = len(targetTab.EnhancedData)
 	} else {
@@ -810,10 +810,10 @@ func (m *MultiTabModel) handleEnhancementUpdate(msg types.PrEnhancementUpdateMsg
 		delete(targetTab.EnhancementQueue, msg.PrData.Number)
 		// Could show error in status, but for now just continue
 	}
-	
+
 	// Update the table display with the new enhanced data
 	m.updateTableRows(targetTab)
-	
+
 	return m, nil
 }
 
@@ -822,13 +822,13 @@ func (m *MultiTabModel) startEnhancementForTab(tab *TabState) tea.Cmd {
 	if len(tab.PRs) == 0 {
 		return nil
 	}
-	
+
 	// Find PRs that need enhancement
 	var prsToEnhance []*gh.PullRequest
-	
+
 	for _, pr := range tab.PRs {
 		prNumber := pr.GetNumber()
-		
+
 		// Skip if already enhanced or in enhancement queue
 		if _, enhanced := tab.EnhancedData[prNumber]; enhanced {
 			continue
@@ -836,30 +836,30 @@ func (m *MultiTabModel) startEnhancementForTab(tab *TabState) tea.Cmd {
 		if _, inQueue := tab.EnhancementQueue[prNumber]; inQueue {
 			continue
 		}
-		
+
 		prsToEnhance = append(prsToEnhance, pr)
 	}
-	
+
 	if len(prsToEnhance) == 0 {
 		return nil
 	}
-	
+
 	// Process PRs in smaller batches to avoid overwhelming the API
 	const batchSize = 10 // Process 10 at a time
 	var cmds []tea.Cmd
-	
+
 	for i := 0; i < len(prsToEnhance) && i < batchSize; i++ {
 		pr := prsToEnhance[i]
 		prNumber := pr.GetNumber()
-		
+
 		// Add to enhancement queue
 		tab.EnhancementQueue[prNumber] = true
-		
+
 		// Create enhancement command
 		enhanceCmd := m.createEnhancementCommand(pr, prNumber)
 		cmds = append(cmds, enhanceCmd)
 	}
-	
+
 	// If there are more PRs to enhance, schedule the next batch
 	if len(prsToEnhance) > batchSize {
 		nextBatchCmd := func() tea.Msg {
@@ -872,11 +872,11 @@ func (m *MultiTabModel) startEnhancementForTab(tab *TabState) tea.Cmd {
 		}
 		cmds = append(cmds, nextBatchCmd)
 	}
-	
+
 	if len(cmds) > 0 {
 		return tea.Batch(cmds...)
 	}
-	
+
 	return nil
 }
 
@@ -885,17 +885,17 @@ func (m *MultiTabModel) createEnhancementCommand(pr *gh.PullRequest, prNumber in
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		
+
 		// Get token from tab manager
 		token := ""
 		if m.TabManager != nil {
 			token = m.TabManager.Token
 		}
-		
+
 		// Use the enhancement service
 		enhancementService := services.NewEnhancementService(token)
 		enhanced, err := enhancementService.EnhancePR(ctx, pr)
-		
+
 		// Convert to our message format
 		if err != nil {
 			return types.PrEnhancementUpdateMsg{
@@ -903,7 +903,7 @@ func (m *MultiTabModel) createEnhancementCommand(pr *gh.PullRequest, prNumber in
 				Error:  err,
 			}
 		}
-		
+
 		return types.PrEnhancementUpdateMsg{
 			PrData: *enhanced,
 			Error:  nil,
@@ -916,7 +916,7 @@ func (m *MultiTabModel) refreshCmdForTab(tab *TabState) tea.Cmd {
 	if refreshInterval == 0 {
 		refreshInterval = 5
 	}
-	
+
 	tabName := tab.Config.Name
 	return func() tea.Msg {
 		duration := time.Duration(refreshInterval) * time.Minute
@@ -931,4 +931,3 @@ func (m *MultiTabModel) spinnerTickCmd() tea.Cmd {
 		return spinnerTickMsg{}
 	})
 }
-

@@ -19,10 +19,10 @@ type OptimizedFetcher struct {
 
 // RateLimiter handles exponential backoff and rate limit management
 type RateLimiter struct {
-	lastRequest   time.Time
-	backoffDelay  time.Duration
-	maxBackoff    time.Duration
-	minDelay      time.Duration
+	lastRequest  time.Time
+	backoffDelay time.Duration
+	maxBackoff   time.Duration
+	minDelay     time.Duration
 }
 
 // NewRateLimiter creates a new rate limiter with exponential backoff
@@ -36,15 +36,15 @@ func NewRateLimiter() *RateLimiter {
 // Wait implements intelligent rate limiting with exponential backoff
 func (r *RateLimiter) Wait(ctx context.Context, rateLimit *RateLimitInfo) error {
 	now := time.Now()
-	
+
 	// Check if we're approaching rate limits
 	if rateLimit != nil && rateLimit.Remaining < 100 {
 		// Calculate time until rate limit resets
 		resetDelay := time.Until(rateLimit.ResetAt)
-		
+
 		if rateLimit.Remaining < 10 {
 			// Very close to limit, wait for reset
-			
+
 			select {
 			case <-time.After(resetDelay):
 				r.backoffDelay = r.minDelay // Reset backoff after waiting
@@ -58,7 +58,7 @@ func (r *RateLimiter) Wait(ctx context.Context, rateLimit *RateLimitInfo) error 
 			if r.backoffDelay == 0 {
 				r.backoffDelay = 1 * time.Second
 			}
-			
+
 		}
 	} else {
 		// Plenty of rate limit, use minimal delay
@@ -92,13 +92,13 @@ func min(a, b time.Duration) time.Duration {
 func NewOptimizedFetcher(baseFetcher PRFetcher, prCache *cache.PRCache, token string) *OptimizedFetcher {
 	// Create GraphQL fetcher with fallback to base fetcher
 	graphqlFetcher := NewGraphQLPRFetcher(token, baseFetcher)
-	
+
 	// Wrap with caching for instant subsequent requests
 	var cachedFetcher *CachedFetcher
 	if prCache != nil {
 		cachedFetcher = NewCachedFetcher(graphqlFetcher, prCache, 5*time.Minute)
 	}
-	
+
 	return &OptimizedFetcher{
 		graphqlFetcher: graphqlFetcher,
 		cachedFetcher:  cachedFetcher,
@@ -136,4 +136,3 @@ func (o *OptimizedFetcher) GetCacheStats() (int, int64, error) {
 	}
 	return 0, 0, nil
 }
-

@@ -14,12 +14,12 @@ import (
 func createTestCache(t *testing.T) *PRCache {
 	tempDir := t.TempDir()
 	cacheDir := filepath.Join(tempDir, "cache")
-	
+
 	cache, err := NewPRCacheWithDir(cacheDir)
 	if err != nil {
 		t.Fatalf("Failed to create test cache: %v", err)
 	}
-	
+
 	return cache
 }
 
@@ -209,11 +209,11 @@ func TestCleanExpiredEntries(t *testing.T) {
 	// Set one entry that will expire quickly
 	shortKey := "short-lived"
 	longKey := "long-lived"
-	
+
 	if err := cache.SetPRList(shortKey, testPRs, 10*time.Millisecond); err != nil {
 		t.Fatalf("SetPRList() error = %v", err)
 	}
-	
+
 	if err := cache.SetPRList(longKey, testPRs, 10*time.Minute); err != nil {
 		t.Fatalf("SetPRList() error = %v", err)
 	}
@@ -231,7 +231,7 @@ func TestCleanExpiredEntries(t *testing.T) {
 	if _, found := cache.GetPRList(shortKey); found {
 		t.Error("Expected expired entry to be cleaned up")
 	}
-	
+
 	if _, found := cache.GetPRList(longKey); !found {
 		t.Error("Expected non-expired entry to remain")
 	}

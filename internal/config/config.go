@@ -32,7 +32,7 @@ type Config struct {
 
 	// UI/Performance options
 	RefreshIntervalMinutes int `mapstructure:"refresh_interval_minutes"` // Auto-refresh interval (default: 5)
-	MaxPRs                 int `mapstructure:"max_prs"`                 // Maximum number of PRs to fetch (default: 50)
+	MaxPRs                 int `mapstructure:"max_prs"`                  // Maximum number of PRs to fetch (default: 50)
 }
 
 func LoadConfig() (*Config, error) {
@@ -46,7 +46,7 @@ func LoadConfigFromPath(configPath string) (*Config, error) {
 	v.SetConfigType("yaml")
 
 	if err := v.ReadInConfig(); err != nil {
-		return nil, errors.NewConfigNotFoundError(configPath, err)
+		return nil, errors.NewConfigNotFoundError(configPath)
 	}
 
 	var cfg Config

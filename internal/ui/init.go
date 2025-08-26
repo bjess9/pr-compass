@@ -30,10 +30,10 @@ func InitialModelAuto(token string) tea.Model {
 			RefreshIntervalMinutes: 5,
 			Tabs: []TabConfig{
 				{
-					Name: "Main",
-					Mode: "repos", // Will auto-detect actual mode
+					Name:                   "Main",
+					Mode:                   "repos", // Will auto-detect actual mode
 					RefreshIntervalMinutes: 5,
-					MaxPRs: 50,
+					MaxPRs:                 50,
 				},
 			},
 		}
@@ -52,10 +52,10 @@ func InitialModelAuto(token string) tea.Model {
 		RefreshIntervalMinutes: 5,
 		Tabs: []TabConfig{
 			{
-				Name: "Main",
-				Mode: "repos", // Will auto-detect actual mode
+				Name:                   "Main",
+				Mode:                   "repos", // Will auto-detect actual mode
 				RefreshIntervalMinutes: 5,
-				MaxPRs: 50,
+				MaxPRs:                 50,
 			},
 		},
 	}

@@ -15,17 +15,17 @@ type GlobalRateLimiter struct {
 	requestsRemaining int
 	resetTime         time.Time
 	lastUpdate        time.Time
-	
+
 	// Request queue for prioritization
-	requestQueue    chan *RateLimitedRequest
-	priorityQueue   chan *RateLimitedRequest
-	
+	requestQueue  chan *RateLimitedRequest
+	priorityQueue chan *RateLimitedRequest
+
 	// Tab coordination
-	activeRequests  map[string]int // tab name -> active request count
-	maxConcurrent   int
-	
+	activeRequests map[string]int // tab name -> active request count
+	maxConcurrent  int
+
 	// Shared resources
-	sharedCache     *SharedCache
+	sharedCache *SharedCache
 }
 
 // RateLimitedRequest represents a request waiting for rate limit approval
@@ -49,12 +49,12 @@ const (
 
 // SharedCache manages cached data across all tabs to reduce API calls
 type SharedCache struct {
-	mu                sync.RWMutex
-	prCache          map[string]*CachedPRData   // repo/number -> cached PR data
-	repoCache        map[string]*CachedRepoData // org/repo -> cached repo metadata
-	userCache        map[string]*CachedUserData // username -> cached user data
+	mu               sync.RWMutex
+	prCache          map[string]*CachedPRData          // repo/number -> cached PR data
+	repoCache        map[string]*CachedRepoData        // org/repo -> cached repo metadata
+	userCache        map[string]*CachedUserData        // username -> cached user data
 	enhancementCache map[string]*CachedEnhancementData // pr_key -> enhancement data
-	
+
 	// TTL management
 	prTTL          time.Duration
 	repoTTL        time.Duration
@@ -97,10 +97,10 @@ func NewGlobalRateLimiter() *GlobalRateLimiter {
 		maxConcurrent:     10, // Conservative limit for concurrent requests
 		sharedCache:       NewSharedCache(),
 	}
-	
+
 	// Start the request processor
 	go limiter.processRequests()
-	
+
 	return limiter
 }
 
@@ -124,7 +124,7 @@ func (rl *GlobalRateLimiter) RequestWithRateLimit(req *RateLimitedRequest) error
 	if req.Timeout == 0 {
 		req.Timeout = 30 * time.Second
 	}
-	
+
 	// Choose the appropriate queue based on priority
 	select {
 	case rl.priorityQueue <- req:
@@ -134,7 +134,7 @@ func (rl *GlobalRateLimiter) RequestWithRateLimit(req *RateLimitedRequest) error
 	case <-time.After(req.Timeout):
 		return errors.NewGitHubRateLimitError("", nil)
 	}
-	
+
 	// Wait for the result
 	select {
 	case err := <-req.ResultChan:
@@ -148,13 +148,13 @@ func (rl *GlobalRateLimiter) RequestWithRateLimit(req *RateLimitedRequest) error
 func (rl *GlobalRateLimiter) processRequests() {
 	ticker := time.NewTicker(100 * time.Millisecond) // Check every 100ms
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ticker.C:
 			rl.updateRateLimitInfo()
 			rl.processNextRequest()
-			
+
 		case <-time.After(1 * time.Second):
 			// Cleanup expired cache entries
 			rl.sharedCache.cleanup()
@@ -166,21 +166,21 @@ func (rl *GlobalRateLimiter) processRequests() {
 func (rl *GlobalRateLimiter) processNextRequest() {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
-	
+
 	// Check if we can make more requests
 	totalActive := 0
 	for _, count := range rl.activeRequests {
 		totalActive += count
 	}
-	
+
 	if totalActive >= rl.maxConcurrent {
 		return // Too many concurrent requests
 	}
-	
+
 	if rl.requestsRemaining <= 10 {
 		return // Too close to rate limit
 	}
-	
+
 	// Try priority queue first, then normal queue
 	var req *RateLimitedRequest
 	select {
@@ -191,15 +191,15 @@ func (rl *GlobalRateLimiter) processNextRequest() {
 	default:
 		return // No requests waiting
 	}
-	
+
 	// Safety check
 	if req == nil {
 		return
 	}
-	
+
 	// Track active request
 	rl.activeRequests[req.TabName]++
-	
+
 	// Process request in goroutine
 	go rl.executeRequest(req)
 }
@@ -215,19 +215,19 @@ func (rl *GlobalRateLimiter) executeRequest(req *RateLimitedRequest) {
 		}
 		rl.mu.Unlock()
 	}()
-	
+
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), req.Timeout)
 	defer cancel()
-	
+
 	// Execute the request
 	err := req.RequestFunc(ctx)
-	
+
 	// Update rate limit counters
 	rl.mu.Lock()
 	rl.requestsRemaining--
 	rl.mu.Unlock()
-	
+
 	// Send result
 	select {
 	case req.ResultChan <- err:
@@ -241,9 +241,9 @@ func (rl *GlobalRateLimiter) executeRequest(req *RateLimitedRequest) {
 func (rl *GlobalRateLimiter) updateRateLimitInfo() {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
-	
+
 	now := time.Now()
-	
+
 	// Reset counters if we've passed the reset time
 	if now.After(rl.resetTime) {
 		rl.requestsRemaining = rl.requestsPerHour
@@ -262,7 +262,7 @@ func (rl *GlobalRateLimiter) GetRateLimitStatus() (remaining int, resetTime time
 func (rl *GlobalRateLimiter) UpdateFromGitHubHeaders(remaining int, resetTime time.Time) {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
-	
+
 	rl.requestsRemaining = remaining
 	rl.resetTime = resetTime
 	rl.lastUpdate = time.Now()
@@ -274,30 +274,30 @@ func (rl *GlobalRateLimiter) UpdateFromGitHubHeaders(remaining int, resetTime ti
 func (sc *SharedCache) cleanup() {
 	sc.mu.Lock()
 	defer sc.mu.Unlock()
-	
+
 	now := time.Now()
-	
+
 	// Clean PR cache
 	for key, cached := range sc.prCache {
 		if now.After(cached.ExpiresAt) {
 			delete(sc.prCache, key)
 		}
 	}
-	
+
 	// Clean repo cache
 	for key, cached := range sc.repoCache {
 		if now.After(cached.ExpiresAt) {
 			delete(sc.repoCache, key)
 		}
 	}
-	
+
 	// Clean user cache
 	for key, cached := range sc.userCache {
 		if now.After(cached.ExpiresAt) {
 			delete(sc.userCache, key)
 		}
 	}
-	
+
 	// Clean enhancement cache
 	for key, cached := range sc.enhancementCache {
 		if now.After(cached.ExpiresAt) {
@@ -310,26 +310,26 @@ func (sc *SharedCache) cleanup() {
 func (sc *SharedCache) GetCachedPR(key string, tabName string) (interface{}, bool) {
 	sc.mu.RLock()
 	defer sc.mu.RUnlock()
-	
+
 	cached, exists := sc.prCache[key]
 	if !exists || time.Now().After(cached.ExpiresAt) {
 		return nil, false
 	}
-	
+
 	// Track that this tab is using this data
 	for _, tab := range cached.TabsUsing {
 		if tab == tabName {
 			return cached.Data, true
 		}
 	}
-	
+
 	// Add this tab to the users list
 	sc.mu.RUnlock()
 	sc.mu.Lock()
 	cached.TabsUsing = append(cached.TabsUsing, tabName)
 	sc.mu.Unlock()
 	sc.mu.RLock()
-	
+
 	return cached.Data, true
 }
 
@@ -337,7 +337,7 @@ func (sc *SharedCache) GetCachedPR(key string, tabName string) (interface{}, boo
 func (sc *SharedCache) SetCachedPR(key string, data interface{}, tabName string) {
 	sc.mu.Lock()
 	defer sc.mu.Unlock()
-	
+
 	sc.prCache[key] = &CachedPRData{
 		Data:      data,
 		ExpiresAt: time.Now().Add(sc.prTTL),
@@ -350,13 +350,13 @@ func (sc *SharedCache) SetCachedPR(key string, data interface{}, tabName string)
 // BatchRequestsByRepo groups requests by repository to optimize API calls
 func (rl *GlobalRateLimiter) BatchRequestsByRepo(requests []*RateLimitedRequest) [][]*RateLimitedRequest {
 	repoMap := make(map[string][]*RateLimitedRequest)
-	
+
 	for _, req := range requests {
 		// Extract repo from tab name or request context (simplified)
 		repo := extractRepoFromRequest(req)
 		repoMap[repo] = append(repoMap[repo], req)
 	}
-	
+
 	var batches [][]*RateLimitedRequest
 	for _, repoRequests := range repoMap {
 		// Split large batches to avoid overwhelming single repos
@@ -368,7 +368,7 @@ func (rl *GlobalRateLimiter) BatchRequestsByRepo(requests []*RateLimitedRequest)
 			batches = append(batches, repoRequests[i:end])
 		}
 	}
-	
+
 	return batches
 }
 

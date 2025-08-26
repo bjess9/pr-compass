@@ -17,8 +17,8 @@ import (
 
 // CacheEntry represents a cached item with TTL
 type CacheEntry[T any] struct {
-	Data      T         `json:"data"`
-	Timestamp time.Time `json:"timestamp"`
+	Data      T             `json:"data"`
+	Timestamp time.Time     `json:"timestamp"`
 	TTL       time.Duration `json:"ttl"`
 }
 
@@ -86,7 +86,7 @@ func (c *PRCache) RemoveCacheFile(path string) error {
 func (c *PRCache) isValidCachePath(path string) bool {
 	cleanPath := filepath.Clean(path)
 	cleanCacheDir := filepath.Clean(c.cacheDir)
-	
+
 	// Check if the path is within the cache directory
 	return strings.HasPrefix(cleanPath, cleanCacheDir)
 }
@@ -97,7 +97,7 @@ func (c *PRCache) saveCacheEntry(path string, entry interface{}) error {
 	if !c.isValidCachePath(path) {
 		return fmt.Errorf("invalid cache path: %s", path)
 	}
-	
+
 	// #nosec G304 - path is validated above to prevent directory traversal
 	file, err := os.Create(path)
 	if err != nil {
@@ -115,7 +115,7 @@ func (c *PRCache) loadCacheEntry(path string, entry interface{}) error {
 	if !c.isValidCachePath(path) {
 		return fmt.Errorf("invalid cache path: %s", path)
 	}
-	
+
 	// #nosec G304 - path is validated above to prevent directory traversal
 	file, err := os.Open(path)
 	if err != nil {
@@ -130,18 +130,18 @@ func (c *PRCache) loadCacheEntry(path string, entry interface{}) error {
 // GetPRList retrieves cached PR list
 func (c *PRCache) GetPRList(cacheKey string) ([]*github.PullRequest, bool) {
 	path := c.getCachePath(cacheKey, "prlist")
-	
+
 	var entry CacheEntry[[]*github.PullRequest]
 	if err := c.loadCacheEntry(path, &entry); err != nil {
 		return nil, false
 	}
 
 	if entry.IsExpired() {
-					// Clean up expired cache file
-			if err := os.Remove(path); err != nil {
-				log.Printf("Warning: Failed to remove expired cache file %s: %v", path, err)
-			}
-			return nil, false
+		// Clean up expired cache file
+		if err := os.Remove(path); err != nil {
+			log.Printf("Warning: Failed to remove expired cache file %s: %v", path, err)
+		}
+		return nil, false
 	}
 
 	return entry.Data, true
@@ -150,7 +150,7 @@ func (c *PRCache) GetPRList(cacheKey string) ([]*github.PullRequest, bool) {
 // SetPRList caches PR list with TTL
 func (c *PRCache) SetPRList(cacheKey string, prs []*github.PullRequest, ttl time.Duration) error {
 	path := c.getCachePath(cacheKey, "prlist")
-	
+
 	entry := CacheEntry[[]*github.PullRequest]{
 		Data:      prs,
 		Timestamp: time.Now(),
@@ -162,30 +162,30 @@ func (c *PRCache) SetPRList(cacheKey string, prs []*github.PullRequest, ttl time
 
 // EnhancedPRData represents the enhanced PR information we cache
 type EnhancedPRData struct {
-	Number          int    `json:"number"`
-	ReviewStatus    string `json:"review_status"`
-	ChecksStatus    string `json:"checks_status"`
-	MergeableStatus string `json:"mergeable_status"`
-	Author          string `json:"author"`
-	Title           string `json:"title"`
+	Number          int       `json:"number"`
+	ReviewStatus    string    `json:"review_status"`
+	ChecksStatus    string    `json:"checks_status"`
+	MergeableStatus string    `json:"mergeable_status"`
+	Author          string    `json:"author"`
+	Title           string    `json:"title"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 // GetEnhancedPRData retrieves cached enhanced PR data
 func (c *PRCache) GetEnhancedPRData(prKey string) (map[string]EnhancedPRData, bool) {
 	path := c.getCachePath(prKey, "enhanced")
-	
+
 	var entry CacheEntry[map[string]EnhancedPRData]
 	if err := c.loadCacheEntry(path, &entry); err != nil {
 		return nil, false
 	}
 
 	if entry.IsExpired() {
-					// Clean up expired cache file
-			if err := os.Remove(path); err != nil {
-				log.Printf("Warning: Failed to remove expired cache file %s: %v", path, err)
-			}
-			return nil, false
+		// Clean up expired cache file
+		if err := os.Remove(path); err != nil {
+			log.Printf("Warning: Failed to remove expired cache file %s: %v", path, err)
+		}
+		return nil, false
 	}
 
 	return entry.Data, true
@@ -194,7 +194,7 @@ func (c *PRCache) GetEnhancedPRData(prKey string) (map[string]EnhancedPRData, bo
 // SetEnhancedPRData caches enhanced PR data with TTL
 func (c *PRCache) SetEnhancedPRData(prKey string, data map[string]EnhancedPRData, ttl time.Duration) error {
 	path := c.getCachePath(prKey, "enhanced")
-	
+
 	entry := CacheEntry[map[string]EnhancedPRData]{
 		Data:      data,
 		Timestamp: time.Now(),

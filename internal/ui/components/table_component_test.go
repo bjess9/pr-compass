@@ -11,7 +11,7 @@ import (
 
 func TestNewTableComponent(t *testing.T) {
 	component := NewTableComponent()
-	
+
 	if component == nil {
 		t.Fatal("NewTableComponent returned nil")
 	}
@@ -19,9 +19,9 @@ func TestNewTableComponent(t *testing.T) {
 
 func TestTableComponent_CreateTable(t *testing.T) {
 	component := NewTableComponent()
-	
+
 	table := component.CreateTable()
-	
+
 	// Verify table is created (just check it doesn't panic)
 	// The table.Model is a struct, so it can't be nil
 	_ = table
@@ -29,9 +29,9 @@ func TestTableComponent_CreateTable(t *testing.T) {
 
 func TestTableComponent_CreateRows_EmptyPRs(t *testing.T) {
 	component := NewTableComponent()
-	
+
 	rows := component.CreateRows([]*types.PRData{}, map[int]bool{})
-	
+
 	// Should return empty rows
 	if len(rows) != 0 {
 		t.Errorf("Expected 0 rows for empty PRs, got %d", len(rows))
@@ -40,9 +40,9 @@ func TestTableComponent_CreateRows_EmptyPRs(t *testing.T) {
 
 func TestTableComponent_CreateRows_NilPRs(t *testing.T) {
 	component := NewTableComponent()
-	
+
 	rows := component.CreateRows(nil, map[int]bool{})
-	
+
 	// Should return empty rows
 	if len(rows) != 0 {
 		t.Errorf("Expected 0 rows for nil PRs, got %d", len(rows))
@@ -51,7 +51,7 @@ func TestTableComponent_CreateRows_NilPRs(t *testing.T) {
 
 func TestTableComponent_CreateRows_Basic(t *testing.T) {
 	component := NewTableComponent()
-	
+
 	now := time.Now()
 	pr := &types.PRData{
 		PullRequest: &gh.PullRequest{
@@ -66,20 +66,20 @@ func TestTableComponent_CreateRows_Basic(t *testing.T) {
 			},
 		},
 	}
-	
+
 	rows := component.CreateRows([]*types.PRData{pr}, map[int]bool{})
-	
+
 	// Verify we get one row
 	if len(rows) != 1 {
 		t.Fatalf("Expected 1 row, got %d", len(rows))
 	}
-	
+
 	row := rows[0]
 	// Verify row has correct number of columns (9 columns as per CreateTableColumns)
 	if len(row) != 9 {
 		t.Fatalf("Expected 9 columns, got %d", len(row))
 	}
-	
+
 	// Check some column content
 	if !strings.Contains(row[0], "Another Test PR") {
 		t.Errorf("Expected title in first column, got '%s'", row[0])
@@ -94,7 +94,7 @@ func TestTableComponent_CreateRows_Basic(t *testing.T) {
 
 func TestTableComponent_CreateRows_WithEnhancement(t *testing.T) {
 	component := NewTableComponent()
-	
+
 	now := time.Now()
 	pr := &types.PRData{
 		PullRequest: &gh.PullRequest{
@@ -113,14 +113,14 @@ func TestTableComponent_CreateRows_WithEnhancement(t *testing.T) {
 			Comments: 5,
 		},
 	}
-	
+
 	rows := component.CreateRows([]*types.PRData{pr}, map[int]bool{})
-	
+
 	// Should have one row
 	if len(rows) != 1 {
 		t.Fatalf("Expected 1 row, got %d", len(rows))
 	}
-	
+
 	row := rows[0]
 	if len(row) != 9 {
 		t.Fatalf("Expected 9 columns, got %d", len(row))
@@ -129,7 +129,7 @@ func TestTableComponent_CreateRows_WithEnhancement(t *testing.T) {
 
 func TestTableComponent_CreateRows_NoEnhancement(t *testing.T) {
 	component := NewTableComponent()
-	
+
 	now := time.Now()
 	pr := &types.PRData{
 		PullRequest: &gh.PullRequest{
@@ -145,14 +145,14 @@ func TestTableComponent_CreateRows_NoEnhancement(t *testing.T) {
 		},
 		// No Enhanced data
 	}
-	
+
 	rows := component.CreateRows([]*types.PRData{pr}, map[int]bool{})
-	
+
 	// Should have one row
 	if len(rows) != 1 {
 		t.Fatalf("Expected 1 row, got %d", len(rows))
 	}
-	
+
 	row := rows[0]
 	if len(row) != 9 {
 		t.Fatalf("Expected 9 columns, got %d", len(row))
@@ -161,7 +161,7 @@ func TestTableComponent_CreateRows_NoEnhancement(t *testing.T) {
 
 func TestTableComponent_CreateRows_SpecialCharacters(t *testing.T) {
 	component := NewTableComponent()
-	
+
 	now := time.Now()
 	pr := &types.PRData{
 		PullRequest: &gh.PullRequest{
@@ -176,19 +176,19 @@ func TestTableComponent_CreateRows_SpecialCharacters(t *testing.T) {
 			},
 		},
 	}
-	
+
 	rows := component.CreateRows([]*types.PRData{pr}, map[int]bool{})
-	
+
 	// Should handle special characters without panicking
 	if len(rows) != 1 {
 		t.Fatalf("Expected 1 row, got %d", len(rows))
 	}
-	
+
 	row := rows[0]
 	if len(row) != 9 {
 		t.Fatalf("Expected 9 columns, got %d", len(row))
 	}
-	
+
 	// Should contain the special characters
 	if !strings.Contains(row[0], "émojis") {
 		t.Error("Title should preserve special characters")
@@ -200,7 +200,7 @@ func TestTableComponent_CreateRows_SpecialCharacters(t *testing.T) {
 
 func TestTableComponent_CreateRows_MultiplePRs(t *testing.T) {
 	component := NewTableComponent()
-	
+
 	now := time.Now()
 	prs := []*types.PRData{
 		{
@@ -243,13 +243,13 @@ func TestTableComponent_CreateRows_MultiplePRs(t *testing.T) {
 			},
 		},
 	}
-	
+
 	rows := component.CreateRows(prs, map[int]bool{})
-	
+
 	if len(rows) != 3 {
 		t.Fatalf("Expected 3 rows, got %d", len(rows))
 	}
-	
+
 	// Check that all PRs are represented
 	titles := []string{rows[0][0], rows[1][0], rows[2][0]}
 	for i, expectedTitle := range []string{"First PR", "Second PR", "Third PR"} {
@@ -261,7 +261,7 @@ func TestTableComponent_CreateRows_MultiplePRs(t *testing.T) {
 
 func TestTableComponent_CreateRows_WithEnhancementQueue(t *testing.T) {
 	component := NewTableComponent()
-	
+
 	now := time.Now()
 	pr := &types.PRData{
 		PullRequest: &gh.PullRequest{
@@ -276,14 +276,14 @@ func TestTableComponent_CreateRows_WithEnhancementQueue(t *testing.T) {
 			},
 		},
 	}
-	
+
 	enhancementQueue := map[int]bool{999: true}
 	rows := component.CreateRows([]*types.PRData{pr}, enhancementQueue)
-	
+
 	if len(rows) != 1 {
 		t.Fatalf("Expected 1 row, got %d", len(rows))
 	}
-	
+
 	row := rows[0]
 	// Check that enhancement queue status affects the display
 	// (specific formatting depends on implementation)

@@ -37,7 +37,7 @@ func TestRateLimiter(t *testing.T) {
 
 	// Test basic rate limiting
 	ctx := context.Background()
-	
+
 	// Normal rate limit should have minimal delay
 	rateLimit := &RateLimitInfo{
 		Limit:     5000,
@@ -89,7 +89,7 @@ func TestRateLimiterBackoff(t *testing.T) {
 		t.Fatalf("Wait() with low rate limit failed: %v", err)
 	}
 
-	// Should have some backoff delay (starts at minDelay, grows to 1s)  
+	// Should have some backoff delay (starts at minDelay, grows to 1s)
 	if duration < 150*time.Millisecond {
 		t.Errorf("Expected some backoff for low rate limit (>150ms), took %v", duration)
 	}
@@ -97,7 +97,7 @@ func TestRateLimiterBackoff(t *testing.T) {
 
 func TestRateLimiterCritical(t *testing.T) {
 	rateLimiter := NewRateLimiter()
-	
+
 	// Use context with timeout to avoid long waits in tests
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
@@ -105,7 +105,7 @@ func TestRateLimiterCritical(t *testing.T) {
 	// Test critical rate limit (should wait for reset, but we'll cancel via context)
 	criticalRateLimit := &RateLimitInfo{
 		Limit:     5000,
-		Remaining: 5, // Critical level
+		Remaining: 5,                                // Critical level
 		ResetAt:   time.Now().Add(10 * time.Second), // Long reset time
 	}
 

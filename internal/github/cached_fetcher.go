@@ -76,15 +76,15 @@ func generateFilterKey(filter *PRFilter) string {
 	}
 
 	var parts []string
-	
+
 	if filter.IncludeDrafts {
 		parts = append(parts, "drafts")
 	}
-	
+
 	if len(filter.ExcludeAuthors) > 0 {
 		parts = append(parts, fmt.Sprintf("noauthors:%s", strings.Join(filter.ExcludeAuthors, ",")))
 	}
-	
+
 	if len(filter.ExcludeTitles) > 0 {
 		parts = append(parts, fmt.Sprintf("notitles:%s", strings.Join(filter.ExcludeTitles, ",")))
 	}
@@ -92,7 +92,7 @@ func generateFilterKey(filter *PRFilter) string {
 	if len(parts) == 0 {
 		return "nofilter"
 	}
-	
+
 	return strings.Join(parts, "_")
 }
 
@@ -106,11 +106,11 @@ func (cf *CachedFetcher) BackgroundRefresh(ctx context.Context, client *ghApi.Cl
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			
+
 			// Fetch fresh data in background
 			filterKey := generateFilterKey(filter)
 			cacheKey := cf.cache.GenerateFetcherKey(cf.fetcherID, filterKey)
-			
+
 			prs, err := cf.fetcher.FetchPRs(ctx, client, filter)
 			if err != nil {
 				continue
@@ -126,14 +126,14 @@ func (cf *CachedFetcher) BackgroundRefresh(ctx context.Context, client *ghApi.Cl
 func (cf *CachedFetcher) InvalidateCache(filter *PRFilter) error {
 	filterKey := generateFilterKey(filter)
 	cacheKey := cf.cache.GenerateFetcherKey(cf.fetcherID, filterKey)
-	
+
 	// Try to remove both PR list and enhanced data
 	prListPath := cf.cache.GetCachePath(cacheKey, "prlist")
 	enhancedPath := cf.cache.GetCachePath(cacheKey, "enhanced")
-	
+
 	// Remove files (ignore errors as files might not exist)
 	_ = cf.cache.RemoveCacheFile(prListPath)
 	_ = cf.cache.RemoveCacheFile(enhancedPath)
-	
+
 	return nil
 }

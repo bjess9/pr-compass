@@ -41,7 +41,6 @@ func DefaultFilter() *PRFilter {
 	}
 }
 
-
 // shouldExcludePR determines if a PR should be filtered out
 func shouldExcludePR(pr *github.PullRequest, filter *PRFilter) bool {
 	if filter == nil {
@@ -96,13 +95,13 @@ func FetchPRsFromConfig(ctx context.Context, cfg *config.Config, token string) (
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Apply global PR limit
 	maxPRs := cfg.MaxPRs
 	if maxPRs == 0 {
 		maxPRs = 50 // Default limit
 	}
-	
+
 	if len(prs) > maxPRs {
 		// Sort by updated time (most recent first) and take the top N
 		sort.Slice(prs, func(i, j int) bool {
@@ -110,7 +109,7 @@ func FetchPRsFromConfig(ctx context.Context, cfg *config.Config, token string) (
 		})
 		prs = prs[:maxPRs]
 	}
-	
+
 	return prs, nil
 }
 
@@ -140,13 +139,13 @@ func FetchPRsFromConfigWithCache(ctx context.Context, cfg *config.Config, token 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Apply global PR limit
 	maxPRs := cfg.MaxPRs
 	if maxPRs == 0 {
 		maxPRs = 50 // Default limit
 	}
-	
+
 	if len(prs) > maxPRs {
 		// Sort by updated time (most recent first) and take the top N
 		sort.Slice(prs, func(i, j int) bool {
@@ -154,7 +153,7 @@ func FetchPRsFromConfigWithCache(ctx context.Context, cfg *config.Config, token 
 		})
 		prs = prs[:maxPRs]
 	}
-	
+
 	return prs, nil
 }
 
@@ -178,13 +177,13 @@ func FetchPRsFromConfigOptimized(ctx context.Context, cfg *config.Config, token 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Apply global PR limit
 	maxPRs := cfg.MaxPRs
 	if maxPRs == 0 {
 		maxPRs = 50 // Default limit
 	}
-	
+
 	if len(prs) > maxPRs {
 		// Sort by updated time (most recent first) and take the top N
 		sort.Slice(prs, func(i, j int) bool {
@@ -192,7 +191,7 @@ func FetchPRsFromConfigOptimized(ctx context.Context, cfg *config.Config, token 
 		})
 		prs = prs[:maxPRs]
 	}
-	
+
 	return prs, nil
 }
 
@@ -522,7 +521,6 @@ func fetchPRsFromSearchWithFilter(ctx context.Context, client *github.Client, qu
 				allPRs = append(allPRs, result.pr)
 			}
 		}
-
 
 		if resp.NextPage == 0 || len(allPRs) >= 200 {
 			break

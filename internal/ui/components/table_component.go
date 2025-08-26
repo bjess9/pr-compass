@@ -1,9 +1,9 @@
 package components
 
 import (
-	"github.com/charmbracelet/bubbles/table"
-	"github.com/bjess9/pr-compass/internal/ui/types"
 	"github.com/bjess9/pr-compass/internal/ui/formatters"
+	"github.com/bjess9/pr-compass/internal/ui/types"
+	"github.com/charmbracelet/bubbles/table"
 )
 
 // TableComponent handles table creation and management
@@ -35,7 +35,7 @@ func (tc *TableComponent) CreateTable() table.Model {
 // CreateRows creates table rows from PR data
 func (tc *TableComponent) CreateRows(prs []*types.PRData, enhancementQueue map[int]bool) []table.Row {
 	rows := make([]table.Row, len(prs))
-	
+
 	for i, pr := range prs {
 		displayInfo := tc.createPRDisplayInfo(pr, enhancementQueue)
 		rows[i] = table.Row{
@@ -50,7 +50,7 @@ func (tc *TableComponent) CreateRows(prs []*types.PRData, enhancementQueue map[i
 			displayInfo.UpdatedTime,
 		}
 	}
-	
+
 	return rows
 }
 
@@ -111,15 +111,15 @@ func (tc *TableComponent) formatRepo(pr *types.PRData) string {
 
 func (tc *TableComponent) formatStatus(pr *types.PRData, isEnhancing, isEnhanced bool) string {
 	baseStatus := tc.formatter.GetBasicStatus(pr.PullRequest)
-	
+
 	if isEnhanced && pr.Enhanced != nil {
 		return tc.formatter.GetEnhancedStatus(pr.Enhanced, baseStatus)
 	}
-	
+
 	if isEnhancing {
 		return baseStatus + " ⏳"
 	}
-	
+
 	return baseStatus + " ••"
 }
 
@@ -127,11 +127,11 @@ func (tc *TableComponent) formatReviews(pr *types.PRData, isEnhancing, isEnhance
 	if isEnhanced && pr.Enhanced != nil {
 		return tc.formatter.GetEnhancedReviewStatus(pr.Enhanced)
 	}
-	
+
 	if isEnhancing {
 		return "Loading..."
 	}
-	
+
 	return tc.formatter.GetBasicReviewStatus(pr.PullRequest)
 }
 
@@ -143,11 +143,11 @@ func (tc *TableComponent) formatComments(pr *types.PRData, isEnhancing, isEnhanc
 		}
 		return tc.formatter.FormatNumber(total)
 	}
-	
+
 	if isEnhancing {
 		return "⏳"
 	}
-	
+
 	return "?"
 }
 
@@ -162,11 +162,11 @@ func (tc *TableComponent) formatFiles(pr *types.PRData, isEnhancing, isEnhanced 
 		}
 		return tc.formatter.FormatNumber(pr.Enhanced.ChangedFiles)
 	}
-	
+
 	if isEnhancing {
 		return "⏳"
 	}
-	
+
 	return "••"
 }
 

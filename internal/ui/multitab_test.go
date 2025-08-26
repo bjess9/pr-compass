@@ -11,11 +11,11 @@ import (
 // TestTabConfig tests tab configuration creation and conversion
 func TestTabConfig(t *testing.T) {
 	config := &TabConfig{
-		Name:         "Test Tab",
-		Mode:         "repos",
-		Repos:        []string{"test/repo1", "test/repo2"},
-		ExcludeBots:  true,
-		IncludeDrafts: false,
+		Name:                   "Test Tab",
+		Mode:                   "repos",
+		Repos:                  []string{"test/repo1", "test/repo2"},
+		ExcludeBots:            true,
+		IncludeDrafts:          false,
 		RefreshIntervalMinutes: 10,
 	}
 
@@ -49,8 +49,8 @@ func TestTabManager(t *testing.T) {
 
 	// Add first tab
 	tab1 := &TabConfig{
-		Name: "Tab 1",
-		Mode: "repos",
+		Name:  "Tab 1",
+		Mode:  "repos",
 		Repos: []string{"test/repo"},
 	}
 	manager.AddTab(tab1)
@@ -67,8 +67,8 @@ func TestTabManager(t *testing.T) {
 
 	// Add second tab
 	tab2 := &TabConfig{
-		Name: "Tab 2",
-		Mode: "organization",
+		Name:         "Tab 2",
+		Mode:         "organization",
 		Organization: "test-org",
 	}
 	manager.AddTab(tab2)
@@ -201,16 +201,16 @@ func TestMultiTabConfiguration(t *testing.T) {
 		RefreshIntervalMinutes: 5,
 		Tabs: []TabConfig{
 			{
-				Name:         "Tab 1",
-				Mode:         "repos",
-				Repos:        []string{"test/repo1"},
-				ExcludeBots:  true,
+				Name:          "Tab 1",
+				Mode:          "repos",
+				Repos:         []string{"test/repo1"},
+				ExcludeBots:   true,
 				IncludeDrafts: true,
 			},
 			{
-				Name:         "Tab 2",
-				Mode:         "organization",
-				Organization: "test-org",
+				Name:                   "Tab 2",
+				Mode:                   "organization",
+				Organization:           "test-org",
 				RefreshIntervalMinutes: 10,
 			},
 		},
@@ -248,9 +248,9 @@ func TestMultiTabConfiguration(t *testing.T) {
 // TestTabStateInitialization tests tab state creation
 func TestTabStateInitialization(t *testing.T) {
 	config := &TabConfig{
-		Name:         "Test Tab",
-		Mode:         "repos",
-		Repos:        []string{"test/repo"},
+		Name:                   "Test Tab",
+		Mode:                   "repos",
+		Repos:                  []string{"test/repo"},
 		RefreshIntervalMinutes: 5,
 	}
 
@@ -302,8 +302,8 @@ func TestTabCleanup(t *testing.T) {
 	// Add multiple tabs
 	for i := 0; i < 3; i++ {
 		config := &TabConfig{
-			Name: "Tab " + string(rune('1'+i)),
-			Mode: "repos",
+			Name:  "Tab " + string(rune('1'+i)),
+			Mode:  "repos",
 			Repos: []string{"test/repo"},
 		}
 		manager.AddTab(config)
@@ -331,10 +331,10 @@ func TestTabManagerEdgeCases(t *testing.T) {
 	if manager.GetActiveTab() != nil {
 		t.Error("Expected nil active tab when no tabs exist")
 	}
-	
+
 	manager.NextTab() // Should not panic
 	manager.PrevTab() // Should not panic
-	
+
 	if manager.ActiveTabIdx != 0 {
 		t.Error("Expected ActiveTabIdx to remain 0 when no tabs exist")
 	}

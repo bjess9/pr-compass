@@ -9,16 +9,16 @@ import (
 
 func TestNewStateService(t *testing.T) {
 	service := NewStateService()
-	
+
 	if service == nil {
 		t.Fatal("NewStateService returned nil")
 	}
-	
+
 	state := service.GetState()
 	if state == nil {
 		t.Fatal("GetState returned nil")
 	}
-	
+
 	// Check initial state
 	if len(state.PRs) != 0 {
 		t.Errorf("Expected empty PRs slice, got %d items", len(state.PRs))
@@ -36,7 +36,7 @@ func TestNewStateService(t *testing.T) {
 
 func TestStateService_UpdatePRs(t *testing.T) {
 	service := NewStateService()
-	
+
 	// Create test PRs
 	prs := []*types.PRData{
 		{
@@ -52,9 +52,9 @@ func TestStateService_UpdatePRs(t *testing.T) {
 			},
 		},
 	}
-	
+
 	service.UpdatePRs(prs)
-	
+
 	state := service.GetState()
 	if len(state.PRs) != 2 {
 		t.Fatalf("Expected 2 PRs, got %d", len(state.PRs))
@@ -65,7 +65,7 @@ func TestStateService_UpdatePRs(t *testing.T) {
 	if !state.Loaded {
 		t.Error("Expected Loaded to be true after UpdatePRs")
 	}
-	
+
 	// Check PR content
 	if state.PRs[0].GetNumber() != 1 {
 		t.Errorf("Expected first PR number to be 1, got %d", state.PRs[0].GetNumber())
@@ -77,15 +77,15 @@ func TestStateService_UpdatePRs(t *testing.T) {
 
 func TestStateService_UpdateFilter(t *testing.T) {
 	service := NewStateService()
-	
+
 	filter := types.FilterOptions{
 		Mode:   "author",
 		Value:  "test-user",
 		Active: true,
 	}
-	
+
 	service.UpdateFilter(filter)
-	
+
 	state := service.GetState()
 	if state.UI.Filter.Mode != "author" {
 		t.Errorf("Expected filter mode 'author', got %s", state.UI.Filter.Mode)
@@ -100,11 +100,11 @@ func TestStateService_UpdateFilter(t *testing.T) {
 
 func TestStateService_ErrorHandling(t *testing.T) {
 	service := NewStateService()
-	
+
 	// Test setting error
 	testError := &testError{message: "test error"}
 	service.SetError(testError)
-	
+
 	state := service.GetState()
 	if state.Error == nil {
 		t.Fatal("Expected error to be set")
@@ -112,7 +112,7 @@ func TestStateService_ErrorHandling(t *testing.T) {
 	if state.Error.Error() != "test error" {
 		t.Errorf("Expected error message 'test error', got %s", state.Error.Error())
 	}
-	
+
 	// Test clearing error
 	service.ClearError()
 	state = service.GetState()
@@ -123,19 +123,19 @@ func TestStateService_ErrorHandling(t *testing.T) {
 
 func TestStateService_EnhancementQueue(t *testing.T) {
 	service := NewStateService()
-	
+
 	// Test adding to queue
 	service.AddToEnhancementQueue(123)
 	if !service.IsInEnhancementQueue(123) {
 		t.Error("Expected PR 123 to be in enhancement queue")
 	}
-	
+
 	// Test removing from queue
 	service.RemoveFromEnhancementQueue(123)
 	if service.IsInEnhancementQueue(123) {
 		t.Error("Expected PR 123 to be removed from enhancement queue")
 	}
-	
+
 	// Test non-existent PR
 	if service.IsInEnhancementQueue(456) {
 		t.Error("Expected PR 456 to not be in enhancement queue")
@@ -144,21 +144,21 @@ func TestStateService_EnhancementQueue(t *testing.T) {
 
 func TestStateService_StatusAndUI(t *testing.T) {
 	service := NewStateService()
-	
+
 	// Test status message
 	service.UpdateStatusMessage("Test status")
 	state := service.GetState()
 	if state.UI.StatusMsg != "Test status" {
 		t.Errorf("Expected status message 'Test status', got %s", state.UI.StatusMsg)
 	}
-	
+
 	// Test help display
 	service.SetShowHelp(true)
 	state = service.GetState()
 	if !state.UI.ShowHelp {
 		t.Error("Expected ShowHelp to be true")
 	}
-	
+
 	// Test cursor updates
 	service.UpdateTableCursor(5)
 	service.UpdateSelectedPR(3)
@@ -173,7 +173,7 @@ func TestStateService_StatusAndUI(t *testing.T) {
 
 func TestStateService_EnhancementData(t *testing.T) {
 	service := NewStateService()
-	
+
 	// Create test PRs
 	prs := []*types.PRData{
 		{
@@ -184,14 +184,14 @@ func TestStateService_EnhancementData(t *testing.T) {
 		},
 	}
 	service.UpdatePRs(prs)
-	
+
 	// Update enhancement
 	enhanced := &types.EnhancedData{
 		Number:   100,
 		Comments: 5,
 	}
 	service.UpdatePREnhancement(100, enhanced)
-	
+
 	// Check that enhancement was applied
 	state := service.GetState()
 	if state.PRs[0].Enhanced == nil {
@@ -207,7 +207,7 @@ func TestStateService_EnhancementData(t *testing.T) {
 
 func TestStateService_GetStateCopy(t *testing.T) {
 	service := NewStateService()
-	
+
 	// Set up some state
 	prs := []*types.PRData{
 		{
@@ -216,16 +216,16 @@ func TestStateService_GetStateCopy(t *testing.T) {
 	}
 	service.UpdatePRs(prs)
 	service.AddToEnhancementQueue(123)
-	
+
 	// Get two copies of state
 	state1 := service.GetState()
 	state2 := service.GetState()
-	
+
 	// They should have the same content
 	if len(state1.PRs) != len(state2.PRs) {
 		t.Error("State copies should have same PR count")
 	}
-	
+
 	// But be different objects (deep copy test)
 	if &state1.PRs == &state2.PRs {
 		t.Error("State copies should not share the same PR slice reference")
@@ -233,7 +233,7 @@ func TestStateService_GetStateCopy(t *testing.T) {
 	if &state1.EnhancementQueue == &state2.EnhancementQueue {
 		t.Error("State copies should not share the same EnhancementQueue reference")
 	}
-	
+
 	// Modify one copy and ensure other is unaffected
 	state1.EnhancementQueue[456] = true
 	if _, exists := state2.EnhancementQueue[456]; exists {

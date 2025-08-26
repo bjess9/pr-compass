@@ -31,20 +31,20 @@ func (s *stateService) GetState() *types.AppState {
 
 	// Return a deep copy to prevent external mutations
 	stateCopy := *s.state
-	
+
 	// Copy slices
 	stateCopy.PRs = make([]*types.PRData, len(s.state.PRs))
 	copy(stateCopy.PRs, s.state.PRs)
-	
+
 	stateCopy.FilteredPRs = make([]*types.PRData, len(s.state.FilteredPRs))
 	copy(stateCopy.FilteredPRs, s.state.FilteredPRs)
-	
+
 	// Copy map
 	stateCopy.EnhancementQueue = make(map[int]bool)
 	for k, v := range s.state.EnhancementQueue {
 		stateCopy.EnhancementQueue[k] = v
 	}
-	
+
 	return &stateCopy
 }
 
@@ -59,7 +59,7 @@ func (s *stateService) UpdateState(updater func(*types.AppState)) {
 func (s *stateService) UpdatePRs(prs []*types.PRData) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	
+
 	s.state.PRs = prs
 	s.state.FilteredPRs = prs // Initially show all PRs
 	s.state.Loaded = true
@@ -175,7 +175,7 @@ func (s *stateService) UpdateTableCursor(cursor int) {
 func (s *stateService) GetEnhancedPR(prNumber int) (*types.PRData, bool) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
-	
+
 	for _, pr := range s.state.PRs {
 		if pr.GetNumber() == prNumber && pr.Enhanced != nil {
 			return pr, true
@@ -188,14 +188,14 @@ func (s *stateService) GetEnhancedPR(prNumber int) (*types.PRData, bool) {
 func (s *stateService) UpdatePREnhancement(prNumber int, enhanced *types.EnhancedData) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	
+
 	// Update the PR in both PRs and FilteredPRs lists
 	for _, pr := range s.state.PRs {
 		if pr.GetNumber() == prNumber {
 			pr.Enhanced = enhanced
 		}
 	}
-	
+
 	for _, pr := range s.state.FilteredPRs {
 		if pr.GetNumber() == prNumber {
 			pr.Enhanced = enhanced

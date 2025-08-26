@@ -45,7 +45,7 @@ func Authenticate() (string, error) {
 	}
 
 	// No valid token found - provide helpful instructions
-	return "", errors.NewAuthTokenMissingError()
+	return "", errors.ErrAuthTokenMissing
 }
 
 // validateToken performs basic validation on token format
@@ -63,10 +63,6 @@ func validateToken(token string) bool {
 		}
 	}
 
-	// Legacy tokens (40 characters, no prefix) - still supported
-	if len(token) == 40 {
-		return true
-	}
-
+	// No valid prefix found
 	return false
 }

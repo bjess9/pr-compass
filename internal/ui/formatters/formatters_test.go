@@ -10,7 +10,7 @@ import (
 
 func TestNewPRFormatter(t *testing.T) {
 	formatter := NewPRFormatter()
-	
+
 	if formatter == nil {
 		t.Fatal("NewPRFormatter returned nil")
 	}
@@ -18,7 +18,7 @@ func TestNewPRFormatter(t *testing.T) {
 
 func TestPRFormatter_FormatNumber(t *testing.T) {
 	formatter := NewPRFormatter()
-	
+
 	tests := []struct {
 		name     string
 		input    int
@@ -28,7 +28,7 @@ func TestPRFormatter_FormatNumber(t *testing.T) {
 		{"Positive", 5, "5"},
 		{"Large number", 999, "999"},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatter.FormatNumber(tt.input)
@@ -41,7 +41,7 @@ func TestPRFormatter_FormatNumber(t *testing.T) {
 
 func TestPRFormatter_FormatChanges(t *testing.T) {
 	formatter := NewPRFormatter()
-	
+
 	tests := []struct {
 		name      string
 		additions int
@@ -53,7 +53,7 @@ func TestPRFormatter_FormatChanges(t *testing.T) {
 		{"Only deletions", 0, 3, "+0/-3"},
 		{"Both", 10, 5, "+10/-5"},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatter.FormatChanges(tt.additions, tt.deletions)
@@ -67,7 +67,7 @@ func TestPRFormatter_FormatChanges(t *testing.T) {
 func TestPRFormatter_HumanizeTimeSince(t *testing.T) {
 	formatter := NewPRFormatter()
 	now := time.Now()
-	
+
 	tests := []struct {
 		name     string
 		time     time.Time
@@ -80,7 +80,7 @@ func TestPRFormatter_HumanizeTimeSince(t *testing.T) {
 		{"Weeks ago", now.Add(-2 * 7 * 24 * time.Hour), "2w"},
 		{"Months ago", now.Add(-2 * 30 * 24 * time.Hour), "2mo"},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatter.HumanizeTimeSince(tt.time)
@@ -93,7 +93,7 @@ func TestPRFormatter_HumanizeTimeSince(t *testing.T) {
 
 func TestPRFormatter_GetBasicStatus(t *testing.T) {
 	formatter := NewPRFormatter()
-	
+
 	tests := []struct {
 		name     string
 		pr       *gh.PullRequest
@@ -139,7 +139,7 @@ func TestPRFormatter_GetBasicStatus(t *testing.T) {
 			expected: "Behind",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatter.GetBasicStatus(tt.pr)
@@ -152,18 +152,18 @@ func TestPRFormatter_GetBasicStatus(t *testing.T) {
 
 func TestPRFormatter_GetEnhancedStatus(t *testing.T) {
 	formatter := NewPRFormatter()
-	
+
 	tests := []struct {
-		name        string
-		enhanced    *types.EnhancedData
-		baseStatus  string
-		expected    string
+		name       string
+		enhanced   *types.EnhancedData
+		baseStatus string
+		expected   string
 	}{
 		{
 			name: "Clean with passing checks",
 			enhanced: &types.EnhancedData{
-				Mergeable:     "clean",
-				ChecksStatus:  "success",
+				Mergeable:    "clean",
+				ChecksStatus: "success",
 			},
 			baseStatus: "Ready",
 			expected:   "[✓] Ready",
@@ -171,8 +171,8 @@ func TestPRFormatter_GetEnhancedStatus(t *testing.T) {
 		{
 			name: "Clean with failing checks",
 			enhanced: &types.EnhancedData{
-				Mergeable:     "clean",
-				ChecksStatus:  "failure",
+				Mergeable:    "clean",
+				ChecksStatus: "failure",
 			},
 			baseStatus: "Ready",
 			expected:   "[!] Checks",
@@ -194,7 +194,7 @@ func TestPRFormatter_GetEnhancedStatus(t *testing.T) {
 			expected:   "Ready",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatter.GetEnhancedStatus(tt.enhanced, tt.baseStatus)
@@ -207,7 +207,7 @@ func TestPRFormatter_GetEnhancedStatus(t *testing.T) {
 
 func TestPRFormatter_GetBasicReviewStatus(t *testing.T) {
 	formatter := NewPRFormatter()
-	
+
 	now := time.Now()
 	tests := []struct {
 		name     string
@@ -257,7 +257,7 @@ func TestPRFormatter_GetBasicReviewStatus(t *testing.T) {
 			expected: "None",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatter.GetBasicReviewStatus(tt.pr)
@@ -270,7 +270,7 @@ func TestPRFormatter_GetBasicReviewStatus(t *testing.T) {
 
 func TestPRFormatter_GetEnhancedReviewStatus(t *testing.T) {
 	formatter := NewPRFormatter()
-	
+
 	tests := []struct {
 		name     string
 		enhanced *types.EnhancedData
@@ -312,7 +312,7 @@ func TestPRFormatter_GetEnhancedReviewStatus(t *testing.T) {
 			expected: "Unknown",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatter.GetEnhancedReviewStatus(tt.enhanced)
@@ -325,18 +325,18 @@ func TestPRFormatter_GetEnhancedReviewStatus(t *testing.T) {
 
 func TestPRFormatter_CreateTableColumns(t *testing.T) {
 	formatter := NewPRFormatter()
-	
+
 	columns := formatter.CreateTableColumns()
-	
+
 	// Should have 9 columns
 	if len(columns) != 9 {
 		t.Fatalf("Expected 9 columns, got %d", len(columns))
 	}
-	
+
 	// Check column titles
 	expectedTitles := []string{
 		"📋 Pull Request",
-		"👤 Author", 
+		"👤 Author",
 		"📦 Repo",
 		"⚡ Status/CI",
 		"👀 Review",
@@ -345,7 +345,7 @@ func TestPRFormatter_CreateTableColumns(t *testing.T) {
 		"📅 Created",
 		"🕐 Updated",
 	}
-	
+
 	for i, expected := range expectedTitles {
 		if columns[i].Title != expected {
 			t.Errorf("Column %d: expected title '%s', got '%s'", i, expected, columns[i].Title)

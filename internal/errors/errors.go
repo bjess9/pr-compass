@@ -1,271 +1,118 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
 
-// ErrorType represents the type of error that occurred
-type ErrorType string
-
-const (
-	// Authentication error types
-	ErrorTypeAuthTokenInvalid     ErrorType = "auth_token_invalid"    // #nosec G101 -- This is an error type identifier, not credentials
-	ErrorTypeAuthTokenMissing     ErrorType = "auth_token_missing"    // #nosec G101 -- This is an error type identifier, not credentials
-	ErrorTypeAuthStorageFailed    ErrorType = "auth_storage_failed"
-	ErrorTypeAuthPermissionDenied ErrorType = "auth_permission_denied"
-
-	// Configuration error types
-	ErrorTypeConfigNotFound    ErrorType = "config_not_found"
-	ErrorTypeConfigInvalid     ErrorType = "config_invalid"
-	ErrorTypeConfigModeInvalid ErrorType = "config_mode_invalid"
-
-	// GitHub API error types
-	ErrorTypeGitHubRateLimit    ErrorType = "github_rate_limit"
-	ErrorTypeGitHubNetworkError ErrorType = "github_network_error"
-	ErrorTypeGitHubNotFound     ErrorType = "github_not_found"
-	ErrorTypeGitHubForbidden    ErrorType = "github_forbidden"
-	ErrorTypeGitHubUnknown      ErrorType = "github_unknown"
-
-	// Context error types
-	ErrorTypeTimeout   ErrorType = "timeout"
-	ErrorTypeCancelled ErrorType = "cancelled"
-
-	// Repository/Resource error types
-	ErrorTypeRepositoryInvalid    ErrorType = "repository_invalid"
-	ErrorTypeOrganizationNotFound ErrorType = "organization_not_found"
+// Authentication errors
+var (
+	ErrAuthTokenInvalid     = errors.New("GitHub token format is invalid - check that your token starts with 'ghp_', 'gho_', 'ghu_', or 'ghs_' and is complete")
+	ErrAuthTokenMissing     = errors.New("no GitHub token found - set GITHUB_TOKEN environment variable or use 'gh auth login'")
+	ErrAuthStorageFailed    = errors.New("failed to store authentication token - check file permissions in your home directory")
+	ErrAuthPermissionDenied = errors.New("GitHub API permission denied - ensure your token has 'repo' and 'read:org' scopes")
 )
 
-// PRCompassError represents a domain-specific error in the PR Compass application
-type PRCompassError struct {
-	Type        ErrorType
-	Message     string
-	UserMessage string // User-friendly message
-	Suggestion  string // Suggestion for user action
-	Cause       error  // Underlying error
+// Configuration errors
+func NewConfigNotFoundError(configPath string) error {
+	return fmt.Errorf("configuration file not found: %s - create it or copy example_config.yaml to get started", configPath)
 }
 
-// Error implements the error interface
-func (e *PRCompassError) Error() string {
-	if e.Cause != nil {
-		return fmt.Sprintf("%s: %s (caused by: %v)", e.Type, e.Message, e.Cause)
-	}
-	return fmt.Sprintf("%s: %s", e.Type, e.Message)
+func NewConfigInvalidError(cause error) error {
+	return fmt.Errorf("configuration file has invalid syntax or structure - check your YAML syntax and compare with example_config.yaml: %w", cause)
 }
 
-// UserFriendlyError returns a user-friendly error message with suggestions
-func (e *PRCompassError) UserFriendlyError() string {
-	msg := e.UserMessage
-	if msg == "" {
-		msg = e.Message
-	}
-
-	if e.Suggestion != "" {
-		return fmt.Sprintf("%s\n\nSuggestion: %s", msg, e.Suggestion)
-	}
-	return msg
+func NewConfigModeInvalidError(mode string) error {
+	return fmt.Errorf("configuration mode '%s' is not supported - use one of: 'repos', 'organization', 'teams', 'search', or 'topics'", mode)
 }
 
-// Unwrap returns the underlying cause error for error wrapping compatibility
-func (e *PRCompassError) Unwrap() error {
-	return e.Cause
-}
-
-// IsType checks if the error is of a specific type
-func (e *PRCompassError) IsType(errorType ErrorType) bool {
-	return e.Type == errorType
-}
-
-// Authentication error constructors
-func NewAuthTokenInvalidError(cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeAuthTokenInvalid,
-		Message:     "GitHub token format is invalid",
-		UserMessage: "Your GitHub token appears to be invalid or malformed",
-		Suggestion:  "Please check that your token starts with 'ghp_', 'gho_', 'ghu_', or 'ghs_' and is complete",
-		Cause:       cause,
-	}
-}
-
-func NewAuthTokenMissingError() *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeAuthTokenMissing,
-		Message:     "No GitHub token found",
-		UserMessage: "No GitHub authentication token found",
-		Suggestion:  "Set GITHUB_TOKEN environment variable or use 'gh auth login' to authenticate with GitHub CLI",
-		Cause:       nil,
-	}
-}
-
-func NewAuthStorageError(cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeAuthStorageFailed,
-		Message:     "Failed to store authentication token",
-		UserMessage: "Unable to save your GitHub token for future use",
-		Suggestion:  "You may need to re-enter your token next time. Check file permissions in your home directory",
-		Cause:       cause,
-	}
-}
-
-func NewAuthPermissionDeniedError(cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeAuthPermissionDenied,
-		Message:     "GitHub API permission denied",
-		UserMessage: "Access denied by GitHub API - insufficient permissions",
-		Suggestion:  "Ensure your token has 'repo' and 'read:org' scopes, and you have access to the requested resources",
-		Cause:       cause,
-	}
-}
-
-// Configuration error constructors
-func NewConfigNotFoundError(configPath string, cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeConfigNotFound,
-		Message:     fmt.Sprintf("Configuration file not found: %s", configPath),
-		UserMessage: "Configuration file not found",
-		Suggestion:  fmt.Sprintf("Create %s or copy example_config.yaml to get started", configPath),
-		Cause:       cause,
-	}
-}
-
-func NewConfigInvalidError(cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeConfigInvalid,
-		Message:     "Configuration file is invalid",
-		UserMessage: "Your configuration file has invalid syntax or structure",
-		Suggestion:  "Check your YAML syntax and compare with example_config.yaml",
-		Cause:       cause,
-	}
-}
-
-func NewConfigModeInvalidError(mode string) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeConfigModeInvalid,
-		Message:     fmt.Sprintf("Invalid configuration mode: %s", mode),
-		UserMessage: fmt.Sprintf("Configuration mode '%s' is not supported", mode),
-		Suggestion:  "Use one of: 'repos', 'organization', 'teams', 'search', or 'topics'",
-		Cause:       nil,
-	}
-}
-
-// GitHub API error constructors
-func NewGitHubRateLimitError(resetTime string, cause error) *PRCompassError {
-	suggestion := "Wait for the rate limit to reset"
+// GitHub API errors
+func NewGitHubRateLimitError(resetTime string, cause error) error {
+	msg := "GitHub API rate limit exceeded - wait for the rate limit to reset"
 	if resetTime != "" {
-		suggestion = fmt.Sprintf("Wait until %s for rate limit reset, or use a different token", resetTime)
+		msg = fmt.Sprintf("GitHub API rate limit exceeded - wait until %s for rate limit reset, or use a different token", resetTime)
 	}
-
-	return &PRCompassError{
-		Type:        ErrorTypeGitHubRateLimit,
-		Message:     "GitHub API rate limit exceeded",
-		UserMessage: "You've hit GitHub's API rate limit",
-		Suggestion:  suggestion,
-		Cause:       cause,
+	if cause != nil {
+		return fmt.Errorf("%s: %w", msg, cause)
 	}
+	return errors.New(msg)
 }
 
-func NewGitHubNetworkError(cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeGitHubNetworkError,
-		Message:     "Network error connecting to GitHub API",
-		UserMessage: "Unable to connect to GitHub",
-		Suggestion:  "Check your internet connection and try again. GitHub might be temporarily unavailable",
-		Cause:       cause,
-	}
+func NewGitHubNetworkError(cause error) error {
+	return fmt.Errorf("unable to connect to GitHub - check your internet connection and try again: %w", cause)
 }
 
-func NewGitHubNotFoundError(resource string, cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeGitHubNotFound,
-		Message:     fmt.Sprintf("GitHub resource not found: %s", resource),
-		UserMessage: fmt.Sprintf("Could not find %s on GitHub", resource),
-		Suggestion:  "Check that the repository/organization name is correct and you have access to it",
-		Cause:       cause,
+func NewGitHubNotFoundError(resource string, cause error) error {
+	msg := fmt.Sprintf("GitHub resource not found: %s - check that the repository/organization name is correct and you have access to it", resource)
+	if cause != nil {
+		return fmt.Errorf("%s: %w", msg, cause)
 	}
+	return errors.New(msg)
 }
 
-func NewGitHubForbiddenError(resource string, cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeGitHubForbidden,
-		Message:     fmt.Sprintf("Access forbidden to GitHub resource: %s", resource),
-		UserMessage: fmt.Sprintf("Access denied to %s", resource),
-		Suggestion:  "Ensure your token has sufficient permissions and you're a member of the organization/team",
-		Cause:       cause,
+func NewGitHubForbiddenError(resource string, cause error) error {
+	msg := fmt.Sprintf("access denied to %s - ensure your token has sufficient permissions and you're a member of the organization/team", resource)
+	if cause != nil {
+		return fmt.Errorf("%s: %w", msg, cause)
 	}
+	return errors.New(msg)
 }
 
-func NewGitHubUnknownError(statusCode int, cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeGitHubUnknown,
-		Message:     fmt.Sprintf("Unknown GitHub API error (HTTP %d)", statusCode),
-		UserMessage: "An unexpected error occurred with the GitHub API",
-		Suggestion:  "Please try again later. If the problem persists, check GitHub's status page",
-		Cause:       cause,
+func NewGitHubUnknownError(statusCode int, cause error) error {
+	msg := fmt.Sprintf("unexpected GitHub API error (HTTP %d) - please try again later", statusCode)
+	if cause != nil {
+		return fmt.Errorf("%s: %w", msg, cause)
 	}
+	return errors.New(msg)
 }
 
-// Context error constructors
-func NewTimeoutError(operation string, cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeTimeout,
-		Message:     fmt.Sprintf("Operation timed out: %s", operation),
-		UserMessage: fmt.Sprintf("The %s operation took too long and was cancelled", operation),
-		Suggestion:  "Try again with a more specific query or check your network connection",
-		Cause:       cause,
+// Context errors
+func NewTimeoutError(operation string, cause error) error {
+	msg := fmt.Sprintf("operation timed out: %s - try again with a more specific query or check your network connection", operation)
+	if cause != nil {
+		return fmt.Errorf("%s: %w", msg, cause)
 	}
+	return errors.New(msg)
 }
 
-func NewCancelledError(operation string, cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeCancelled,
-		Message:     fmt.Sprintf("Operation cancelled: %s", operation),
-		UserMessage: "The operation was cancelled",
-		Suggestion:  "The operation was stopped, likely due to app shutdown or user interruption",
-		Cause:       cause,
+func NewCancelledError(operation string, cause error) error {
+	msg := fmt.Sprintf("operation cancelled: %s", operation)
+	if cause != nil {
+		return fmt.Errorf("%s: %w", msg, cause)
 	}
+	return errors.New(msg)
 }
 
-// Repository error constructors
-func NewRepositoryInvalidError(repo string, cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeRepositoryInvalid,
-		Message:     fmt.Sprintf("Invalid repository format: %s", repo),
-		UserMessage: fmt.Sprintf("Repository '%s' has invalid format", repo),
-		Suggestion:  "Repository names should be in 'owner/repo' format (e.g., 'microsoft/vscode')",
-		Cause:       cause,
+// Repository errors
+func NewRepositoryInvalidError(repo string, cause error) error {
+	msg := fmt.Sprintf("invalid repository format: %s - repository names should be in 'owner/repo' format (e.g., 'microsoft/vscode')", repo)
+	if cause != nil {
+		return fmt.Errorf("%s: %w", msg, cause)
 	}
+	return errors.New(msg)
 }
 
-func NewOrganizationNotFoundError(org string, cause error) *PRCompassError {
-	return &PRCompassError{
-		Type:        ErrorTypeOrganizationNotFound,
-		Message:     fmt.Sprintf("Organization not found: %s", org),
-		UserMessage: fmt.Sprintf("Organization '%s' could not be found or accessed", org),
-		Suggestion:  "Check the organization name and ensure you have access to it",
-		Cause:       cause,
+func NewOrganizationNotFoundError(org string, cause error) error {
+	msg := fmt.Sprintf("organization not found: %s - check the organization name and ensure you have access to it", org)
+	if cause != nil {
+		return fmt.Errorf("%s: %w", msg, cause)
 	}
+	return errors.New(msg)
 }
 
 // Helper function to convert HTTP status codes to appropriate GitHub errors
-func NewGitHubErrorFromHTTPStatus(statusCode int, resource string, cause error) *PRCompassError {
+func NewGitHubErrorFromHTTPStatus(statusCode int, resource string, cause error) error {
 	switch statusCode {
 	case http.StatusNotFound:
 		return NewGitHubNotFoundError(resource, cause)
 	case http.StatusForbidden:
 		return NewGitHubForbiddenError(resource, cause)
 	case http.StatusUnauthorized:
-		return NewAuthPermissionDeniedError(cause)
+		return fmt.Errorf("GitHub API permission denied - ensure your token has 'repo' and 'read:org' scopes: %w", cause)
 	case http.StatusTooManyRequests:
 		return NewGitHubRateLimitError("", cause)
 	default:
 		return NewGitHubUnknownError(statusCode, cause)
 	}
-}
-
-// IsPRCompassError checks if an error is a PRCompassError
-func IsPRCompassError(err error) (*PRCompassError, bool) {
-	if prErr, ok := err.(*PRCompassError); ok {
-		return prErr, true
-	}
-	return nil, false
 }

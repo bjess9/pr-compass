@@ -149,12 +149,12 @@ func (m *mockFetcher) FetchPRs(ctx context.Context, client *github.Client, filte
 func createTestCache(t *testing.T) *cache.PRCache {
 	tempDir := t.TempDir()
 	cacheDir := filepath.Join(tempDir, "cache")
-	
+
 	prCache, err := cache.NewPRCacheWithDir(cacheDir)
 	if err != nil {
 		t.Fatalf("Failed to create test cache: %v", err)
 	}
-	
+
 	return prCache
 }
 

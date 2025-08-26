@@ -56,10 +56,10 @@ type GraphQLResponse struct {
 	Errors     []GraphQLError  `json:"errors,omitempty"`
 	Extensions struct {
 		Cost struct {
-			RequestedQueryCost   int `json:"requestedQueryCost"`
-			ActualQueryCost      int `json:"actualQueryCost"`
-			MaximumAvailable     int `json:"maximumAvailable"`
-			RemainingQuotaAfter  int `json:"remainingQuotaAfter"`
+			RequestedQueryCost  int `json:"requestedQueryCost"`
+			ActualQueryCost     int `json:"actualQueryCost"`
+			MaximumAvailable    int `json:"maximumAvailable"`
+			RemainingQuotaAfter int `json:"remainingQuotaAfter"`
 		} `json:"cost"`
 	} `json:"extensions"`
 }
@@ -106,7 +106,7 @@ func (gc *GraphQLClient) Execute(ctx context.Context, req GraphQLRequest) (*Grap
 		_, _ = fmt.Sscanf(limit, "%d", &gc.rateLimits.Limit)
 	}
 	if remaining := resp.Header.Get("X-RateLimit-Remaining"); remaining != "" {
-		_, _ = fmt.Sscanf(remaining, "%d", &gc.rateLimits.Remaining)  
+		_, _ = fmt.Sscanf(remaining, "%d", &gc.rateLimits.Remaining)
 	}
 	if reset := resp.Header.Get("X-RateLimit-Reset"); reset != "" {
 		var resetTimestamp int64
@@ -135,26 +135,26 @@ func (gc *GraphQLClient) Execute(ctx context.Context, req GraphQLRequest) (*Grap
 
 // PRData represents comprehensive PR data from GraphQL
 type PRData struct {
-	Number          int                    `json:"number"`
-	Title           string                 `json:"title"`
-	Body            string                 `json:"body"`
-	State           string                 `json:"state"`
-	IsDraft         bool                   `json:"isDraft"`
-	Mergeable       string                 `json:"mergeable"`
-	Author          *AuthorData            `json:"author"`
-	Repository      *RepositoryData        `json:"repository"`
-	CreatedAt       time.Time              `json:"createdAt"`
-	UpdatedAt       time.Time              `json:"updatedAt"`
-	URL             string                 `json:"url"`
-	Labels          *LabelConnection       `json:"labels"`
-	Comments        *CommentConnection     `json:"comments"`
-	ReviewRequests  *ReviewRequestConnection `json:"reviewRequests"`
-	LatestReviews   *ReviewConnection      `json:"latestReviews"`
-	StatusCheckRollup *StatusCheckRollupData `json:"statusCheckRollup"`
-	Commits         *CommitConnection      `json:"commits"`
+	Number            int                      `json:"number"`
+	Title             string                   `json:"title"`
+	Body              string                   `json:"body"`
+	State             string                   `json:"state"`
+	IsDraft           bool                     `json:"isDraft"`
+	Mergeable         string                   `json:"mergeable"`
+	Author            *AuthorData              `json:"author"`
+	Repository        *RepositoryData          `json:"repository"`
+	CreatedAt         time.Time                `json:"createdAt"`
+	UpdatedAt         time.Time                `json:"updatedAt"`
+	URL               string                   `json:"url"`
+	Labels            *LabelConnection         `json:"labels"`
+	Comments          *CommentConnection       `json:"comments"`
+	ReviewRequests    *ReviewRequestConnection `json:"reviewRequests"`
+	LatestReviews     *ReviewConnection        `json:"latestReviews"`
+	StatusCheckRollup *StatusCheckRollupData   `json:"statusCheckRollup"`
+	Commits           *CommitConnection        `json:"commits"`
 }
 
-// AuthorData represents PR author information  
+// AuthorData represents PR author information
 type AuthorData struct {
 	Login     string `json:"login"`
 	AvatarUrl string `json:"avatarUrl"`
@@ -162,15 +162,15 @@ type AuthorData struct {
 
 // RepositoryData represents repository information
 type RepositoryData struct {
-	Name          string     `json:"name"`
+	Name          string      `json:"name"`
 	Owner         *AuthorData `json:"owner"`
-	NameWithOwner string     `json:"nameWithOwner"`
+	NameWithOwner string      `json:"nameWithOwner"`
 }
 
 // LabelConnection represents the labels connection
 type LabelConnection struct {
-	Nodes []LabelData `json:"nodes"`
-	TotalCount int     `json:"totalCount"`
+	Nodes      []LabelData `json:"nodes"`
+	TotalCount int         `json:"totalCount"`
 }
 
 // LabelData represents a label
@@ -191,27 +191,27 @@ type ReviewRequestConnection struct {
 
 // ReviewConnection represents reviews connection
 type ReviewConnection struct {
-	Nodes []ReviewData `json:"nodes"`
-	TotalCount int      `json:"totalCount"`
+	Nodes      []ReviewData `json:"nodes"`
+	TotalCount int          `json:"totalCount"`
 }
 
 // ReviewData represents review information
 type ReviewData struct {
-	State      string      `json:"state"`
-	Author     *AuthorData `json:"author"`
-	SubmittedAt time.Time  `json:"submittedAt"`
+	State       string      `json:"state"`
+	Author      *AuthorData `json:"author"`
+	SubmittedAt time.Time   `json:"submittedAt"`
 }
 
 // StatusCheckRollupData represents CI/check status
 type StatusCheckRollupData struct {
-	State string `json:"state"`
+	State    string                   `json:"state"`
 	Contexts *StatusContextConnection `json:"contexts"`
 }
 
 // StatusContextConnection represents status contexts
 type StatusContextConnection struct {
-	Nodes []StatusContextData `json:"nodes"`
-	TotalCount int            `json:"totalCount"`
+	Nodes      []StatusContextData `json:"nodes"`
+	TotalCount int                 `json:"totalCount"`
 }
 
 // StatusContextData represents a status check context
@@ -223,8 +223,8 @@ type StatusContextData struct {
 
 // CommitConnection represents commits connection
 type CommitConnection struct {
-	Nodes []CommitData `json:"nodes"`
-	TotalCount int      `json:"totalCount"`
+	Nodes      []CommitData `json:"nodes"`
+	TotalCount int          `json:"totalCount"`
 }
 
 // CommitData represents commit information

@@ -143,7 +143,7 @@ func TestStaggeredInitialRefresh(t *testing.T) {
 
 	// All refresh times should be different (staggered)
 	times := []time.Time{refreshTimes["tab1"], refreshTimes["tab2"], refreshTimes["tab3"]}
-	
+
 	for i := 0; i < len(times); i++ {
 		for j := i + 1; j < len(times); j++ {
 			if times[i].Equal(times[j]) {
@@ -169,7 +169,7 @@ func TestRefreshIntervalAdjustment(t *testing.T) {
 	if GlobalLimiter == nil {
 		InitGlobalRateLimiter()
 	}
-	
+
 	scheduler := NewRefreshScheduler()
 	scheduler.AddTab("test-tab", 2*time.Minute, RefreshPriorityNormal)
 
@@ -206,7 +206,7 @@ func TestRateLimitSummary(t *testing.T) {
 	if GlobalLimiter == nil {
 		InitGlobalRateLimiter()
 	}
-	
+
 	scheduler := NewRefreshScheduler()
 	scheduler.AddTab("tab1", 5*time.Minute, RefreshPriorityNormal)
 	scheduler.AddTab("tab2", 3*time.Minute, RefreshPriorityHigh)
@@ -339,7 +339,7 @@ func TestSchedulerConcurrency(t *testing.T) {
 
 	// Start multiple goroutines doing different operations
 	done := make(chan bool)
-	
+
 	// Goroutine 1: Adding and removing tabs
 	go func() {
 		for i := 0; i < 10; i++ {

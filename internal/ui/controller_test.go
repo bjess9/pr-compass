@@ -10,11 +10,11 @@ import (
 func TestNewUIController(t *testing.T) {
 	token := "test-token"
 	controller := NewUIController(token)
-	
+
 	if controller == nil {
 		t.Fatal("NewUIController returned nil")
 	}
-	
+
 	if controller.token != token {
 		t.Errorf("Expected token %s, got %s", token, controller.token)
 	}
@@ -23,7 +23,7 @@ func TestNewUIController(t *testing.T) {
 // TestControllerApplyFilter tests the filtering functionality
 func TestControllerApplyFilter(t *testing.T) {
 	controller := NewUIController("test-token")
-	
+
 	// Create test PRs
 	testPRs := []*gh.PullRequest{
 		createTestPR(1, "alice", "Fix bug in auth", false, ""),
@@ -31,7 +31,7 @@ func TestControllerApplyFilter(t *testing.T) {
 		createTestPR(3, "alice", "Update documentation", false, "dirty"),
 		createTestPR(4, "charlie", "Refactor code", false, ""),
 	}
-	
+
 	tests := []struct {
 		name           string
 		mode           string
@@ -48,7 +48,7 @@ func TestControllerApplyFilter(t *testing.T) {
 		},
 		{
 			name:           "filter by draft status",
-			mode:           "status", 
+			mode:           "status",
 			value:          "draft",
 			expectedCount:  1,
 			expectedStatus: "Filter applied: status=draft (1 results)",
@@ -82,15 +82,15 @@ func TestControllerApplyFilter(t *testing.T) {
 			expectedStatus: "Filter applied: author=nonexistent (0 results)",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := controller.ApplyFilter(testPRs, tt.mode, tt.value)
-			
+
 			if len(result.FilteredPRs) != tt.expectedCount {
 				t.Errorf("Expected %d filtered PRs, got %d", tt.expectedCount, len(result.FilteredPRs))
 			}
-			
+
 			if result.StatusMsg != tt.expectedStatus {
 				t.Errorf("Expected status message '%s', got '%s'", tt.expectedStatus, result.StatusMsg)
 			}
@@ -98,24 +98,24 @@ func TestControllerApplyFilter(t *testing.T) {
 	}
 }
 
-// TestControllerFilterDraftPRs tests draft PR filtering  
+// TestControllerFilterDraftPRs tests draft PR filtering
 func TestControllerFilterDraftPRs(t *testing.T) {
 	controller := NewUIController("test-token")
-	
+
 	testPRs := []*gh.PullRequest{
 		createTestPR(1, "alice", "Regular PR", false, ""),
 		createTestPR(2, "bob", "Draft PR", true, ""),
 		createTestPR(3, "charlie", "Another draft", true, ""),
 		createTestPR(4, "dave", "Regular PR 2", false, ""),
 	}
-	
+
 	drafts := controller.FilterDraftPRs(testPRs)
-	
+
 	expectedCount := 2
 	if len(drafts) != expectedCount {
 		t.Errorf("Expected %d draft PRs, got %d", expectedCount, len(drafts))
 	}
-	
+
 	// Verify all returned PRs are drafts
 	for _, pr := range drafts {
 		if !pr.GetDraft() {
@@ -127,7 +127,7 @@ func TestControllerFilterDraftPRs(t *testing.T) {
 // TestControllerCalculateTableHeight tests table height calculations
 func TestControllerCalculateTableHeight(t *testing.T) {
 	controller := NewUIController("test-token")
-	
+
 	tests := []struct {
 		name           string
 		terminalHeight int
@@ -138,7 +138,7 @@ func TestControllerCalculateTableHeight(t *testing.T) {
 		{"large height for big terminal", 50, 41},
 		{"very small terminal", 5, 5},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			height := controller.CalculateTableHeight(tt.terminalHeight)
@@ -152,7 +152,7 @@ func TestControllerCalculateTableHeight(t *testing.T) {
 // TestControllerValidateTabSwitch tests tab switching validation
 func TestControllerValidateTabSwitch(t *testing.T) {
 	controller := NewUIController("test-token")
-	
+
 	tests := []struct {
 		name       string
 		currentIdx int
@@ -166,7 +166,7 @@ func TestControllerValidateTabSwitch(t *testing.T) {
 		{"target beyond range", 0, 5, 3, false},
 		{"valid switch to last tab", 0, 2, 3, true},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := controller.ValidateTabSwitch(tt.currentIdx, tt.targetIdx, tt.totalTabs)
@@ -180,18 +180,18 @@ func TestControllerValidateTabSwitch(t *testing.T) {
 // TestControllerGetSpinnerFrame tests spinner animation
 func TestControllerGetSpinnerFrame(t *testing.T) {
 	controller := NewUIController("test-token")
-	
+
 	// Test that spinner cycles through frames
 	frames := make([]string, 12)
 	for i := 0; i < 12; i++ {
 		frames[i] = controller.GetSpinnerFrame(i)
 	}
-	
+
 	// Should have 10 different spinner characters cycling
 	if frames[0] != frames[10] {
 		t.Error("Spinner should cycle after 10 frames")
 	}
-	
+
 	if frames[0] == frames[1] {
 		t.Error("Consecutive spinner frames should be different")
 	}
@@ -200,7 +200,7 @@ func TestControllerGetSpinnerFrame(t *testing.T) {
 // TestControllerFilterPRsEdgeCases tests edge cases in filtering
 func TestControllerFilterPRsEdgeCases(t *testing.T) {
 	controller := NewUIController("test-token")
-	
+
 	// Test with nil user
 	prWithNilUser := &gh.PullRequest{
 		Number: gh.Int(1),
@@ -208,15 +208,15 @@ func TestControllerFilterPRsEdgeCases(t *testing.T) {
 		Draft:  gh.Bool(false),
 		User:   nil, // This could happen in real data
 	}
-	
+
 	prs := []*gh.PullRequest{prWithNilUser}
-	
+
 	// Should not crash and should handle gracefully
 	result := controller.ApplyFilter(prs, "author", "alice")
 	if len(result.FilteredPRs) != 0 {
 		t.Error("Should not match PRs with nil user")
 	}
-	
+
 	// Test with empty PR list
 	emptyResult := controller.ApplyFilter([]*gh.PullRequest{}, "author", "alice")
 	if len(emptyResult.FilteredPRs) != 0 {
@@ -234,18 +234,18 @@ func createTestPR(number int, author, title string, isDraft bool, mergeableState
 			Login: gh.String(author),
 		},
 	}
-	
+
 	if mergeableState != "" {
 		pr.MergeableState = gh.String(mergeableState)
 	}
-	
+
 	return pr
 }
 
 // TestControllerIntegration tests controller with realistic scenarios
 func TestControllerIntegration(t *testing.T) {
 	controller := NewUIController("test-token")
-	
+
 	// Create a realistic set of PRs mimicking a real project
 	realisticPRs := []*gh.PullRequest{
 		createTestPR(123, "developer1", "feat: add user authentication", false, "clean"),
@@ -254,7 +254,7 @@ func TestControllerIntegration(t *testing.T) {
 		createTestPR(126, "renovate[bot]", "chore: update dependencies", false, "clean"),
 		createTestPR(127, "developer3", "refactor: simplify user service", false, "blocked"),
 	}
-	
+
 	// Test realistic filtering scenarios
 	scenarios := []struct {
 		name          string
@@ -267,12 +267,12 @@ func TestControllerIntegration(t *testing.T) {
 		{"find draft PRs", "status", "draft", 1},
 		{"find ready PRs", "status", "ready", 3}, // PRs that aren't drafts or dirty are considered ready
 	}
-	
+
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
 			result := controller.ApplyFilter(realisticPRs, scenario.mode, scenario.value)
 			if len(result.FilteredPRs) != scenario.expectedCount {
-				t.Errorf("Scenario '%s': expected %d results, got %d", 
+				t.Errorf("Scenario '%s': expected %d results, got %d",
 					scenario.name, scenario.expectedCount, len(result.FilteredPRs))
 			}
 		})

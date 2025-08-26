@@ -72,7 +72,7 @@ func TestSharedCache(t *testing.T) {
 
 	// Test cache cleanup manually
 	cache.cleanup()
-	
+
 	// Data should still be there since TTL hasn't expired
 	_, found = cache.GetCachedPR("test-key", "tab1")
 	if !found {
@@ -91,9 +91,9 @@ func TestRateLimitedRequest(t *testing.T) {
 	// Test successful request
 	var executed bool
 	req := &RateLimitedRequest{
-		TabName:  "test-tab",
-		Priority: PriorityNormal,
-		Timeout:  1 * time.Second,
+		TabName:    "test-tab",
+		Priority:   PriorityNormal,
+		Timeout:    1 * time.Second,
 		ResultChan: make(chan error, 1),
 		RequestFunc: func(ctx context.Context) error {
 			executed = true
@@ -106,10 +106,10 @@ func TestRateLimitedRequest(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected successful request, got error: %v", err)
 	}
-	
+
 	// Give some time for async processing
 	time.Sleep(200 * time.Millisecond)
-	
+
 	if !executed {
 		t.Error("Expected request function to be executed")
 	}
@@ -128,9 +128,9 @@ func TestRateLimitPrioritization(t *testing.T) {
 
 	createRequest := func(name string, priority RequestPriority) *RateLimitedRequest {
 		return &RateLimitedRequest{
-			TabName:  name,
-			Priority: priority,
-			Timeout:  2 * time.Second,
+			TabName:    name,
+			Priority:   priority,
+			Timeout:    2 * time.Second,
 			ResultChan: make(chan error, 1),
 			RequestFunc: func(ctx context.Context) error {
 				mu.Lock()
@@ -150,15 +150,15 @@ func TestRateLimitPrioritization(t *testing.T) {
 	go func() {
 		_ = limiter.RequestWithRateLimit(normalReq)
 	}()
-	
+
 	// Small delay to ensure normal request gets queued
 	time.Sleep(10 * time.Millisecond)
-	
+
 	// Submit high priority
 	go func() {
 		_ = limiter.RequestWithRateLimit(highReq)
 	}()
-	
+
 	// Submit urgent priority
 	go func() {
 		_ = limiter.RequestWithRateLimit(urgentReq)
@@ -197,9 +197,9 @@ func TestRateLimitTimeout(t *testing.T) {
 	}()
 
 	req := &RateLimitedRequest{
-		TabName:  "test-tab",
-		Priority: PriorityNormal,
-		Timeout:  10 * time.Millisecond, // Very short timeout
+		TabName:    "test-tab",
+		Priority:   PriorityNormal,
+		Timeout:    10 * time.Millisecond, // Very short timeout
 		ResultChan: make(chan error, 1),
 		RequestFunc: func(ctx context.Context) error {
 			// Simulate slow request
@@ -224,7 +224,7 @@ func TestRateLimitTimeout(t *testing.T) {
 // TestCacheExpiry tests that cache entries expire properly
 func TestCacheExpiry(t *testing.T) {
 	cache := NewSharedCache()
-	
+
 	// Set very short TTL for testing
 	cache.prTTL = 10 * time.Millisecond
 
@@ -269,14 +269,14 @@ func TestRateLimiterConcurrency(t *testing.T) {
 			defer wg.Done()
 
 			req := &RateLimitedRequest{
-				TabName:  "concurrent-test",
-				Priority: PriorityNormal,
-				Timeout:  2 * time.Second,
+				TabName:    "concurrent-test",
+				Priority:   PriorityNormal,
+				Timeout:    2 * time.Second,
 				ResultChan: make(chan error, 1),
 				RequestFunc: func(ctx context.Context) error {
 					// Simulate some work
 					time.Sleep(1 * time.Millisecond)
-					
+
 					mu.Lock()
 					completedCount++
 					mu.Unlock()

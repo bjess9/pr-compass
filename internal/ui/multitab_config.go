@@ -15,7 +15,7 @@ import (
 type MultiTabConfig struct {
 	// Global settings
 	RefreshIntervalMinutes int `mapstructure:"refresh_interval_minutes" yaml:"refresh_interval_minutes,omitempty"`
-	
+
 	// Tab definitions
 	Tabs []TabConfig `mapstructure:"tabs" yaml:"tabs"`
 }
@@ -32,7 +32,7 @@ func LoadMultiTabConfigFromPath(configPath string) (*MultiTabConfig, error) {
 	v.SetConfigType("yaml")
 
 	if err := v.ReadInConfig(); err != nil {
-		return nil, errors.NewConfigNotFoundError(configPath, err)
+		return nil, errors.NewConfigNotFoundError(configPath)
 	}
 
 	// First, try to load as multi-tab configuration
@@ -41,12 +41,12 @@ func LoadMultiTabConfigFromPath(configPath string) (*MultiTabConfig, error) {
 		// Validate and set defaults for multi-tab config
 		for i := range multiConfig.Tabs {
 			tab := &multiConfig.Tabs[i]
-			
+
 			// Set default name if not provided
 			if tab.Name == "" {
 				tab.Name = fmt.Sprintf("Tab %d", i+1)
 			}
-			
+
 			// Set default refresh interval if not provided
 			if tab.RefreshIntervalMinutes == 0 {
 				if multiConfig.RefreshIntervalMinutes > 0 {
@@ -55,18 +55,18 @@ func LoadMultiTabConfigFromPath(configPath string) (*MultiTabConfig, error) {
 					tab.RefreshIntervalMinutes = 5
 				}
 			}
-			
+
 			// Set default include_drafts if not specified
 			if !v.IsSet(fmt.Sprintf("tabs.%d.include_drafts", i)) {
 				tab.IncludeDrafts = true
 			}
-			
+
 			// Set default max_prs if not specified
 			if tab.MaxPRs == 0 {
 				tab.MaxPRs = 50 // Conservative default for multi-tab
 			}
 		}
-		
+
 		return &multiConfig, nil
 	}
 
@@ -81,15 +81,15 @@ func LoadMultiTabConfigFromPath(configPath string) (*MultiTabConfig, error) {
 		Name:                   "Main", // Default name for legacy tab
 		Mode:                   legacyConfig.Mode,
 		Repos:                  legacyConfig.Repos,
-		Organization:          legacyConfig.Organization,
-		Teams:                 legacyConfig.Teams,
-		SearchQuery:           legacyConfig.SearchQuery,
-		Topics:                legacyConfig.Topics,
-		TopicOrg:              legacyConfig.TopicOrg,
-		ExcludeBots:           legacyConfig.ExcludeBots,
-		ExcludeAuthors:        legacyConfig.ExcludeAuthors,
-		ExcludeTitles:         legacyConfig.ExcludeTitles,
-		IncludeDrafts:         legacyConfig.IncludeDrafts,
+		Organization:           legacyConfig.Organization,
+		Teams:                  legacyConfig.Teams,
+		SearchQuery:            legacyConfig.SearchQuery,
+		Topics:                 legacyConfig.Topics,
+		TopicOrg:               legacyConfig.TopicOrg,
+		ExcludeBots:            legacyConfig.ExcludeBots,
+		ExcludeAuthors:         legacyConfig.ExcludeAuthors,
+		ExcludeTitles:          legacyConfig.ExcludeTitles,
+		IncludeDrafts:          legacyConfig.IncludeDrafts,
 		RefreshIntervalMinutes: legacyConfig.RefreshIntervalMinutes,
 	}
 
@@ -116,7 +116,7 @@ func LoadMultiTabConfigFromPath(configPath string) (*MultiTabConfig, error) {
 	if tabConfig.RefreshIntervalMinutes == 0 {
 		tabConfig.RefreshIntervalMinutes = 5 // default: 5 minutes
 	}
-	
+
 	// Set default max PRs if not configured
 	if tabConfig.MaxPRs == 0 {
 		tabConfig.MaxPRs = 50 // default: 50 PRs
@@ -124,7 +124,7 @@ func LoadMultiTabConfigFromPath(configPath string) (*MultiTabConfig, error) {
 
 	multiConfig = MultiTabConfig{
 		RefreshIntervalMinutes: tabConfig.RefreshIntervalMinutes,
-		Tabs:                  []TabConfig{tabConfig},
+		Tabs:                   []TabConfig{tabConfig},
 	}
 
 	return &multiConfig, nil
@@ -167,12 +167,12 @@ func CreateExampleMultiTabConfig(path string) error {
 	if path == "" {
 		return fmt.Errorf("path cannot be empty")
 	}
-	
+
 	// Basic path validation - ensure it ends with .yaml extension and doesn't contain suspicious patterns
 	if !strings.HasSuffix(path, ".yaml") && !strings.HasSuffix(path, ".yml") {
 		return fmt.Errorf("config file must have .yaml or .yml extension")
 	}
-	
+
 	// Prevent directory traversal attacks
 	cleanPath := filepath.Clean(path)
 	if strings.Contains(cleanPath, "..") {

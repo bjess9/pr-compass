@@ -33,18 +33,18 @@ func TestNewClient(t *testing.T) {
 				t.Errorf("NewClient() returned unexpected error: %v", err)
 			}
 
-					// Should return a valid GitHub client
-		if client == nil {
-			t.Error("NewClient() returned nil client")
-			return
-		}
+			// Should return a valid GitHub client
+			if client == nil {
+				t.Error("NewClient() returned nil client")
+				return
+			}
 
-		// Verify it's actually a GitHub client
-		// We can't easily type-check the concrete type, but we can verify
-		// it has the expected GitHub client structure
-		if client.BaseURL == nil {
-			t.Error("Client BaseURL should be set")
-		}
+			// Verify it's actually a GitHub client
+			// We can't easily type-check the concrete type, but we can verify
+			// it has the expected GitHub client structure
+			if client.BaseURL == nil {
+				t.Error("Client BaseURL should be set")
+			}
 		})
 	}
 }

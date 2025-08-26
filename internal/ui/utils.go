@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bjess9/pr-compass/internal/errors"
 	"github.com/bjess9/pr-compass/internal/ui/formatters"
 	"github.com/bjess9/pr-compass/internal/ui/types"
 	gh "github.com/google/go-github/v55/github"
@@ -550,16 +549,16 @@ func loadingView() string {
 
 func loadingViewWithSpinner(spinnerIndex int) string {
 	title := titleStyle.Render("🧭 PR Compass - Pull Request Monitor")
-	
+
 	// Enhanced loading animation with multiple symbols
 	spinner := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	currentSpinner := spinner[spinnerIndex%len(spinner)]
-	
+
 	// Create a more informative loading message
 	loadingMsg := fmt.Sprintf("%s Fetching pull requests from GitHub...", currentSpinner)
 	message := loadingStyle.Render(loadingMsg)
-	
-	// Compact help text 
+
+	// Compact help text
 	helpText := "🧭 Press q to quit • Fetching data..."
 	help := helpStyle.Render(helpText)
 
@@ -572,21 +571,12 @@ func errorView(err error) string {
 	var message string
 	var suggestions string
 
-	// Check if this is a domain-specific error
-	if prErr, isPRError := errors.IsPRCompassError(err); isPRError {
-		// Enhanced error display with better formatting
-		errorMsg := fmt.Sprintf("🚫 %s", prErr.UserFriendlyError())
-		message = errorStyle.Render(errorMsg)
-		
-		// Add helpful suggestions based on error type
-		suggestions = mutedStyle.Render("💡 Try: Check your config file or run 'gh auth login' to authenticate")
-	} else {
-		// Enhanced generic error display
-		errorMsg := fmt.Sprintf("🚫 Unexpected error: %v", err)
-		message = errorStyle.Render(errorMsg)
-		
-		suggestions = mutedStyle.Render("💡 This might be a network issue or GitHub API problem")
-	}
+	// Display error message with better formatting
+	errorMsg := fmt.Sprintf("🚫 %s", err.Error())
+	message = errorStyle.Render(errorMsg)
+
+	// Add helpful suggestions
+	suggestions = mutedStyle.Render("💡 Try: Check your config file or run 'gh auth login' to authenticate")
 
 	// Compact help text with compass emoji
 	helpText := "🧭 Press q to quit • r to retry • Check connection"
@@ -608,4 +598,3 @@ func sortPRsByNewest(prs []*gh.PullRequest) []*gh.PullRequest {
 
 	return sorted
 }
-

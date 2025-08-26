@@ -10,17 +10,17 @@ import (
 // RefreshScheduler coordinates refresh timing across all tabs to minimize rate limit impact
 type RefreshScheduler struct {
 	mu sync.RWMutex
-	
+
 	// Tab refresh timing
 	tabSchedules map[string]*TabSchedule
-	
+
 	// Global coordination
 	lastGlobalRefresh time.Time
 	minInterval       time.Duration // Minimum time between any refreshes
-	
+
 	// Rate limit awareness
-	rateLimitBuffer   int           // Buffer of requests to keep available
-	maxSimultaneous   int           // Max tabs that can refresh simultaneously
+	rateLimitBuffer int // Buffer of requests to keep available
+	maxSimultaneous int // Max tabs that can refresh simultaneously
 }
 
 // TabSchedule tracks refresh timing for a single tab
@@ -37,7 +37,7 @@ type TabSchedule struct {
 type RefreshPriority int
 
 const (
-	RefreshPriorityLow    RefreshPriority = iota
+	RefreshPriorityLow RefreshPriority = iota
 	RefreshPriorityNormal
 	RefreshPriorityHigh
 	RefreshPriorityUrgent
@@ -46,10 +46,10 @@ const (
 // NewRefreshScheduler creates a new refresh scheduler
 func NewRefreshScheduler() *RefreshScheduler {
 	return &RefreshScheduler{
-		tabSchedules:     make(map[string]*TabSchedule),
-		minInterval:      30 * time.Second, // Min 30 seconds between any refreshes
-		rateLimitBuffer:  100,               // Keep 100 requests in reserve
-		maxSimultaneous:  2,                 // Max 2 tabs refreshing at once
+		tabSchedules:    make(map[string]*TabSchedule),
+		minInterval:     30 * time.Second, // Min 30 seconds between any refreshes
+		rateLimitBuffer: 100,              // Keep 100 requests in reserve
+		maxSimultaneous: 2,                // Max 2 tabs refreshing at once
 	}
 }
 
@@ -57,10 +57,10 @@ func NewRefreshScheduler() *RefreshScheduler {
 func (rs *RefreshScheduler) AddTab(tabName string, refreshInterval time.Duration, priority RefreshPriority) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	
+
 	// Estimate request count based on tab configuration
 	requestCount := rs.estimateRequestCount(tabName)
-	
+
 	schedule := &TabSchedule{
 		TabName:         tabName,
 		RefreshInterval: refreshInterval,
@@ -69,7 +69,7 @@ func (rs *RefreshScheduler) AddTab(tabName string, refreshInterval time.Duration
 		Priority:        priority,
 		RequestCount:    requestCount,
 	}
-	
+
 	rs.tabSchedules[tabName] = schedule
 }
 
@@ -84,34 +84,34 @@ func (rs *RefreshScheduler) RemoveTab(tabName string) {
 func (rs *RefreshScheduler) ShouldRefreshTab(tabName string) bool {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
-	
+
 	schedule, exists := rs.tabSchedules[tabName]
 	if !exists {
 		return false
 	}
-	
+
 	now := time.Now()
-	
+
 	// Check if it's time for this tab
 	if now.Before(schedule.NextRefresh) {
 		return false
 	}
-	
+
 	// Check global rate limiting constraints
 	if rs.wouldExceedRateLimit(schedule) {
 		return false
 	}
-	
+
 	// Check if too many tabs are refreshing simultaneously
 	if rs.countActiveRefreshes() >= rs.maxSimultaneous {
 		return false
 	}
-	
+
 	// Check minimum interval since last global refresh
 	if now.Sub(rs.lastGlobalRefresh) < rs.minInterval {
 		return false
 	}
-	
+
 	return true
 }
 
@@ -119,12 +119,12 @@ func (rs *RefreshScheduler) ShouldRefreshTab(tabName string) bool {
 func (rs *RefreshScheduler) MarkRefreshStarted(tabName string) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	
+
 	schedule, exists := rs.tabSchedules[tabName]
 	if !exists {
 		return
 	}
-	
+
 	now := time.Now()
 	schedule.LastRefresh = now
 	schedule.NextRefresh = now.Add(schedule.RefreshInterval)
@@ -135,7 +135,7 @@ func (rs *RefreshScheduler) MarkRefreshStarted(tabName string) {
 func (rs *RefreshScheduler) GetNextRefreshTimes() map[string]time.Time {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
-	
+
 	result := make(map[string]time.Time)
 	for name, schedule := range rs.tabSchedules {
 		result[name] = schedule.NextRefresh
@@ -147,31 +147,31 @@ func (rs *RefreshScheduler) GetNextRefreshTimes() map[string]time.Time {
 func (rs *RefreshScheduler) GetOptimalRefreshOrder() []string {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
-	
+
 	now := time.Now()
 	var candidates []string
-	
+
 	// Find tabs that need refreshing
 	for name, schedule := range rs.tabSchedules {
 		if now.After(schedule.NextRefresh) {
 			candidates = append(candidates, name)
 		}
 	}
-	
+
 	// Sort by priority and request count (lower request count first)
 	sort.Slice(candidates, func(i, j int) bool {
 		scheduleI := rs.tabSchedules[candidates[i]]
 		scheduleJ := rs.tabSchedules[candidates[j]]
-		
+
 		// Higher priority first
 		if scheduleI.Priority != scheduleJ.Priority {
 			return scheduleI.Priority > scheduleJ.Priority
 		}
-		
+
 		// Lower request count first (to spread out heavy requests)
 		return scheduleI.RequestCount < scheduleJ.RequestCount
 	})
-	
+
 	return candidates
 }
 
@@ -182,7 +182,7 @@ func (rs *RefreshScheduler) staggerInitialRefresh(tabName string) time.Duration 
 	for _, r := range tabName {
 		hash = hash*31 + int(r)
 	}
-	
+
 	// Stagger between 0-60 seconds based on hash
 	stagger := time.Duration(hash%60) * time.Second
 	return stagger
@@ -192,12 +192,12 @@ func (rs *RefreshScheduler) staggerInitialRefresh(tabName string) time.Duration 
 func (rs *RefreshScheduler) estimateRequestCount(tabName string) int {
 	// This is a simplified estimate - in practice, you'd analyze the tab configuration
 	// to determine the expected number of requests
-	
+
 	baseRequests := 5 // Basic PR list fetch
-	
+
 	// Add estimates for enhancement requests
 	enhancementRequests := 20 // Conservative estimate for PR details, reviews, checks
-	
+
 	return baseRequests + enhancementRequests
 }
 
@@ -206,12 +206,12 @@ func (rs *RefreshScheduler) wouldExceedRateLimit(schedule *TabSchedule) bool {
 	if GlobalLimiter == nil {
 		return false
 	}
-	
+
 	remaining, _ := GlobalLimiter.GetRateLimitStatus()
-	
+
 	// Don't refresh if we don't have enough requests + buffer
 	requiredRequests := schedule.RequestCount + rs.rateLimitBuffer
-	
+
 	return remaining < requiredRequests
 }
 
@@ -220,15 +220,15 @@ func (rs *RefreshScheduler) countActiveRefreshes() int {
 	if GlobalLimiter == nil {
 		return 0
 	}
-	
+
 	GlobalLimiter.mu.RLock()
 	defer GlobalLimiter.mu.RUnlock()
-	
+
 	total := 0
 	for _, count := range GlobalLimiter.activeRequests {
 		total += count
 	}
-	
+
 	// Estimate how many tabs this represents (rough approximation)
 	return int(math.Ceil(float64(total) / 10.0)) // Assume ~10 requests per tab refresh
 }
@@ -237,14 +237,14 @@ func (rs *RefreshScheduler) countActiveRefreshes() int {
 func (rs *RefreshScheduler) AdjustRefreshIntervals() {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	
+
 	if GlobalLimiter == nil {
 		return
 	}
-	
+
 	remaining, resetTime := GlobalLimiter.GetRateLimitStatus()
 	timeUntilReset := time.Until(resetTime)
-	
+
 	// If we're running low on rate limit, slow down refreshes
 	if timeUntilReset > 0 && remaining > 0 {
 		if remaining < 1000 { // Less than 1000 requests remaining
@@ -275,14 +275,14 @@ func (rs *RefreshScheduler) AdjustRefreshIntervals() {
 func (rs *RefreshScheduler) GetRateLimitSummary() RateLimitSummary {
 	rs.mu.RLock()
 	defer rs.mu.RUnlock()
-	
+
 	summary := RateLimitSummary{
 		TabCount: len(rs.tabSchedules),
 	}
-	
+
 	if GlobalLimiter != nil {
 		summary.RequestsRemaining, summary.ResetTime = GlobalLimiter.GetRateLimitStatus()
-		
+
 		GlobalLimiter.mu.RLock()
 		summary.ActiveRequests = 0
 		for _, count := range GlobalLimiter.activeRequests {
@@ -290,7 +290,7 @@ func (rs *RefreshScheduler) GetRateLimitSummary() RateLimitSummary {
 		}
 		GlobalLimiter.mu.RUnlock()
 	}
-	
+
 	return summary
 }
 

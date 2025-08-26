@@ -15,13 +15,11 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 )
 
-
-
 // TabConfig represents the configuration for a single tab
 type TabConfig struct {
-	Name         string `mapstructure:"name" yaml:"name"`                 // Display name for the tab
-	Mode         string `mapstructure:"mode" yaml:"mode"`                 // "repos", "organization", "teams", "search", "topics"
-	
+	Name string `mapstructure:"name" yaml:"name"` // Display name for the tab
+	Mode string `mapstructure:"mode" yaml:"mode"` // "repos", "organization", "teams", "search", "topics"
+
 	// Mode-specific configurations
 	Repos        []string `mapstructure:"repos" yaml:"repos,omitempty"`
 	Organization string   `mapstructure:"organization" yaml:"organization,omitempty"`
@@ -29,16 +27,16 @@ type TabConfig struct {
 	SearchQuery  string   `mapstructure:"search_query" yaml:"search_query,omitempty"`
 	Topics       []string `mapstructure:"topics" yaml:"topics,omitempty"`
 	TopicOrg     string   `mapstructure:"topic_org" yaml:"topic_org,omitempty"`
-	
+
 	// Filtering options (can be different per tab)
 	ExcludeBots    bool     `mapstructure:"exclude_bots" yaml:"exclude_bots,omitempty"`
 	ExcludeAuthors []string `mapstructure:"exclude_authors" yaml:"exclude_authors,omitempty"`
 	ExcludeTitles  []string `mapstructure:"exclude_titles" yaml:"exclude_titles,omitempty"`
 	IncludeDrafts  bool     `mapstructure:"include_drafts" yaml:"include_drafts,omitempty"`
-	
+
 	// Tab-specific refresh interval
 	RefreshIntervalMinutes int `mapstructure:"refresh_interval_minutes" yaml:"refresh_interval_minutes,omitempty"`
-	
+
 	// Performance options
 	MaxPRs int `mapstructure:"max_prs" yaml:"max_prs,omitempty"` // Maximum PRs to fetch for this tab
 }
@@ -49,19 +47,19 @@ func (tc *TabConfig) ConvertToConfig() *config.Config {
 	if maxPRs == 0 {
 		maxPRs = 50 // Default limit
 	}
-	
+
 	return &config.Config{
 		Mode:                   tc.Mode,
 		Repos:                  tc.Repos,
-		Organization:          tc.Organization,
-		Teams:                 tc.Teams,
-		SearchQuery:           tc.SearchQuery,
-		Topics:                tc.Topics,
-		TopicOrg:              tc.TopicOrg,
-		ExcludeBots:           tc.ExcludeBots,
-		ExcludeAuthors:        tc.ExcludeAuthors,
-		ExcludeTitles:         tc.ExcludeTitles,
-		IncludeDrafts:         tc.IncludeDrafts,
+		Organization:           tc.Organization,
+		Teams:                  tc.Teams,
+		SearchQuery:            tc.SearchQuery,
+		Topics:                 tc.Topics,
+		TopicOrg:               tc.TopicOrg,
+		ExcludeBots:            tc.ExcludeBots,
+		ExcludeAuthors:         tc.ExcludeAuthors,
+		ExcludeTitles:          tc.ExcludeTitles,
+		IncludeDrafts:          tc.IncludeDrafts,
 		RefreshIntervalMinutes: tc.RefreshIntervalMinutes,
 		MaxPRs:                 maxPRs,
 	}
@@ -69,43 +67,43 @@ func (tc *TabConfig) ConvertToConfig() *config.Config {
 
 // TabState represents the state of a single tab (similar to current model)
 type TabState struct {
-	Config   *TabConfig
-	
+	Config *TabConfig
+
 	// UI State
 	Table       table.Model
 	ShowHelp    bool
 	FilterMode  string // "", "author", "repo", "status"
 	FilterValue string
 	StatusMsg   string
-	
+
 	// Data State
 	PRs         []*gh.PullRequest
 	FilteredPRs []*gh.PullRequest
 	Loaded      bool
 	Error       error
-	
+
 	// Enhanced data tracking
 	EnhancedData     map[int]types.EnhancedData // PR number -> enhanced data
 	EnhancementMutex sync.RWMutex
 	Enhancing        bool
 	EnhancedCount    int
-	
+
 	// Background processing
 	BatchManager    *batch.Manager[*gh.PullRequest, types.EnhancedData]
 	ActiveBatchChan chan types.PrEnhancementUpdateMsg
-	
+
 	// Context for cancellation
 	Ctx    context.Context
 	Cancel context.CancelFunc
-	
+
 	// Cache
 	PRCache *cache.PRCache
-	
+
 	// State management
 	BackgroundRefreshing bool
 	LastSelectedPRIndex  int
 	EnhancementQueue     map[int]bool
-	
+
 	// Tab metadata
 	LastRefreshTime time.Time
 	LoadTime        time.Time
@@ -113,22 +111,22 @@ type TabState struct {
 
 // TabManager manages multiple tabs and their states
 type TabManager struct {
-	Tabs          []*TabState
-	ActiveTabIdx  int
-	Token         string
-	
+	Tabs         []*TabState
+	ActiveTabIdx int
+	Token        string
+
 	// Global settings
 	GlobalRefreshInterval int
-	
+
 	// Tab switching state
 	TabSwitchMode bool // When true, show tab numbers for quick switching
-	
+
 	// Rate limiting and coordination
-	RateLimiter   *GlobalRateLimiter
-	SharedCache   *SharedCache
-	
+	RateLimiter *GlobalRateLimiter
+	SharedCache *SharedCache
+
 	// Request coordination
-	refreshScheduler  *RefreshScheduler
+	refreshScheduler *RefreshScheduler
 }
 
 // NewTabState creates a new tab state with the given configuration
@@ -141,7 +139,7 @@ func NewTabState(tabConfig *TabConfig, token string) *TabState {
 		table.WithHeight(10), // Will be dynamically adjusted based on terminal size
 	)
 	t.Focus()
-	
+
 	// Apply table styles to ensure proper sizing behavior
 	s := table.DefaultStyles()
 	s.Header = s.Header.
@@ -150,50 +148,50 @@ func NewTabState(tabConfig *TabConfig, token string) *TabState {
 	s.Selected = s.Selected.
 		Bold(false)
 	t.SetStyles(s)
-	
+
 	// Create context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	// Create worker function for batch PR enhancement using the enhancement service
 	enhancePRWorker := func(batchCtx context.Context, pr *gh.PullRequest) (types.EnhancedData, error) {
 		prCtx, prCancel := context.WithTimeout(batchCtx, 10*time.Second)
 		defer prCancel()
-		
+
 		// Use the enhancement service instead of direct API calls
 		enhancementService := services.NewEnhancementService(token)
 		enhanced, err := enhancementService.EnhancePR(prCtx, pr)
 		if err != nil {
 			return types.EnhancedData{Number: pr.GetNumber()}, err
 		}
-		
+
 		// Convert from service type to our type (they should be identical)
 		return types.EnhancedData(*enhanced), nil
 	}
-	
+
 	// Create batch manager
 	batchManager := batch.NewManager(5, enhancePRWorker)
-	
+
 	// Initialize PR cache
 	prCache, err := cache.NewPRCache()
 	if err != nil {
 		// Continue without caching if cache initialization fails
 		prCache = nil
 	}
-	
+
 	// Note: Refresh interval is handled at the TabConfig level
 	// and used by the MultiTabModel when setting up refresh timers
-	
+
 	return &TabState{
-		Config:               tabConfig,
-		Table:                t,
-		EnhancedData:         make(map[int]types.EnhancedData),
-		BatchManager:         batchManager,
-		Ctx:                  ctx,
-		Cancel:               cancel,
-		PRCache:              prCache,
-		LastSelectedPRIndex:  -1,
-		EnhancementQueue:     make(map[int]bool),
-		LoadTime:             time.Now(),
+		Config:              tabConfig,
+		Table:               t,
+		EnhancedData:        make(map[int]types.EnhancedData),
+		BatchManager:        batchManager,
+		Ctx:                 ctx,
+		Cancel:              cancel,
+		PRCache:             prCache,
+		LastSelectedPRIndex: -1,
+		EnhancementQueue:    make(map[int]bool),
+		LoadTime:            time.Now(),
 	}
 }
 
@@ -203,18 +201,18 @@ func NewTabManager(token string) *TabManager {
 	if GlobalLimiter == nil {
 		InitGlobalRateLimiter()
 	}
-	
+
 	manager := &TabManager{
 		Tabs:                  make([]*TabState, 0),
 		ActiveTabIdx:          0,
 		Token:                 token,
 		GlobalRefreshInterval: 5,
 		TabSwitchMode:         false,
-		RateLimiter:          GlobalLimiter,
-		SharedCache:          GlobalLimiter.sharedCache,
-		refreshScheduler:     NewRefreshScheduler(),
+		RateLimiter:           GlobalLimiter,
+		SharedCache:           GlobalLimiter.sharedCache,
+		refreshScheduler:      NewRefreshScheduler(),
 	}
-	
+
 	return manager
 }
 
@@ -222,14 +220,14 @@ func NewTabManager(token string) *TabManager {
 func (tm *TabManager) AddTab(tabConfig *TabConfig) *TabState {
 	tabState := NewTabState(tabConfig, tm.Token)
 	tm.Tabs = append(tm.Tabs, tabState)
-	
+
 	// Register with refresh scheduler for rate limiting coordination
 	if tm.refreshScheduler != nil {
 		refreshInterval := time.Duration(tabConfig.RefreshIntervalMinutes) * time.Minute
 		if refreshInterval == 0 {
 			refreshInterval = time.Duration(tm.GlobalRefreshInterval) * time.Minute
 		}
-		
+
 		// Determine priority based on refresh interval (faster = higher priority)
 		var priority RefreshPriority = RefreshPriorityNormal
 		if refreshInterval < 3*time.Minute {
@@ -237,10 +235,10 @@ func (tm *TabManager) AddTab(tabConfig *TabConfig) *TabState {
 		} else if refreshInterval > 10*time.Minute {
 			priority = RefreshPriorityLow
 		}
-		
+
 		tm.refreshScheduler.AddTab(tabConfig.Name, refreshInterval, priority)
 	}
-	
+
 	return tabState
 }
 
@@ -280,22 +278,22 @@ func (tm *TabManager) CloseTab(index int) bool {
 	if index < 0 || index >= len(tm.Tabs) || len(tm.Tabs) <= 1 {
 		return false // Can't close the last tab
 	}
-	
+
 	// Cancel the tab's context to stop background operations
 	if tm.Tabs[index].Cancel != nil {
 		tm.Tabs[index].Cancel()
 	}
-	
+
 	// Remove the tab
 	tm.Tabs = append(tm.Tabs[:index], tm.Tabs[index+1:]...)
-	
+
 	// Adjust active tab index
 	if tm.ActiveTabIdx >= len(tm.Tabs) {
 		tm.ActiveTabIdx = len(tm.Tabs) - 1
 	} else if tm.ActiveTabIdx > index {
 		tm.ActiveTabIdx--
 	}
-	
+
 	return true
 }
 

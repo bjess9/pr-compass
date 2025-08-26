@@ -78,7 +78,7 @@ func shouldExcludePR(pr *github.PullRequest, filter *PRFilter) bool {
 	return false
 }
 
-// FetchPRsFromConfig fetches PRs based on the configuration mode using the fetcher interface
+// FetchPRsFromConfig fetches PRs based on the configuration mode
 func FetchPRsFromConfig(ctx context.Context, cfg *config.Config, token string) ([]*github.PullRequest, error) {
 	client, err := NewClient(token)
 	if err != nil {
@@ -88,10 +88,24 @@ func FetchPRsFromConfig(ctx context.Context, cfg *config.Config, token string) (
 	// Create filter based on config
 	filter := createFilterFromConfig(cfg)
 
-	// Create appropriate fetcher based on configuration
-	fetcher := NewFetcher(cfg)
-
-	prs, err := fetcher.FetchPRs(ctx, client, filter)
+	// Fetch PRs directly based on mode - no need for complex strategy pattern
+	var prs []*github.PullRequest
+	switch cfg.Mode {
+	case "repos":
+		prs, err = fetchOpenPRsWithFilter(ctx, client, cfg.Repos, filter)
+	case "organization":
+		prs, err = fetchPRsFromOrganizationWithFilter(ctx, client, cfg.Organization, filter)
+	case "teams":
+		prs, err = fetchPRsFromTeamsWithFilter(ctx, client, cfg.Organization, cfg.Teams, filter)
+	case "search":
+		prs, err = fetchPRsFromSearchWithFilter(ctx, client, cfg.SearchQuery, filter)
+	case "topics":
+		prs, err = fetchPRsFromTopicsWithFilter(ctx, client, cfg.TopicOrg, cfg.Topics, filter)
+	default:
+		// fallback to repo mode
+		prs, err = fetchOpenPRsWithFilter(ctx, client, cfg.Repos, filter)
+	}
+	
 	if err != nil {
 		return nil, err
 	}
@@ -115,29 +129,35 @@ func FetchPRsFromConfig(ctx context.Context, cfg *config.Config, token string) (
 
 // FetchPRsFromConfigWithCache fetches PRs using caching for improved performance
 func FetchPRsFromConfigWithCache(ctx context.Context, cfg *config.Config, token string, prCache *cache.PRCache) ([]*github.PullRequest, error) {
-	client, err := NewClient(token)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create filter based on config
-	filter := createFilterFromConfig(cfg)
-
-	// Create appropriate fetcher based on configuration
-	baseFetcher := NewFetcher(cfg)
-
-	// If cache is provided, wrap fetcher with caching (5 minute TTL)
-	var fetcher PRFetcher
+	// Try cache first if available
 	if prCache != nil {
-		cacheTTL := 5 * time.Minute
-		fetcher = NewCachedFetcher(baseFetcher, prCache, cacheTTL)
-	} else {
-		fetcher = baseFetcher
+		filterKey := generateCacheKey(cfg)
+		cacheKey := prCache.GenerateFetcherKey(cfg.Mode, filterKey)
+		if cachedPRs, found := prCache.GetPRList(cacheKey); found {
+			// Apply PR limit to cached data too
+			maxPRs := cfg.MaxPRs
+			if maxPRs == 0 {
+				maxPRs = 50
+			}
+			if len(cachedPRs) > maxPRs {
+				cachedPRs = cachedPRs[:maxPRs]
+			}
+			return cachedPRs, nil
+		}
 	}
 
-	prs, err := fetcher.FetchPRs(ctx, client, filter)
+	// Cache miss or no cache - fetch fresh data
+	prs, err := FetchPRsFromConfig(ctx, cfg, token)
 	if err != nil {
 		return nil, err
+	}
+
+	// Store in cache if available
+	if prCache != nil {
+		filterKey := generateCacheKey(cfg)
+		cacheKey := prCache.GenerateFetcherKey(cfg.Mode, filterKey)
+		cacheTTL := 5 * time.Minute
+		_ = prCache.SetPRList(cacheKey, prs, cacheTTL) // ignore cache errors
 	}
 
 	// Apply global PR limit
@@ -157,42 +177,38 @@ func FetchPRsFromConfigWithCache(ctx context.Context, cfg *config.Config, token 
 	return prs, nil
 }
 
-// FetchPRsFromConfigOptimized fetches PRs using all optimizations (GraphQL + Cache + Rate Limiting)
+// FetchPRsFromConfigOptimized fetches PRs using optimizations (Cache + Rate Limiting)
 func FetchPRsFromConfigOptimized(ctx context.Context, cfg *config.Config, token string, prCache *cache.PRCache) ([]*github.PullRequest, error) {
-	client, err := NewClient(token)
-	if err != nil {
-		return nil, err
+	// Use cached version which handles cache lookup and storage
+	return FetchPRsFromConfigWithCache(ctx, cfg, token, prCache)
+}
+
+// generateCacheKey creates a cache key for the configuration
+func generateCacheKey(cfg *config.Config) string {
+	var parts []string
+	
+	switch cfg.Mode {
+	case "repos":
+		parts = append(parts, cfg.Repos...)
+	case "organization":
+		parts = append(parts, cfg.Organization)
+	case "teams":
+		parts = append(parts, cfg.Organization)
+		parts = append(parts, cfg.Teams...)
+	case "search":
+		parts = append(parts, cfg.SearchQuery)
+	case "topics":
+		parts = append(parts, cfg.TopicOrg)
+		parts = append(parts, cfg.Topics...)
 	}
-
-	// Create filter based on config
-	filter := createFilterFromConfig(cfg)
-
-	// Create appropriate base fetcher
-	baseFetcher := NewFetcher(cfg)
-
-	// Create fully optimized fetcher with GraphQL + Caching + Rate Limiting
-	optimizedFetcher := NewOptimizedFetcher(baseFetcher, prCache, token)
-
-	prs, err := optimizedFetcher.FetchPRs(ctx, client, filter)
-	if err != nil {
-		return nil, err
+	
+	if cfg.ExcludeBots {
+		parts = append(parts, "exclude-bots")
 	}
-
-	// Apply global PR limit
-	maxPRs := cfg.MaxPRs
-	if maxPRs == 0 {
-		maxPRs = 50 // Default limit
-	}
-
-	if len(prs) > maxPRs {
-		// Sort by updated time (most recent first) and take the top N
-		sort.Slice(prs, func(i, j int) bool {
-			return prs[i].GetUpdatedAt().Time.After(prs[j].GetUpdatedAt().Time)
-		})
-		prs = prs[:maxPRs]
-	}
-
-	return prs, nil
+	parts = append(parts, cfg.ExcludeAuthors...)
+	parts = append(parts, cfg.ExcludeTitles...)
+	
+	return fmt.Sprintf("%s:%s", cfg.Mode, strings.Join(parts, ","))
 }
 
 // createFilterFromConfig creates a PRFilter from configuration settings

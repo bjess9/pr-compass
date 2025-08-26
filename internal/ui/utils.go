@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bjess9/pr-compass/internal/errors"
+	"github.com/bjess9/pr-compass/internal/ui/formatters"
 	"github.com/bjess9/pr-compass/internal/ui/types"
 	gh "github.com/google/go-github/v55/github"
 
@@ -142,11 +143,10 @@ func createTableRows(prs []*gh.PullRequest) []table.Row {
 		// Files (placeholder for now, will be enhanced)
 		files := "-"
 
-		// Time since created
-		timeSinceCreated := humanizeTimeSince(pr.GetCreatedAt().Time)
-
-		// Time since last updated (matches our sorting)
-		timeSinceUpdated := humanizeTimeSince(pr.GetUpdatedAt().Time)
+		// Use the formatter for consistent timestamps
+		formatter := formatters.NewPRFormatter()
+		timeSinceCreated := formatter.HumanizeTimeSince(pr.GetCreatedAt().Time)
+		timeSinceUpdated := formatter.HumanizeTimeSince(pr.GetUpdatedAt().Time)
 
 		row := table.Row{
 			prName,
@@ -206,11 +206,10 @@ func createTableRowsWithEnhancement(prs []*gh.PullRequest, enhancedData map[int]
 		// Files - enhanced with file change info when available
 		files := getPRFileChangesEnhanced(pr, enhancedData)
 
-		// Time since created
-		timeSinceCreated := humanizeTimeSince(pr.GetCreatedAt().Time)
-
-		// Time since last updated (matches our sorting)
-		timeSinceUpdated := humanizeTimeSince(pr.GetUpdatedAt().Time)
+		// Use the formatter for consistent timestamps
+		formatter := formatters.NewPRFormatter()
+		timeSinceCreated := formatter.HumanizeTimeSince(pr.GetCreatedAt().Time)
+		timeSinceUpdated := formatter.HumanizeTimeSince(pr.GetUpdatedAt().Time)
 
 		row := table.Row{
 			prName,
@@ -610,27 +609,3 @@ func sortPRsByNewest(prs []*gh.PullRequest) []*gh.PullRequest {
 	return sorted
 }
 
-// humanizeTimeSince formats duration since a given time in a human-readable way with emojis
-func humanizeTimeSince(t time.Time) string {
-	duration := time.Since(t)
-
-	// Handle very recent times
-	if duration < time.Minute {
-		return "now"
-	} else if duration < time.Hour {
-		minutes := int(duration.Minutes())
-		return fmt.Sprintf("%dm", minutes)
-	} else if duration < 24*time.Hour {
-		hours := int(duration.Hours())
-		return fmt.Sprintf("%dh", hours)
-	} else if duration < 7*24*time.Hour {
-		days := int(duration.Hours() / 24)
-		return fmt.Sprintf("%dd", days)
-	} else if duration < 30*24*time.Hour {
-		weeks := int(duration.Hours() / (24 * 7))
-		return fmt.Sprintf("%dw", weeks)
-	} else {
-		months := int(duration.Hours() / (24 * 30))
-		return fmt.Sprintf("%dmo", months)
-	}
-}

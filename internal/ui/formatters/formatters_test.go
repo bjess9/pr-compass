@@ -73,7 +73,7 @@ func TestPRFormatter_HumanizeTimeSince(t *testing.T) {
 		time     time.Time
 		contains string
 	}{
-		{"Just now", now.Add(-30 * time.Second), "now"},
+		{"Just now", now.Add(-30 * time.Second), "< 1m"},
 		{"Minutes ago", now.Add(-5 * time.Minute), "5m"},
 		{"Hours ago", now.Add(-3 * time.Hour), "3h"},
 		{"Days ago", now.Add(-2 * 24 * time.Hour), "2d"},

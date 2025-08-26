@@ -38,9 +38,9 @@ func (f *PRFormatter) FormatChanges(additions, deletions int) string {
 func (f *PRFormatter) HumanizeTimeSince(t time.Time) string {
 	duration := time.Since(t)
 
-	// Handle very recent times
+	// Handle very recent times - show < 1m instead of "now"
 	if duration < time.Minute {
-		return "now"
+		return "< 1m"
 	} else if duration < time.Hour {
 		minutes := int(duration.Minutes())
 		return fmt.Sprintf("%dm", minutes)

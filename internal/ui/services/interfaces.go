@@ -32,20 +32,6 @@ type EnhancementService interface {
 	GetEnhancedData(prNumber int) (*types.EnhancedData, bool)
 }
 
-// FilterService handles PR filtering operations
-type FilterService interface {
-	// ApplyFilter filters PRs based on the given options
-	ApplyFilter(prs []*types.PRData, filter types.FilterOptions) []*types.PRData
-	
-	// GetFilterSuggestions returns suggested filter values for a given mode
-	GetFilterSuggestions(prs []*types.PRData, mode string) []string
-	
-	// ValidateFilter checks if a filter configuration is valid
-	ValidateFilter(filter types.FilterOptions) error
-	
-	// GetActiveFiltersDescription returns a human-readable description of active filters
-	GetActiveFiltersDescription(filter types.FilterOptions) string
-}
 
 // StateService handles application state management
 type StateService interface {

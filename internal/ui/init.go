@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"log"
-
 	"github.com/bjess9/pr-compass/internal/cache"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -25,7 +23,6 @@ func InitialModelAuto(token string) tea.Model {
 	// Try to load multi-tab configuration
 	multiConfig, err := LoadMultiTabConfig()
 	if err != nil {
-		log.Printf("Failed to load multi-tab config, creating default config: %v", err)
 		// Create a default single tab configuration and use multi-tab model
 		defaultConfig := &MultiTabConfig{
 			RefreshIntervalMinutes: 5,
@@ -48,7 +45,6 @@ func InitialModelAuto(token string) tea.Model {
 
 	// No tabs configured - shouldn't happen due to fallback logic, but handle gracefully
 	// Create a default single tab configuration and use multi-tab model
-	log.Printf("No tabs found in config, creating default tab configuration")
 	defaultConfig := &MultiTabConfig{
 		RefreshIntervalMinutes: 5,
 		Tabs: []TabConfig{

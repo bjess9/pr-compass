@@ -6,7 +6,6 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -138,9 +137,7 @@ func (c *PRCache) GetPRList(cacheKey string) ([]*github.PullRequest, bool) {
 
 	if entry.IsExpired() {
 		// Clean up expired cache file
-		if err := os.Remove(path); err != nil {
-			log.Printf("Warning: Failed to remove expired cache file %s: %v", path, err)
-		}
+		os.Remove(path) // Ignore errors - file cleanup is best effort
 		return nil, false
 	}
 
@@ -182,9 +179,7 @@ func (c *PRCache) GetEnhancedPRData(prKey string) (map[string]EnhancedPRData, bo
 
 	if entry.IsExpired() {
 		// Clean up expired cache file
-		if err := os.Remove(path); err != nil {
-			log.Printf("Warning: Failed to remove expired cache file %s: %v", path, err)
-		}
+		os.Remove(path) // Ignore errors - file cleanup is best effort
 		return nil, false
 	}
 
@@ -228,9 +223,7 @@ func (c *PRCache) CleanExpiredEntries(ctx context.Context) error {
 		var entry CacheEntry[interface{}]
 		if err := c.loadCacheEntry(file, &entry); err == nil {
 			if entry.IsExpired() {
-				if err := os.Remove(file); err != nil {
-					log.Printf("Warning: Failed to remove expired cache file %s: %v", file, err)
-				}
+				os.Remove(file) // Ignore errors - file cleanup is best effort
 			}
 		}
 	}

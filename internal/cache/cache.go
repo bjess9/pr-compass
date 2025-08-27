@@ -137,7 +137,7 @@ func (c *PRCache) GetPRList(cacheKey string) ([]*github.PullRequest, bool) {
 
 	if entry.IsExpired() {
 		// Clean up expired cache file
-		os.Remove(path) // Ignore errors - file cleanup is best effort
+		os.Remove(path) // #nosec G104 - Ignore errors - file cleanup is best effort
 		return nil, false
 	}
 
@@ -179,7 +179,7 @@ func (c *PRCache) GetEnhancedPRData(prKey string) (map[string]EnhancedPRData, bo
 
 	if entry.IsExpired() {
 		// Clean up expired cache file
-		os.Remove(path) // Ignore errors - file cleanup is best effort
+		os.Remove(path) // #nosec G104 - Ignore errors - file cleanup is best effort
 		return nil, false
 	}
 
@@ -223,7 +223,7 @@ func (c *PRCache) CleanExpiredEntries(ctx context.Context) error {
 		var entry CacheEntry[interface{}]
 		if err := c.loadCacheEntry(file, &entry); err == nil {
 			if entry.IsExpired() {
-				os.Remove(file) // Ignore errors - file cleanup is best effort
+				os.Remove(file) // #nosec G104 - Ignore errors - file cleanup is best effort
 			}
 		}
 	}

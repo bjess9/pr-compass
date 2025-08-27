@@ -67,3 +67,12 @@ type StateService interface {
 	UpdateTableCursor(cursor int)
 	UpdatePREnhancement(prNumber int, enhanced *types.EnhancedData)
 }
+
+// FilterService handles PR filtering operations
+type FilterService interface {
+	// FilterPRs applies filtering to a list of PRs
+	FilterPRs(prs []*types.PRData, filter types.FilterOptions) []*types.PRData
+
+	// ValidateFilter validates filter options
+	ValidateFilter(filter types.FilterOptions) error
+}

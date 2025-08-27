@@ -3,12 +3,14 @@ package ui
 import (
 	"testing"
 
+	"github.com/bjess9/pr-compass/internal/ui/services"
 	gh "github.com/google/go-github/v55/github"
 )
 
 // TestNewViewModel tests view model creation
 func TestNewViewModel(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := services.NewRegistry("test-token", nil)
+	controller := NewUIController(registry)
 	vm := NewViewModel(controller)
 
 	if vm == nil {
@@ -22,7 +24,8 @@ func TestNewViewModel(t *testing.T) {
 
 // TestCreateTabViewModels tests tab view model creation
 func TestCreateTabViewModels(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := services.NewRegistry("test-token", nil)
+	controller := NewUIController(registry)
 	vm := NewViewModel(controller)
 
 	// Create test tab manager
@@ -76,7 +79,8 @@ func TestCreateTabViewModels(t *testing.T) {
 
 // TestCreateFilterViewModel tests filter view model creation
 func TestCreateFilterViewModel(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := services.NewRegistry("test-token", nil)
+	controller := NewUIController(registry)
 	vm := NewViewModel(controller)
 
 	// Create test tab state
@@ -148,7 +152,8 @@ func TestCreateFilterViewModel(t *testing.T) {
 
 // TestCreateTableViewModel tests table view model creation
 func TestCreateTableViewModel(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := services.NewRegistry("test-token", nil)
+	controller := NewUIController(registry)
 	vm := NewViewModel(controller)
 
 	// Create test PRs
@@ -180,7 +185,8 @@ func TestCreateTableViewModel(t *testing.T) {
 
 // TestCreateStatusViewModel tests status view model creation
 func TestCreateStatusViewModel(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := services.NewRegistry("test-token", nil)
+	controller := NewUIController(registry)
 	vm := NewViewModel(controller)
 
 	tests := []struct {
@@ -238,7 +244,8 @@ func TestCreateStatusViewModel(t *testing.T) {
 
 // TestCreateHelpViewModel tests help view model creation
 func TestCreateHelpViewModel(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := services.NewRegistry("test-token", nil)
+	controller := NewUIController(registry)
 	vm := NewViewModel(controller)
 
 	helpVM := vm.CreateHelpViewModel()
@@ -274,7 +281,8 @@ func TestCreateHelpViewModel(t *testing.T) {
 
 // TestValidateTabOperation tests tab operation validation
 func TestValidateTabOperation(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := services.NewRegistry("test-token", nil)
+	controller := NewUIController(registry)
 	vm := NewViewModel(controller)
 
 	// Create test tab manager with multiple tabs
@@ -341,7 +349,8 @@ func TestValidateTabOperation(t *testing.T) {
 
 // TestValidateTabOperationEdgeCases tests edge cases for tab operations
 func TestValidateTabOperationEdgeCases(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := services.NewRegistry("test-token", nil)
+	controller := NewUIController(registry)
 	vm := NewViewModel(controller)
 
 	// Create tab manager with only one tab

@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"sort"
 	"strings"
 	"time"
 
@@ -543,28 +542,6 @@ func getPRLabelsDisplay(pr *gh.PullRequest) string {
 	return result
 }
 
-func loadingView() string {
-	return loadingViewWithSpinner(0) // Default spinner index for backward compatibility
-}
-
-func loadingViewWithSpinner(spinnerIndex int) string {
-	title := titleStyle.Render("🧭 PR Compass - Pull Request Monitor")
-
-	// Enhanced loading animation with multiple symbols
-	spinner := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
-	currentSpinner := spinner[spinnerIndex%len(spinner)]
-
-	// Create a more informative loading message
-	loadingMsg := fmt.Sprintf("%s Fetching pull requests from GitHub...", currentSpinner)
-	message := loadingStyle.Render(loadingMsg)
-
-	// Compact help text
-	helpText := "🧭 Press q to quit • Fetching data..."
-	help := helpStyle.Render(helpText)
-
-	return "\n" + title + "\n\n" + message + "\n\n" + help + "\n"
-}
-
 func errorView(err error) string {
 	title := titleStyle.Render("🧭 PR Compass - Pull Request Monitor")
 
@@ -583,18 +560,4 @@ func errorView(err error) string {
 	help := helpStyle.Render(helpText)
 
 	return "\n" + title + "\n\n" + message + "\n\n" + suggestions + "\n\n" + help + "\n"
-}
-
-// sortPRsByNewest sorts PRs by most recently updated first (not created)
-func sortPRsByNewest(prs []*gh.PullRequest) []*gh.PullRequest {
-	// Make a copy to avoid modifying the original slice
-	sorted := make([]*gh.PullRequest, len(prs))
-	copy(sorted, prs)
-
-	// Sort by updated time (most recent first) for better relevance
-	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].GetUpdatedAt().Time.After(sorted[j].GetUpdatedAt().Time)
-	})
-
-	return sorted
 }

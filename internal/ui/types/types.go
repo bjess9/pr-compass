@@ -81,9 +81,6 @@ type PRDisplayInfo struct {
 	IsEnhanced  bool   `json:"is_enhanced"`
 }
 
-// Legacy type aliases for backward compatibility (used in utils.go and tabs.go)
-type enhancedPRData = EnhancedData
-
 // Message types for background enhancement
 type PrEnhancementUpdateMsg struct {
 	PrData EnhancedData

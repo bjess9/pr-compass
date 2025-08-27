@@ -270,7 +270,7 @@ func testErrorHandling() bool {
 }
 
 func testModelInitialization() bool {
-	model := ui.InitialModel("test-token")
+	model := ui.InitialModelAuto("test-token")
 
 	// Test that model was initialized by checking View method
 	view := model.View()

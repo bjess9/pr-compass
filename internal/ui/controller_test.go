@@ -3,26 +3,34 @@ package ui
 import (
 	"testing"
 
+	"github.com/bjess9/pr-compass/internal/ui/services"
+	"github.com/bjess9/pr-compass/internal/ui/types"
 	gh "github.com/google/go-github/v55/github"
 )
 
+// createTestRegistry creates a test service registry
+func createTestRegistry(token string) *services.Registry {
+	return services.NewRegistry(token, nil)
+}
+
 // TestNewUIController tests controller creation
 func TestNewUIController(t *testing.T) {
-	token := "test-token"
-	controller := NewUIController(token)
+	registry := createTestRegistry("test-token")
+	controller := NewUIController(registry)
 
 	if controller == nil {
 		t.Fatal("NewUIController returned nil")
 	}
 
-	if controller.token != token {
-		t.Errorf("Expected token %s, got %s", token, controller.token)
+	if controller.services != registry {
+		t.Error("Expected controller to have registry")
 	}
 }
 
 // TestControllerApplyFilter tests the filtering functionality
 func TestControllerApplyFilter(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := createTestRegistry("test-token")
+	controller := NewUIController(registry)
 
 	// Create test PRs
 	testPRs := []*gh.PullRequest{
@@ -85,7 +93,15 @@ func TestControllerApplyFilter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := controller.ApplyFilter(testPRs, tt.mode, tt.value)
+			// Convert to PRData format
+			prData := make([]*types.PRData, len(testPRs))
+			for i, pr := range testPRs {
+				prData[i] = &types.PRData{PullRequest: pr}
+			}
+
+			// Create filter options
+			filter := types.FilterOptions{Mode: tt.mode, Value: tt.value}
+			result := controller.ApplyFilter(prData, filter)
 
 			if len(result.FilteredPRs) != tt.expectedCount {
 				t.Errorf("Expected %d filtered PRs, got %d", tt.expectedCount, len(result.FilteredPRs))
@@ -100,7 +116,8 @@ func TestControllerApplyFilter(t *testing.T) {
 
 // TestControllerFilterDraftPRs tests draft PR filtering
 func TestControllerFilterDraftPRs(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := createTestRegistry("test-token")
+	controller := NewUIController(registry)
 
 	testPRs := []*gh.PullRequest{
 		createTestPR(1, "alice", "Regular PR", false, ""),
@@ -109,7 +126,19 @@ func TestControllerFilterDraftPRs(t *testing.T) {
 		createTestPR(4, "dave", "Regular PR 2", false, ""),
 	}
 
-	drafts := controller.FilterDraftPRs(testPRs)
+	// Convert to PRData format
+	prData := make([]*types.PRData, len(testPRs))
+	for i, pr := range testPRs {
+		prData[i] = &types.PRData{PullRequest: pr}
+	}
+
+	filteredData := controller.FilterDraftPRs(prData)
+
+	// Convert back to check results
+	drafts := make([]*gh.PullRequest, len(filteredData))
+	for i, pr := range filteredData {
+		drafts[i] = pr.PullRequest
+	}
 
 	expectedCount := 2
 	if len(drafts) != expectedCount {
@@ -126,17 +155,18 @@ func TestControllerFilterDraftPRs(t *testing.T) {
 
 // TestControllerCalculateTableHeight tests table height calculations
 func TestControllerCalculateTableHeight(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := createTestRegistry("test-token")
+	controller := NewUIController(registry)
 
 	tests := []struct {
 		name           string
 		terminalHeight int
 		expectedHeight int
 	}{
-		{"minimum height for small terminal", 10, 5},
-		{"normal height for medium terminal", 30, 21},
-		{"large height for big terminal", 50, 41},
-		{"very small terminal", 5, 5},
+		{"minimum height for small terminal", 10, 3},  // 10 - 16 = -6, returns minHeight = 3
+		{"normal height for medium terminal", 30, 14}, // 30 - 16 = 14
+		{"large height for big terminal", 50, 20},     // 50 - 16 = 34, capped to maxHeight = 20
+		{"very small terminal", 5, 3},                 // 5 - 16 = -11, returns minHeight = 3
 	}
 
 	for _, tt := range tests {
@@ -151,7 +181,8 @@ func TestControllerCalculateTableHeight(t *testing.T) {
 
 // TestControllerValidateTabSwitch tests tab switching validation
 func TestControllerValidateTabSwitch(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := createTestRegistry("test-token")
+	controller := NewUIController(registry)
 
 	tests := []struct {
 		name       string
@@ -179,7 +210,8 @@ func TestControllerValidateTabSwitch(t *testing.T) {
 
 // TestControllerGetSpinnerFrame tests spinner animation
 func TestControllerGetSpinnerFrame(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := createTestRegistry("test-token")
+	controller := NewUIController(registry)
 
 	// Test that spinner cycles through frames
 	frames := make([]string, 12)
@@ -199,7 +231,8 @@ func TestControllerGetSpinnerFrame(t *testing.T) {
 
 // TestControllerFilterPRsEdgeCases tests edge cases in filtering
 func TestControllerFilterPRsEdgeCases(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := createTestRegistry("test-token")
+	controller := NewUIController(registry)
 
 	// Test with nil user
 	prWithNilUser := &gh.PullRequest{
@@ -209,16 +242,18 @@ func TestControllerFilterPRsEdgeCases(t *testing.T) {
 		User:   nil, // This could happen in real data
 	}
 
-	prs := []*gh.PullRequest{prWithNilUser}
+	// Convert to PRData format
+	prData := []*types.PRData{{PullRequest: prWithNilUser}}
+	filter := types.FilterOptions{Mode: "author", Value: "alice"}
 
 	// Should not crash and should handle gracefully
-	result := controller.ApplyFilter(prs, "author", "alice")
+	result := controller.ApplyFilter(prData, filter)
 	if len(result.FilteredPRs) != 0 {
 		t.Error("Should not match PRs with nil user")
 	}
 
 	// Test with empty PR list
-	emptyResult := controller.ApplyFilter([]*gh.PullRequest{}, "author", "alice")
+	emptyResult := controller.ApplyFilter([]*types.PRData{}, filter)
 	if len(emptyResult.FilteredPRs) != 0 {
 		t.Error("Should return empty list for empty input")
 	}
@@ -244,7 +279,8 @@ func createTestPR(number int, author, title string, isDraft bool, mergeableState
 
 // TestControllerIntegration tests controller with realistic scenarios
 func TestControllerIntegration(t *testing.T) {
-	controller := NewUIController("test-token")
+	registry := createTestRegistry("test-token")
+	controller := NewUIController(registry)
 
 	// Create a realistic set of PRs mimicking a real project
 	realisticPRs := []*gh.PullRequest{
@@ -270,7 +306,14 @@ func TestControllerIntegration(t *testing.T) {
 
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			result := controller.ApplyFilter(realisticPRs, scenario.mode, scenario.value)
+			// Convert to PRData format
+			prData := make([]*types.PRData, len(realisticPRs))
+			for i, pr := range realisticPRs {
+				prData[i] = &types.PRData{PullRequest: pr}
+			}
+
+			filter := types.FilterOptions{Mode: scenario.mode, Value: scenario.value}
+			result := controller.ApplyFilter(prData, filter)
 			if len(result.FilteredPRs) != scenario.expectedCount {
 				t.Errorf("Scenario '%s': expected %d results, got %d",
 					scenario.name, scenario.expectedCount, len(result.FilteredPRs))

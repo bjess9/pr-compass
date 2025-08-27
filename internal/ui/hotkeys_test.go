@@ -20,11 +20,10 @@ func TestHotkeyQuit(t *testing.T) {
 	}
 	tabManager.AddTab(tabConfig)
 
-	model := &MultiTabModel{
-		TabManager: tabManager,
-		Width:      100,
-		Height:     50,
-	}
+	model := NewMultiTabModel("test-token", nil)
+	model.TabManager = tabManager
+	model.Width = 100
+	model.Height = 50
 
 	tests := []string{"q", "ctrl+c"}
 
@@ -56,11 +55,10 @@ func TestHotkeyHelp(t *testing.T) {
 	}
 	tabManager.AddTab(tabConfig)
 
-	model := &MultiTabModel{
-		TabManager: tabManager,
-		Width:      100,
-		Height:     50,
-	}
+	model := NewMultiTabModel("test-token", nil)
+	model.TabManager = tabManager
+	model.Width = 100
+	model.Height = 50
 
 	activeTab := model.TabManager.GetActiveTab()
 	if activeTab == nil {
@@ -94,11 +92,10 @@ func TestHotkeyFilter(t *testing.T) {
 	}
 	tabManager.AddTab(tabConfig)
 
-	model := &MultiTabModel{
-		TabManager: tabManager,
-		Width:      100,
-		Height:     50,
-	}
+	model := NewMultiTabModel("test-token", nil)
+	model.TabManager = tabManager
+	model.Width = 100
+	model.Height = 50
 
 	activeTab := model.TabManager.GetActiveTab()
 	if activeTab == nil {
@@ -140,7 +137,7 @@ func TestHotkeyFilter(t *testing.T) {
 			t.Errorf("Expected FilterMode to be 'author', got '%s'", activeTab.FilterMode)
 		}
 
-		if activeTab.StatusMsg != "Enter author name to filter by:" {
+		if activeTab.StatusMsg != "Filter by author:" {
 			t.Errorf("Expected status message for author filter, got '%s'", activeTab.StatusMsg)
 		}
 	})
@@ -155,7 +152,7 @@ func TestHotkeyFilter(t *testing.T) {
 			t.Errorf("Expected FilterMode to be 'status', got '%s'", activeTab.FilterMode)
 		}
 
-		if activeTab.StatusMsg != "Enter status (draft/ready/conflicts):" {
+		if activeTab.StatusMsg != "Filter by status:" {
 			t.Errorf("Expected status message for status filter, got '%s'", activeTab.StatusMsg)
 		}
 	})
@@ -220,11 +217,10 @@ func TestHotkeyNavigation(t *testing.T) {
 	}
 	tabManager.AddTab(tabConfig)
 
-	model := &MultiTabModel{
-		TabManager: tabManager,
-		Width:      100,
-		Height:     50,
-	}
+	model := NewMultiTabModel("test-token", nil)
+	model.TabManager = tabManager
+	model.Width = 100
+	model.Height = 50
 
 	activeTab := model.TabManager.GetActiveTab()
 	if activeTab == nil {
@@ -289,11 +285,10 @@ func TestFilterInput(t *testing.T) {
 	}
 	tabManager.AddTab(tabConfig)
 
-	model := &MultiTabModel{
-		TabManager: tabManager,
-		Width:      100,
-		Height:     50,
-	}
+	model := NewMultiTabModel("test-token", nil)
+	model.TabManager = tabManager
+	model.Width = 100
+	model.Height = 50
 
 	activeTab := model.TabManager.GetActiveTab()
 	if activeTab == nil {
@@ -346,7 +341,7 @@ func TestFilterInput(t *testing.T) {
 
 // TestApplyFilter tests the filter application logic
 func TestApplyFilter(t *testing.T) {
-	model := &MultiTabModel{}
+	model := NewMultiTabModel("test-token", nil)
 
 	testPRs := []*gh.PullRequest{
 		{
@@ -444,11 +439,10 @@ func TestUpdateTableRows(t *testing.T) {
 	}
 	tabManager.AddTab(tabConfig)
 
-	model := &MultiTabModel{
-		TabManager: tabManager,
-		Width:      100,
-		Height:     50,
-	}
+	model := NewMultiTabModel("test-token", nil)
+	model.TabManager = tabManager
+	model.Width = 100
+	model.Height = 50
 
 	activeTab := model.TabManager.GetActiveTab()
 	if activeTab == nil {

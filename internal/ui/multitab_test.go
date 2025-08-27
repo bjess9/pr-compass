@@ -133,7 +133,7 @@ func TestTabManager(t *testing.T) {
 
 // TestMultiTabModel tests the multi-tab model functionality
 func TestMultiTabModel(t *testing.T) {
-	model := NewMultiTabModel("test-token")
+	model := NewMultiTabModel("test-token", nil)
 
 	// Test initial state
 	if model.Width != 120 {

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bjess9/pr-compass/internal/cache"
 	"github.com/bjess9/pr-compass/internal/github"
 	"github.com/bjess9/pr-compass/internal/ui/services"
 	"github.com/bjess9/pr-compass/internal/ui/types"
@@ -61,9 +62,12 @@ type tabPrsMsg struct {
 }
 
 // NewMultiTabModel creates a new multi-tab model
-func NewMultiTabModel(token string) *MultiTabModel {
+func NewMultiTabModel(token string, prCache *cache.PRCache) *MultiTabModel {
+	// Create service registry
+	serviceRegistry := services.NewRegistry(token, prCache)
+
 	manager := NewTabManager(token)
-	controller := NewUIController(token)
+	controller := NewUIController(serviceRegistry)
 	viewModel := NewViewModel(controller)
 
 	return &MultiTabModel{
@@ -389,13 +393,36 @@ func (m *MultiTabModel) handleFilterInput(tab *TabState, input string) (tea.Mode
 
 // applyFilter applies a filter to the PRs list using the controller
 func (m *MultiTabModel) applyFilter(prs []*gh.PullRequest, mode, value string) []*gh.PullRequest {
-	result := m.controller.ApplyFilter(prs, mode, value)
+	// Convert to PRData format
+	prData := make([]*types.PRData, len(prs))
+	for i, pr := range prs {
+		prData[i] = &types.PRData{PullRequest: pr}
+	}
+
+	// Apply filter
+	filter := types.FilterOptions{Mode: mode, Value: value}
+	result := m.controller.ApplyFilter(prData, filter)
 	return result.FilteredPRs
 }
 
 // filterPRsByDraft returns only draft PRs using the controller
 func (m *MultiTabModel) filterPRsByDraft(prs []*gh.PullRequest) []*gh.PullRequest {
-	return m.controller.FilterDraftPRs(prs)
+	// Convert to PRData format
+	prData := make([]*types.PRData, len(prs))
+	for i, pr := range prs {
+		prData[i] = &types.PRData{PullRequest: pr}
+	}
+
+	// Apply draft filter
+	filteredData := m.controller.FilterDraftPRs(prData)
+
+	// Convert back to GitHub PR format
+	result := make([]*gh.PullRequest, len(filteredData))
+	for i, pr := range filteredData {
+		result[i] = pr.PullRequest
+	}
+
+	return result
 }
 
 // updateTableRows updates the table with current filtered PRs

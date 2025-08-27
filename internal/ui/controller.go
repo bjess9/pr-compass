@@ -3,22 +3,22 @@ package ui
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"github.com/bjess9/pr-compass/internal/github"
+	"github.com/bjess9/pr-compass/internal/ui/services"
+	"github.com/bjess9/pr-compass/internal/ui/types"
 	gh "github.com/google/go-github/v55/github"
 )
 
 // UIController handles business logic for UI operations
 // This is separated from the Bubble Tea model for better testability
 type UIController struct {
-	token string
+	services *services.Registry
 }
 
 // NewUIController creates a new UI controller
-func NewUIController(token string) *UIController {
+func NewUIController(services *services.Registry) *UIController {
 	return &UIController{
-		token: token,
+		services: services,
 	}
 }
 
@@ -29,80 +29,45 @@ type FilterResult struct {
 }
 
 // ApplyFilter applies filtering logic to PRs
-func (c *UIController) ApplyFilter(prs []*gh.PullRequest, mode, value string) FilterResult {
-	if mode == "" || value == "" {
+func (c *UIController) ApplyFilter(prs []*types.PRData, filter types.FilterOptions) FilterResult {
+	if filter.Mode == "" {
+		converted := make([]*gh.PullRequest, len(prs))
+		for i, pr := range prs {
+			converted[i] = pr.PullRequest
+		}
 		return FilterResult{
-			FilteredPRs: prs,
+			FilteredPRs: converted,
 			StatusMsg:   "",
 		}
 	}
 
-	filtered := c.filterPRs(prs, mode, value)
-	statusMsg := c.formatFilterStatus(mode, value, len(filtered))
+	filteredPRs := c.services.Filter.FilterPRs(prs, filter)
+	statusMsg := fmt.Sprintf("Filter applied: %s=%s (%d results)", filter.Mode, filter.Value, len(filteredPRs))
+
+	converted := make([]*gh.PullRequest, len(filteredPRs))
+	for i, pr := range filteredPRs {
+		converted[i] = pr.PullRequest
+	}
 
 	return FilterResult{
-		FilteredPRs: filtered,
+		FilteredPRs: converted,
 		StatusMsg:   statusMsg,
 	}
 }
 
-// filterPRs performs the actual filtering logic
-func (c *UIController) filterPRs(prs []*gh.PullRequest, mode, value string) []*gh.PullRequest {
-	var filtered []*gh.PullRequest
-	valueLower := strings.ToLower(value)
-
-	for _, pr := range prs {
-		include := false
-
-		switch mode {
-		case "author":
-			author := ""
-			if pr.GetUser() != nil {
-				author = strings.ToLower(pr.GetUser().GetLogin())
-			}
-			include = strings.Contains(author, valueLower)
-
-		case "status":
-			status := "ready"
-			if pr.GetDraft() {
-				status = "draft"
-			} else if pr.GetMergeableState() == "dirty" {
-				status = "conflicts"
-			}
-			include = strings.Contains(status, valueLower)
-
-		case "draft":
-			include = pr.GetDraft() == (value == "true")
-		}
-
-		if include {
-			filtered = append(filtered, pr)
-		}
-	}
-
-	return filtered
-}
-
-// formatFilterStatus creates a status message for filtering
-func (c *UIController) formatFilterStatus(mode, value string, resultCount int) string {
-	return fmt.Sprintf("Filter applied: %s=%s (%d results)", mode, value, resultCount)
-}
-
 // FilterDraftPRs returns only draft PRs
-func (c *UIController) FilterDraftPRs(prs []*gh.PullRequest) []*gh.PullRequest {
-	var drafts []*gh.PullRequest
-	for _, pr := range prs {
-		if pr.GetDraft() {
-			drafts = append(drafts, pr)
-		}
+func (c *UIController) FilterDraftPRs(prs []*types.PRData) []*types.PRData {
+	filter := types.FilterOptions{
+		Mode:  "draft",
+		Value: "true",
 	}
-	return drafts
+	return c.services.Filter.FilterPRs(prs, filter)
 }
 
 // FetchPRsForTab fetches PRs for a specific tab configuration
-func (c *UIController) FetchPRsForTab(ctx context.Context, tabConfig *TabConfig) ([]*gh.PullRequest, error) {
+func (c *UIController) FetchPRsForTab(ctx context.Context, tabConfig *TabConfig) ([]*types.PRData, error) {
 	config := tabConfig.ConvertToConfig()
-	return github.FetchPRsFromConfig(ctx, config, c.token)
+	return c.services.PR.FetchPRs(ctx, config)
 }
 
 // CalculateTableHeight calculates the appropriate table height based on terminal dimensions

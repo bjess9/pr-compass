@@ -94,15 +94,6 @@ var (
 			BorderBottom(true).
 			BorderForeground(lipgloss.Color(PrimaryColor))
 
-	// Additional specialized styles for better UX
-	loadingStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color(InfoColor)).
-			Background(lipgloss.Color(SurfaceColor)).
-			Padding(2, 4).
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color(BorderColor)).
-			Align(lipgloss.Center)
-
 	errorStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color(ErrorColor)).
 			Background(lipgloss.Color(SurfaceColor)).

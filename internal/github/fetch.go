@@ -105,7 +105,7 @@ func FetchPRsFromConfig(ctx context.Context, cfg *config.Config, token string) (
 		// fallback to repo mode
 		prs, err = fetchOpenPRsWithFilter(ctx, client, cfg.Repos, filter)
 	}
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func FetchPRsFromConfigOptimized(ctx context.Context, cfg *config.Config, token 
 // generateCacheKey creates a cache key for the configuration
 func generateCacheKey(cfg *config.Config) string {
 	var parts []string
-	
+
 	switch cfg.Mode {
 	case "repos":
 		parts = append(parts, cfg.Repos...)
@@ -201,13 +201,13 @@ func generateCacheKey(cfg *config.Config) string {
 		parts = append(parts, cfg.TopicOrg)
 		parts = append(parts, cfg.Topics...)
 	}
-	
+
 	if cfg.ExcludeBots {
 		parts = append(parts, "exclude-bots")
 	}
 	parts = append(parts, cfg.ExcludeAuthors...)
 	parts = append(parts, cfg.ExcludeTitles...)
-	
+
 	return fmt.Sprintf("%s:%s", cfg.Mode, strings.Join(parts, ","))
 }
 

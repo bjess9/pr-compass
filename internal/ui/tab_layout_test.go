@@ -23,11 +23,10 @@ func TestTabBarHorizontalLayout(t *testing.T) {
 		tabManager.AddTab(config)
 	}
 
-	model := &MultiTabModel{
-		TabManager: tabManager,
-		Width:      120,
-		Height:     40,
-	}
+	model := NewMultiTabModel("test-token", nil)
+	model.TabManager = tabManager
+	model.Width = 120
+	model.Height = 40
 
 	// Set all tabs as loaded to avoid loading indicators
 	for _, tab := range tabManager.Tabs {
@@ -127,18 +126,22 @@ func TestSingleTabNoBar(t *testing.T) {
 	}
 	tabManager.AddTab(tabConfig)
 
-	model := &MultiTabModel{
-		TabManager: tabManager,
-		Width:      120,
-		Height:     40,
-	}
+	model := NewMultiTabModel("test-token", nil)
+	model.TabManager = tabManager
+	model.Width = 120
+	model.Height = 40
 
 	// Render the tab bar
 	tabBar := model.renderTabBar()
 
-	// Should be empty for single tab
-	if tabBar != "" {
-		t.Errorf("Tab bar should be empty for single tab, got: %s", tabBar)
+	// Tab bar is now always shown, even for single tabs, as it contains important status info
+	if tabBar == "" {
+		t.Error("Tab bar should be shown even for single tab as it contains status info")
+	}
+
+	// Verify it contains the tab name
+	if !strings.Contains(tabBar, "Single Tab") {
+		t.Error("Tab bar should contain the tab name")
 	}
 }
 
@@ -156,11 +159,10 @@ func TestTabBarSpacing(t *testing.T) {
 		tabManager.AddTab(config)
 	}
 
-	model := &MultiTabModel{
-		TabManager: tabManager,
-		Width:      120,
-		Height:     40,
-	}
+	model := NewMultiTabModel("test-token", nil)
+	model.TabManager = tabManager
+	model.Width = 120
+	model.Height = 40
 
 	// Set tabs as loaded
 	for _, tab := range tabManager.Tabs {

@@ -3,6 +3,7 @@ package ui
 import (
 	"log"
 
+	"github.com/bjess9/pr-compass/internal/cache"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -64,7 +65,10 @@ func InitialModelAuto(token string) tea.Model {
 
 // InitialMultiTabModel creates a new multi-tab model with the given configuration
 func InitialMultiTabModel(token string, multiConfig *MultiTabConfig) tea.Model {
-	model := NewMultiTabModel(token)
+	// Initialize cache (could be nil for simpler cases)
+	var prCache *cache.PRCache = nil // For now, no caching in initial model
+
+	model := NewMultiTabModel(token, prCache)
 
 	// Add all configured tabs
 	for _, tabConfig := range multiConfig.Tabs {

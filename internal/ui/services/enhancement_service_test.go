@@ -281,3 +281,217 @@ func TestFetchEnhancedPRData_ValidateInputs(t *testing.T) {
 		})
 	}
 }
+
+func TestDetermineReviewStatus(t *testing.T) {
+	tests := []struct {
+		name     string
+		reviews  []*gh.PullRequestReview
+		expected string
+	}{
+		{
+			name:     "no reviews",
+			reviews:  []*gh.PullRequestReview{},
+			expected: "no_review",
+		},
+		{
+			name:     "nil reviews",
+			reviews:  nil,
+			expected: "no_review",
+		},
+		{
+			name: "single approved review",
+			reviews: []*gh.PullRequestReview{
+				{
+					User:  &gh.User{Login: gh.String("reviewer1")},
+					State: gh.String("APPROVED"),
+				},
+			},
+			expected: "approved",
+		},
+		{
+			name: "single changes requested review",
+			reviews: []*gh.PullRequestReview{
+				{
+					User:  &gh.User{Login: gh.String("reviewer1")},
+					State: gh.String("CHANGES_REQUESTED"),
+				},
+			},
+			expected: "changes_requested",
+		},
+		{
+			name: "mixed reviews - changes requested wins",
+			reviews: []*gh.PullRequestReview{
+				{
+					User:  &gh.User{Login: gh.String("reviewer1")},
+					State: gh.String("APPROVED"),
+				},
+				{
+					User:  &gh.User{Login: gh.String("reviewer2")},
+					State: gh.String("CHANGES_REQUESTED"),
+				},
+			},
+			expected: "changes_requested",
+		},
+		{
+			name: "multiple reviews same user - latest wins",
+			reviews: []*gh.PullRequestReview{
+				{
+					User:  &gh.User{Login: gh.String("reviewer1")},
+					State: gh.String("CHANGES_REQUESTED"),
+				},
+				{
+					User:  &gh.User{Login: gh.String("reviewer1")},
+					State: gh.String("APPROVED"),
+				},
+			},
+			expected: "approved",
+		},
+		{
+			name: "commented reviews are pending",
+			reviews: []*gh.PullRequestReview{
+				{
+					User:  &gh.User{Login: gh.String("reviewer1")},
+					State: gh.String("COMMENTED"),
+				},
+			},
+			expected: "pending",
+		},
+		{
+			name: "all approved",
+			reviews: []*gh.PullRequestReview{
+				{
+					User:  &gh.User{Login: gh.String("reviewer1")},
+					State: gh.String("APPROVED"),
+				},
+				{
+					User:  &gh.User{Login: gh.String("reviewer2")},
+					State: gh.String("APPROVED"),
+				},
+			},
+			expected: "approved",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := determineReviewStatus(tt.reviews)
+			if result != tt.expected {
+				t.Errorf("determineReviewStatus() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestDetermineChecksStatus(t *testing.T) {
+	tests := []struct {
+		name     string
+		checks   []*gh.CheckRun
+		expected string
+	}{
+		{
+			name:     "no checks",
+			checks:   []*gh.CheckRun{},
+			expected: "none",
+		},
+		{
+			name:     "nil checks",
+			checks:   nil,
+			expected: "none",
+		},
+		{
+			name: "all successful",
+			checks: []*gh.CheckRun{
+				{
+					Status:     gh.String("completed"),
+					Conclusion: gh.String("success"),
+				},
+				{
+					Status:     gh.String("completed"),
+					Conclusion: gh.String("success"),
+				},
+			},
+			expected: "success",
+		},
+		{
+			name: "one failure",
+			checks: []*gh.CheckRun{
+				{
+					Status:     gh.String("completed"),
+					Conclusion: gh.String("success"),
+				},
+				{
+					Status:     gh.String("completed"),
+					Conclusion: gh.String("failure"),
+				},
+			},
+			expected: "failure",
+		},
+		{
+			name: "cancelled check counts as failure",
+			checks: []*gh.CheckRun{
+				{
+					Status:     gh.String("completed"),
+					Conclusion: gh.String("cancelled"),
+				},
+			},
+			expected: "failure",
+		},
+		{
+			name: "pending checks",
+			checks: []*gh.CheckRun{
+				{
+					Status: gh.String("in_progress"),
+				},
+			},
+			expected: "pending",
+		},
+		{
+			name: "queued checks",
+			checks: []*gh.CheckRun{
+				{
+					Status: gh.String("queued"),
+				},
+			},
+			expected: "pending",
+		},
+		{
+			name: "mixed status - failure takes precedence",
+			checks: []*gh.CheckRun{
+				{
+					Status:     gh.String("completed"),
+					Conclusion: gh.String("success"),
+				},
+				{
+					Status: gh.String("in_progress"),
+				},
+				{
+					Status:     gh.String("completed"),
+					Conclusion: gh.String("failure"),
+				},
+			},
+			expected: "failure",
+		},
+		{
+			name: "mixed status - pending when no failures",
+			checks: []*gh.CheckRun{
+				{
+					Status:     gh.String("completed"),
+					Conclusion: gh.String("success"),
+				},
+				{
+					Status: gh.String("in_progress"),
+				},
+			},
+			expected: "pending",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := determineChecksStatus(tt.checks)
+			if result != tt.expected {
+				t.Errorf("determineChecksStatus() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}

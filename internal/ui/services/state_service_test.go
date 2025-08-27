@@ -249,3 +249,149 @@ type testError struct {
 func (e *testError) Error() string {
 	return e.message
 }
+
+// Tests for previously untested methods
+
+func TestStateService_UpdateState(t *testing.T) {
+	service := NewStateService()
+
+	// Test updating state with custom function
+	service.UpdateState(func(state *types.AppState) {
+		state.Loaded = true
+		state.BackgroundRefreshing = true
+	})
+
+	state := service.GetState()
+	if !state.Loaded {
+		t.Error("Expected Loaded to be true after UpdateState")
+	}
+	if !state.BackgroundRefreshing {
+		t.Error("Expected BackgroundRefreshing to be true after UpdateState")
+	}
+}
+
+func TestStateService_UpdateFilteredPRs(t *testing.T) {
+	service := NewStateService()
+
+	filteredPRs := []*types.PRData{
+		{
+			PullRequest: &gh.PullRequest{
+				Number: gh.Int(42),
+				Title:  gh.String("Filtered PR"),
+			},
+		},
+	}
+
+	service.UpdateFilteredPRs(filteredPRs)
+
+	state := service.GetState()
+	if len(state.FilteredPRs) != 1 {
+		t.Errorf("Expected 1 filtered PR, got %d", len(state.FilteredPRs))
+	}
+	if state.FilteredPRs[0].GetNumber() != 42 {
+		t.Errorf("Expected filtered PR #42, got #%d", state.FilteredPRs[0].GetNumber())
+	}
+}
+
+func TestStateService_SetLoaded(t *testing.T) {
+	service := NewStateService()
+
+	// Test setting loaded to true
+	service.SetLoaded(true)
+	state := service.GetState()
+	if !state.Loaded {
+		t.Error("Expected Loaded to be true")
+	}
+
+	// Test setting loaded to false
+	service.SetLoaded(false)
+	state = service.GetState()
+	if state.Loaded {
+		t.Error("Expected Loaded to be false")
+	}
+}
+
+func TestStateService_SetBackgroundRefreshing(t *testing.T) {
+	service := NewStateService()
+
+	// Test setting background refreshing to true
+	service.SetBackgroundRefreshing(true)
+	state := service.GetState()
+	if !state.BackgroundRefreshing {
+		t.Error("Expected BackgroundRefreshing to be true")
+	}
+
+	// Test setting background refreshing to false
+	service.SetBackgroundRefreshing(false)
+	state = service.GetState()
+	if state.BackgroundRefreshing {
+		t.Error("Expected BackgroundRefreshing to be false")
+	}
+}
+
+func TestStateService_SetEnhancing(t *testing.T) {
+	service := NewStateService()
+
+	// Test setting enhancing to true
+	service.SetEnhancing(true)
+	state := service.GetState()
+	if !state.Enhancing {
+		t.Error("Expected Enhancing to be true")
+	}
+
+	// Test setting enhancing to false
+	service.SetEnhancing(false)
+	state = service.GetState()
+	if state.Enhancing {
+		t.Error("Expected Enhancing to be false")
+	}
+}
+
+func TestStateService_UpdateEnhancedCount(t *testing.T) {
+	service := NewStateService()
+
+	// Test updating enhanced count
+	service.UpdateEnhancedCount(42)
+	state := service.GetState()
+	if state.EnhancedCount != 42 {
+		t.Errorf("Expected EnhancedCount to be 42, got %d", state.EnhancedCount)
+	}
+
+	// Test updating to zero
+	service.UpdateEnhancedCount(0)
+	state = service.GetState()
+	if state.EnhancedCount != 0 {
+		t.Errorf("Expected EnhancedCount to be 0, got %d", state.EnhancedCount)
+	}
+}
+
+func TestStateService_EnhancementData_ExtendedUsage(t *testing.T) {
+	service := NewStateService()
+
+	// Test enhanced PR data consistency across state updates
+	prs := []*types.PRData{
+		{
+			PullRequest: &gh.PullRequest{
+				Number: gh.Int(100),
+				Title:  gh.String("Enhanced PR"),
+			},
+			Enhanced: &types.EnhancedData{
+				Number:   100,
+				Comments: 5,
+			},
+		},
+	}
+	service.UpdatePRs(prs)
+
+	// Verify enhanced data survives state updates
+	service.UpdateStatusMessage("test status")
+	service.SetLoaded(true)
+	
+	state := service.GetState()
+	if state.PRs[0].Enhanced == nil {
+		t.Error("Enhanced data should persist across state updates")
+	}
+	if state.PRs[0].Enhanced.Comments != 5 {
+		t.Errorf("Expected 5 comments, got %d", state.PRs[0].Enhanced.Comments)
+	}
+}
